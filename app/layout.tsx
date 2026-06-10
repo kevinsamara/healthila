@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: "Healthila — Pengalaman Rasa Alami. Segar.",
   description: "Premium fruit, cold-pressed juice, hamper elegan & dessert sehat.",
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: '/public/favicon.ico',
+    apple: '/public/apple-touch-icon.png',
   },
 };
 
