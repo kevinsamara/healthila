@@ -150,7 +150,7 @@ export default function ProdukDetailContent() {
           {product.deskripsi_panjang && (
             <div style={{backgroundColor: 'white', borderRadius: '16px', padding: '1.25rem', boxShadow: '0 2px 10px rgba(0,0,0,0.06)'}}>
               <p style={{fontWeight: '700', color: '#1a1a1a', marginBottom: '0.75rem', fontSize: '0.95rem'}}>📝 Deskripsi</p>
-              <p style={{color: '#374151', fontSize: '0.88rem', lineHeight: 1.75}}>
+              <p style={{color: '#374151', fontSize: '0.88rem', lineHeight: 1.75, whiteSpace: 'pre-wrap'}}>
                 {product.deskripsi_panjang}
               </p>
             </div>
