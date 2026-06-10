@@ -83,10 +83,10 @@ export default function Home() {
             Premium Fruit Store Malang
           </div>
           <h1 style={{fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '800', color: 'white', lineHeight: 1.2, marginBottom: '0.5rem'}}>
-            Pengalaman Rasa
+            Fruitful Heart
           </h1>
           <h1 style={{fontSize: 'clamp(2rem, 5vw, 3.5rem)', fontWeight: '800', color: '#86efac', lineHeight: 1.2, marginBottom: '1.5rem'}}>
-            Alami. Segar.
+            Eating Smart
           </h1>
           <p style={{color: 'rgba(255,255,255,0.85)', fontSize: 'clamp(0.9rem, 2vw, 1.1rem)', lineHeight: 1.7, maxWidth: '480px', marginBottom: '2rem'}}>
             Premium fruit, cold-pressed juice, hamper elegan dan dessert sehat, dikirim langsung ke pintumu.
