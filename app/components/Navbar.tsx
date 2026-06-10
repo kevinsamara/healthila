@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import CartIcon from "./CartIcon";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -7,28 +8,31 @@ export default function Navbar() {
 
   return (
     <nav style={{backgroundColor: '#1a5c2e', position: 'sticky', top: 0, zIndex: 100}}>
-      <div style={{maxWidth: '1200px', margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-        
+      <div style={{maxWidth: '1200px', margin: '0 auto', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem'}}>
+
         {/* Logo */}
-        <div style={{color: 'white', fontSize: '1.4rem', fontWeight: '800'}}>
+        <a href="/" style={{color: 'white', fontSize: '1.4rem', fontWeight: '800', textDecoration: 'none'}}>
           🌿 Healthila
-        </div>
+        </a>
 
         {/* Menu Desktop */}
         <div style={{display: 'flex', gap: '1.5rem', alignItems: 'center'}} className="desktop-menu">
           {menus.map((item) => (
-            <a key={item} href="#" style={{color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '0.9rem'}}>
+            <a key={item} href={`/${item === 'Beranda' ? '' : item.toLowerCase().replace(' ', '-').replace('&', '').replace('  ', '-')}`}
+              style={{color: 'rgba(255,255,255,0.85)', textDecoration: 'none', fontSize: '0.88rem'}}>
               {item}
             </a>
           ))}
         </div>
 
-        {/* Tombol WA Desktop */}
-        <a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer"
-          style={{backgroundColor: '#25D366', color: 'white', padding: '0.6rem 1.2rem', borderRadius: '999px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 'bold'}}
-          className="desktop-menu">
-          📱 Order via WA
-        </a>
+        {/* Kanan: Cart + WA */}
+        <div style={{display: 'flex', gap: '0.75rem', alignItems: 'center'}} className="desktop-menu">
+          <CartIcon />
+          <a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer"
+            style={{backgroundColor: '#25D366', color: 'white', padding: '0.6rem 1.2rem', borderRadius: '999px', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 'bold'}}>
+            📱 Order via WA
+          </a>
+        </div>
 
         {/* Hamburger Mobile */}
         <button onClick={() => setMenuOpen(!menuOpen)}
@@ -38,19 +42,24 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* Dropdown Mobile */}
+      {/* Mobile Menu */}
       {menuOpen && (
-        <div style={{backgroundColor: '#1a5c2e', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '1rem 1.5rem'}} className="mobile-dropdown">
+        <div style={{backgroundColor: '#1a5c2e', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '1rem 1.5rem'}}>
           {menus.map((item) => (
             <a key={item} href="#" onClick={() => setMenuOpen(false)}
               style={{display: 'block', color: 'rgba(255,255,255,0.85)', textDecoration: 'none', padding: '0.75rem 0', borderBottom: '1px solid rgba(255,255,255,0.08)', fontSize: '1rem'}}>
               {item}
             </a>
           ))}
-          <a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer"
-            style={{display: 'block', backgroundColor: '#25D366', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '999px', textDecoration: 'none', fontWeight: 'bold', textAlign: 'center', marginTop: '1rem'}}>
-            📱 Order via WA
-          </a>
+          <div style={{display: 'flex', gap: '0.75rem', marginTop: '1rem', flexWrap: 'wrap'}}>
+            <a href="/keranjang" style={{flex: 1, backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', padding: '0.7rem 1rem', borderRadius: '999px', textDecoration: 'none', fontWeight: '600', textAlign: 'center'}}>
+              🛒 Keranjang
+            </a>
+            <a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer"
+              style={{flex: 1, backgroundColor: '#25D366', color: 'white', padding: '0.7rem 1rem', borderRadius: '999px', textDecoration: 'none', fontWeight: '600', textAlign: 'center'}}>
+              📱 Order WA
+            </a>
+          </div>
         </div>
       )}
 
