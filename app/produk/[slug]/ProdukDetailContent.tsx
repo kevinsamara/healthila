@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import AddToCartButton from "../../components/AddToCartButton";
 
 type Product = {
   id: number; nama: string; kategori: string; harga: number;
@@ -199,6 +200,18 @@ export default function ProdukDetailContent() {
               </div>
             ))}
           </div>
+
+<AddToCartButton
+  produkId={product.id}
+  nama={product.nama}
+  varian={selectedVariant?.nama || null}
+  harga={activeHarga}
+  hargaLabel={activeHargaLabel}
+  qty={qty}
+  foto={product.foto_url || ''}
+  icon={product.icon || '🍎'}
+/>
+
         </div>
       </div>
 
