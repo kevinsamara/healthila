@@ -5,12 +5,8 @@ import { supabase } from "../lib/supabase";
 const categories = ['Semua', 'Buah Segar', 'Buah Eksotis', 'Jus & Dessert', 'Parcel'];
 
 const fallbackProducts = [
-  { id: 1, nama: 'Jeruk Pontianak', kategori: 'Buah Segar', harga: 45000, harga_label: 'Rp 45.000', deskripsi: '1 kg, manis segar pilihan', icon: '🍊', foto_url: '', tersedia: true },
-  { id: 2, nama: 'Strawberry Premium', kategori: 'Buah Segar', harga: 65000, harga_label: 'Rp 65.000', deskripsi: '500 gr, import Berastagi', icon: '🍓', foto_url: '', tersedia: true },
-  { id: 3, nama: 'Mangga Harum Manis', kategori: 'Buah Segar', harga: 55000, harga_label: 'Rp 55.000', deskripsi: '1 kg, manis legit', icon: '🥭', foto_url: '', tersedia: true },
-  { id: 4, nama: 'Shine Muscat Import', kategori: 'Buah Eksotis', harga: 120000, harga_label: 'Rp 120.000', deskripsi: '500 gr, seedless premium', icon: '🍇', foto_url: '', tersedia: true },
-  { id: 5, nama: 'Jus Cold-Pressed', kategori: 'Jus & Dessert', harga: 35000, harga_label: 'Rp 35.000', deskripsi: '350 ml, tanpa gula tambahan', icon: '🧃', foto_url: '', tersedia: true },
-  { id: 6, nama: 'Hamper Kesehatan', kategori: 'Parcel', harga: 250000, harga_label: 'Rp 250.000', deskripsi: 'Isi 8 buah + jus', icon: '🧺', foto_url: '', tersedia: true },
+  { id: 1, nama: 'Jeruk Pontianak', kategori: 'Buah Segar', harga: 45000, harga_label: 'Rp 45.000', deskripsi: '1 kg, manis segar pilihan', icon: '🍊', foto_url: '', slug: 'jeruk-pontianak', tersedia: true },
+  { id: 2, nama: 'Strawberry Premium', kategori: 'Buah Segar', harga: 65000, harga_label: 'Rp 65.000', deskripsi: '500 gr, import Berastagi', icon: '🍓', foto_url: '', slug: 'strawberry-premium', tersedia: true },
 ];
 
 const bgMap: Record<string, string> = {
@@ -58,6 +54,8 @@ export default function KatalogPage() {
         .katalog-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
         .search-input { width: 100%; max-width: 500px; padding: 0.75rem 1.25rem; border-radius: 999px; border: 2px solid #e5e7eb; font-size: 1rem; outline: none; }
         .search-input:focus { border-color: #1a5c2e; }
+        .product-card { border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; flex-direction: column; gap: 0.75rem; transition: transform 0.2s; }
+        .product-card:hover { transform: translateY(-3px); }
         @media (max-width: 1024px) { .katalog-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 640px) { .katalog-grid { grid-template-columns: 1fr; } }
       `}</style>
@@ -66,7 +64,9 @@ export default function KatalogPage() {
         <h1 style={{color: 'white', fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', fontWeight: '800', marginBottom: '0.5rem'}}>
           Katalog Produk 🌿
         </h1>
-        <p style={{color: 'rgba(255,255,255,0.8)', marginBottom: '1.5rem'}}>Buah segar, jus sehat, dan parcel elegan pilihan Healthila</p>
+        <p style={{color: 'rgba(255,255,255,0.8)', marginBottom: '1.5rem'}}>
+          Buah segar, jus sehat, dan parcel elegan pilihan Healthila
+        </p>
         <input type="text" placeholder="🔍 Cari produk..." value={search}
           onChange={(e) => setSearch(e.target.value)} className="search-input"
           style={{backgroundColor: 'white'}} />
@@ -87,9 +87,9 @@ export default function KatalogPage() {
           ))}
         </div>
         <p style={{color: '#6b7280', fontSize: '0.9rem', marginBottom: '1.5rem'}}>
-          {loading ? 'Memuat produk...' : `Menampilkan `}
-          {!loading && <strong style={{color: '#1a5c2e'}}>{filtered.length}</strong>}
-          {!loading && ' produk'}
+          {loading ? 'Memuat produk...' : (
+            <>Menampilkan <strong style={{color: '#1a5c2e'}}>{filtered.length}</strong> produk</>
+          )}
         </p>
       </section>
 
@@ -107,15 +107,11 @@ export default function KatalogPage() {
         ) : (
           <div className="katalog-grid">
             {filtered.map((product) => (
-              <div key={product.id} style={{
-                backgroundColor: bgMap[product.kategori] || '#f9fafb',
-                borderRadius: '16px', padding: '1.5rem',
-                boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-                display: 'flex', flexDirection: 'column', gap: '0.75rem',
-              }}>
+              <div key={product.id} className="product-card"
+                style={{backgroundColor: bgMap[product.kategori] || '#f9fafb'}}>
                 {product.foto_url ? (
                   <img src={product.foto_url} alt={product.nama}
-                    style={{width: '100%', height: '140px', objectFit: 'cover', borderRadius: '10px'}} />
+                    style={{width: '100%', height: '160px', objectFit: 'cover', borderRadius: '10px'}} />
                 ) : (
                   <div style={{fontSize: '3rem', textAlign: 'center', padding: '0.5rem'}}>{product.icon}</div>
                 )}
@@ -126,7 +122,7 @@ export default function KatalogPage() {
                 <p style={{color: '#6b7280', fontSize: '0.85rem'}}>{product.deskripsi}</p>
                 <p style={{color: '#1a5c2e', fontWeight: '800', fontSize: '1.1rem'}}>{product.harga_label}</p>
                 <div style={{display: 'flex', gap: '0.5rem', marginTop: 'auto'}}>
-                  <a href={`/produk/detail?id=${product.id}`}
+                  <a href={`/produk/${product.slug || product.id}`}
                     style={{flex: 1, backgroundColor: 'white', color: '#1a5c2e', padding: '0.65rem 1rem', borderRadius: '999px', textDecoration: 'none', fontWeight: '700', fontSize: '0.85rem', textAlign: 'center', border: '2px solid #1a5c2e'}}>
                     Lihat Detail
                   </a>
@@ -143,8 +139,12 @@ export default function KatalogPage() {
       </section>
 
       <section style={{backgroundColor: '#1a5c2e', padding: '3rem 2rem', textAlign: 'center'}}>
-        <h2 style={{color: 'white', fontWeight: '800', fontSize: '1.5rem', marginBottom: '0.5rem'}}>Tidak menemukan yang kamu cari?</h2>
-        <p style={{color: 'rgba(255,255,255,0.8)', marginBottom: '1.5rem'}}>Chat langsung untuk request produk spesial</p>
+        <h2 style={{color: 'white', fontWeight: '800', fontSize: '1.5rem', marginBottom: '0.5rem'}}>
+          Tidak menemukan yang kamu cari?
+        </h2>
+        <p style={{color: 'rgba(255,255,255,0.8)', marginBottom: '1.5rem'}}>
+          Chat langsung untuk request produk spesial
+        </p>
         <a href="https://wa.me/628123456789" target="_blank" rel="noopener noreferrer"
           style={{backgroundColor: '#25D366', color: 'white', padding: '0.9rem 2rem', borderRadius: '999px', textDecoration: 'none', fontWeight: 'bold', fontSize: '1rem'}}>
           Chat WhatsApp Sekarang
