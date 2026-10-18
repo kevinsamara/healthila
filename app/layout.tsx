@@ -1,26 +1,38 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { site } from "@/lib/site";
+
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "Healthila — Pengalaman Rasa Alami. Segar.",
-  description: "Premium fruit, cold-pressed juice, hamper elegan & dessert sehat.",
-  icons: {
-    icon: '/public/favicon.ico',
-    apple: '/public/apple-touch-icon.png',
+  metadataBase: new URL(site.url),
+  title: {
+    default: "Healthila — Buah Segar, Jus & Parcel Buah",
+    template: "%s · Healthila",
   },
+  description: site.description,
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: site.name,
+    images: ["/healthila-logo.png"],
+  },
+  icons: { apple: "/apple-touch-icon.png" },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id">
-      <body className="min-h-full flex flex-col">
-        <Navbar />
-        {children}
+    <html lang="id" className={`${jakarta.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col font-sans">
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );

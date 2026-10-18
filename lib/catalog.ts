@@ -1,0 +1,94 @@
+import "server-only";
+import { createClient } from "@supabase/supabase-js";
+import type { SectionKey } from "./site";
+
+/**
+ * Read-only access to the CRM catalog through the `web_products` view
+ * (healthila-crm migration 0090). The view is the whole public contract —
+ * never query base tables from the storefront.
+ */
+
+export type Packaging = {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number | null;
+  promo_price: number | null;
+  is_default: boolean;
+};
+
+export type Product = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  photo_url: string | null;
+  section: SectionKey;
+  product_group: string | null;
+  category: string | null;
+  unit: string | null;
+  price: number | null;
+  promo_price: number | null;
+  price_note: string | null;
+  badges: string[];
+  is_new: boolean;
+  country_flag: string | null;
+  sort_order: number;
+  made_to_order: boolean;
+  packagings: Packaging[];
+  updated_at: string;
+};
+
+function db() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false },
+  });
+}
+
+function normalize(row: Record<string, unknown>): Product {
+  const num = (v: unknown) => (v == null ? null : Number(v));
+  return {
+    ...(row as unknown as Product),
+    price: num(row.price),
+    promo_price: num(row.promo_price),
+    badges: (row.badges as string[] | null) ?? [],
+    packagings: ((row.packagings as Packaging[] | null) ?? []).map((p) => ({
+      ...p,
+      quantity: Number(p.quantity),
+      price: num(p.price),
+      promo_price: num(p.promo_price),
+    })),
+  };
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const { data, error } = await db()
+    .from("web_products")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (error) {
+    console.error("[catalog] getProducts", error.message);
+    return [];
+  }
+  return (data ?? []).map(normalize);
+}
+
+export async function getProductBySlug(slug: string): Promise<Product | null> {
+  const { data, error } = await db().from("web_products").select("*").eq("slug", slug).maybeSingle();
+  if (error) {
+    console.error("[catalog] getProductBySlug", error.message);
+    return null;
+  }
+  return data ? normalize(data) : null;
+}
+
+/** Lowest price a shopper can actually pay, promo included. */
+export function displayPrice(p: Product): { price: number | null; was: number | null } {
+  const options = [
+    { price: p.promo_price ?? p.price, was: p.promo_price != null ? p.price : null },
+    ...p.packagings.map((k) => ({ price: k.promo_price ?? k.price, was: k.promo_price != null ? k.price : null })),
+  ].filter((o) => o.price != null);
+  if (!options.length) return { price: null, was: null };
+  return options.reduce((a, b) => ((b.price as number) < (a.price as number) ? b : a));
+}

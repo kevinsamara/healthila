@@ -1,8 +1,55 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-leaf-50: #effaf3;
+  --color-leaf-100: #d7f2e1;
+  --color-leaf-200: #aee3c4;
+  --color-leaf-500: #138a5c;
+  --color-leaf-700: #04724a;
+  --color-leaf-900: #033d29;
+  --color-plum-50: #fbf0f6;
+  --color-plum-100: #f5dbe9;
+  --color-plum-500: #a12a72;
+  --color-plum-700: #7f1a5c;
+  --color-plum-900: #4a0f36;
+  --color-lime-300: #d8fb6e;
+  --color-lime-400: #b5f60a;
+  --color-cream: #fbf8f1;
+  --color-ink: #1d2420;
+  --color-muted: #5c6862;
+  --font-sans: var(--font-jakarta);
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 body {
-  background-color: #faf7f2;
-  font-family: sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-leaf-700);
+  outline-offset: 2px;
+}
+
+.prose-healthila h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 2rem 0 0.75rem;
+  color: var(--color-leaf-900);
+}
+.prose-healthila p,
+.prose-healthila li {
+  line-height: 1.75;
+  color: var(--color-muted);
+}
+.prose-healthila ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  margin: 0.5rem 0 1rem;
+}
+.prose-healthila p {
+  margin: 0.75rem 0;
 }
