@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { getProducts } from "@/lib/catalog";
 import { sectionLabel, sections } from "@/lib/site";
 import { ProductCard } from "@/components/ProductCard";
+import { FilterSidebar } from "./FilterSidebar";
+import { applyFilters, facet, groupOf, isPromo, parseFilters, sortProducts, toQuery } from "./filters";
 
 export const metadata: Metadata = {
   title: "Katalog",
@@ -10,92 +11,104 @@ export const metadata: Metadata = {
 };
 
 export default async function KatalogPage({ searchParams }: PageProps<"/katalog">) {
-  const sp = await searchParams;
-  const kategori = typeof sp.kategori === "string" ? sp.kategori : "";
-  const q = typeof sp.q === "string" ? sp.q.trim() : "";
-
+  const f = parseFilters(await searchParams);
   const all = await getProducts();
-  const needle = q.toLowerCase();
-  const products = all.filter(
-    (p) =>
-      (!kategori || p.section === kategori) &&
-      (!needle ||
-        p.name.toLowerCase().includes(needle) ||
-        (p.product_group ?? "").toLowerCase().includes(needle)),
-  );
 
-  // Group fruit by its catalog group (Apel, Anggur, …) so the list reads like the printed catalog.
-  const groups = new Map<string, typeof products>();
-  for (const p of products) {
-    const g = kategori === "buah" || !kategori ? (p.section === "buah" ? p.product_group ?? "Buah lainnya" : sectionLabel(p.section)) : sectionLabel(p.section);
-    groups.set(g, [...(groups.get(g) ?? []), p]);
-  }
+  const products = sortProducts(applyFilters(all, f), f.urut);
+
+  // Facet counts ignore their own filter so options stay selectable.
+  const sectionCounts = Object.fromEntries(
+    sections.map((s) => [s.key, applyFilters(all, f, ["kategori", "jenis"]).filter((p) => p.section === s.key).length]),
+  );
+  const groups = facet(applyFilters(all, f, ["jenis"]), groupOf);
+  const origins = facet(applyFilters(all, f, ["asal"]), (p) => p.country_flag);
+  const availableCount = applyFilters(all, f, ["tersedia"]).filter((p) => p.in_stock).length;
+  const promoCount = applyFilters(all, f, ["promo"]).filter(isPromo).length;
+
+  // Recommended order reads like the printed catalog: one heading per fruit group.
+  const grouped = f.urut === "rekomendasi";
+  const byGroup = new Map<string, typeof products>();
+  if (grouped) for (const p of products) byGroup.set(groupOf(p), [...(byGroup.get(groupOf(p)) ?? []), p]);
+
+  const sidebar = (
+    <FilterSidebar
+      filters={f}
+      sectionCounts={sectionCounts}
+      groups={groups}
+      origins={origins}
+      availableCount={availableCount}
+      promoCount={promoCount}
+    />
+  );
+  const activeCount =
+    (f.kategori ? 1 : 0) + f.jenis.length + f.asal.length + (f.harga ? 1 : 0) + (f.tersedia ? 1 : 0) + (f.promo ? 1 : 0);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-3xl font-extrabold tracking-tight text-leaf-900">
-        {kategori ? sectionLabel(kategori) : "Katalog"}
+        {f.kategori ? sectionLabel(f.kategori) : "Katalog"}
       </h1>
       <p className="mt-2 text-muted">Harga dapat berubah mengikuti musim. Stok dikonfirmasi admin saat pemesanan.</p>
 
-      <form action="/katalog" className="mt-6 flex gap-2">
-        {kategori && <input type="hidden" name="kategori" value={kategori} />}
+      <form action="/katalog" className="mt-6 flex max-w-xl gap-2">
+        {/* Keep active filters when searching. */}
+        {[...new URLSearchParams(toQuery({ ...f, q: "" }).split("?")[1] ?? "").entries()].map(([k, v], i) => (
+          <input key={`${k}-${i}`} type="hidden" name={k} value={v} />
+        ))}
         <input
           name="q"
-          defaultValue={q}
+          defaultValue={f.q}
           placeholder="Cari apel, anggur, parcel…"
-          className="h-11 w-full max-w-md rounded-full border border-leaf-200 bg-white px-5 text-sm outline-none focus:border-leaf-700"
+          className="h-11 w-full rounded-full border border-leaf-200 bg-white px-5 text-sm outline-none focus:border-leaf-700"
         />
         <button className="h-11 rounded-full bg-leaf-700 px-5 text-sm font-semibold text-white hover:bg-leaf-900">Cari</button>
       </form>
 
-      <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
-        <Chip href={q ? `/katalog?q=${encodeURIComponent(q)}` : "/katalog"} active={!kategori}>
-          Semua
-        </Chip>
-        {sections.map((s) => (
-          <Chip
-            key={s.key}
-            href={`/katalog?kategori=${s.key}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-            active={kategori === s.key}
-          >
-            {s.label}
-          </Chip>
-        ))}
-      </div>
+      <div className="mt-8 grid gap-8 lg:grid-cols-[230px_1fr]">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2">{sidebar}</div>
+        </aside>
 
-      {products.length === 0 ? (
-        <div className="mt-16 text-center text-muted">
-          <p className="text-lg font-semibold text-ink">Produk tidak ditemukan</p>
-          <p className="mt-1">Coba kata kunci lain, atau tanya admin lewat WhatsApp.</p>
-        </div>
-      ) : (
-        [...groups.entries()].map(([group, items]) => (
-          <section key={group} className="mt-10">
-            <h2 className="text-lg font-bold text-leaf-900">
-              {group} <span className="text-sm font-medium text-muted">({items.length})</span>
-            </h2>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-              {items.map((p) => (
-                <ProductCard key={p.id} product={p} />
-              ))}
+        <div>
+          <details className="mb-6 rounded-2xl bg-white ring-1 ring-leaf-100 lg:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold text-ink">
+              Filter & urutkan{activeCount ? ` (${activeCount})` : ""}
+              <span className="text-leaf-700">▾</span>
+            </summary>
+            <div className="border-t border-leaf-100 p-4">{sidebar}</div>
+          </details>
+
+          <p className="mb-4 text-sm text-muted">{products.length} produk</p>
+
+          {products.length === 0 ? (
+            <div className="mt-10 text-center text-muted">
+              <p className="text-lg font-semibold text-ink">Produk tidak ditemukan</p>
+              <p className="mt-1">Coba kurangi filter atau kata kunci lain, atau tanya admin lewat WhatsApp.</p>
             </div>
-          </section>
-        ))
-      )}
+          ) : grouped ? (
+            [...byGroup.entries()].map(([group, items]) => (
+              <section key={group} className="mb-10">
+                <h2 className="text-lg font-bold text-leaf-900">
+                  {group} <span className="text-sm font-medium text-muted">({items.length})</span>
+                </h2>
+                <Grid items={items} />
+              </section>
+            ))
+          ) : (
+            <Grid items={products} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-function Chip({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
+function Grid({ items }: { items: Awaited<ReturnType<typeof getProducts>> }) {
   return (
-    <Link
-      href={href}
-      className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold ${
-        active ? "bg-leaf-700 text-white" : "bg-white text-leaf-700 ring-1 ring-leaf-200 hover:bg-leaf-50"
-      }`}
-    >
-      {children}
-    </Link>
+    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+      {items.map((p) => (
+        <ProductCard key={p.id} product={p} />
+      ))}
+    </div>
   );
 }

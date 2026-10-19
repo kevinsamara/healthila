@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { displayPrice, type Product } from "@/lib/catalog";
+import type { Product } from "@/lib/catalog";
+import { displayPrice } from "@/lib/price";
 import { rupiah } from "@/lib/format";
 
 export function ProductCard({ product }: { product: Product }) {
