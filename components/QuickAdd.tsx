@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/lib/catalog";
 import { addItem } from "@/lib/cart";
+import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
 
 /** Card-level add button: one tap for single-option products, otherwise opens the product page. */
@@ -48,7 +49,7 @@ export function QuickAdd({ product }: { product: Product }) {
       slug: product.slug,
       name: product.name,
       variant: pkg ? pkg.name : null,
-      unitLabel: product.base_per_unit || !pkg ? product.unit : "pcs",
+      unitLabel: sellUnit(product, pkg),
       price: price!,
       photo: product.photo_url,
       basePerUnit: product.base_per_unit,

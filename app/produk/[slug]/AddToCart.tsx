@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Product } from "@/lib/catalog";
 import { addItem } from "@/lib/cart";
 import { qtyLabel, rupiah } from "@/lib/format";
+import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
 
 type Option = { id: string | null; label: string; price: number | null; was: number | null };
@@ -31,7 +32,7 @@ export function AddToCart({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const [note, setNote] = useState("");
   const opt = options[selected];
-  const unitWord = product.base_per_unit || !product.packagings.length ? product.unit : "pcs";
+  const unitWord = sellUnit(product, opt.id ? (product.packagings.find((k) => k.id === opt.id) ?? null) : null);
 
   function add() {
     if (opt.price == null) return;
@@ -59,9 +60,7 @@ export function AddToCart({ product }: { product: Product }) {
       {product.price_note && <p className="text-sm font-semibold text-plum-700">{product.price_note}</p>}
       <p className="mt-1 text-4xl font-extrabold text-leaf-700">
         {opt.price != null ? rupiah(opt.price) : "Harga by request"}
-        {!product.packagings.length && product.unit && opt.price != null && (
-          <span className="text-base font-medium text-muted"> / {product.unit}</span>
-        )}
+        {unitWord && opt.price != null && <span className="text-base font-medium text-muted"> / {unitWord}</span>}
         {opt.was != null && <span className="ml-3 text-lg font-medium text-muted line-through">{rupiah(opt.was)}</span>}
       </p>
       {product.base_per_unit && (

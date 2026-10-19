@@ -15,6 +15,8 @@ export type Packaging = {
   price: number | null;
   promo_price: number | null;
   is_default: boolean;
+  /** Selling unit of the variant in the CRM (kg, pcs, …). */
+  unit: string | null;
 };
 
 export type Product = {

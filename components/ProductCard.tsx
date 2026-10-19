@@ -3,13 +3,14 @@ import Link from "next/link";
 import type { Product } from "@/lib/catalog";
 import { productEmoji } from "@/lib/emoji";
 import { rupiah } from "@/lib/format";
-import { displayPrice } from "@/lib/price";
+import { cardUnit, displayPrice } from "@/lib/price";
 import { QuickAdd } from "./QuickAdd";
 
 export function ProductCard({ product }: { product: Product }) {
   const { price, was } = displayPrice(product);
   const fromLabel = product.packagings.length > 1 ? "mulai " : "";
   const blurb = shortBlurb(product.description);
+  const unit = cardUnit(product);
 
   return (
     <div className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-leaf-900/10">
@@ -52,7 +53,7 @@ export function ProductCard({ product }: { product: Product }) {
                 {fromLabel}
                 {rupiah(price)}
               </span>
-              {product.unit && product.packagings.length === 0 && <span className="text-xs text-muted">/ {product.unit}</span>}
+              {unit && <span className="text-xs text-muted">/ {unit}</span>}
               {was != null && <span className="text-xs text-muted line-through">{rupiah(was)}</span>}
             </p>
           ) : (
