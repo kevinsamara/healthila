@@ -1,7 +1,9 @@
 "use server";
 
 import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { after } from "next/server";
 import { z } from "zod";
+import { notifyNewWebOrder, type PlacedOrder } from "@/lib/notify";
 import { getAccount, sessionToken } from "@/lib/session";
 import { webRpc, WebRpcError, webSecret } from "@/lib/web-rpc";
 
@@ -49,7 +51,7 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
   }
 
   try {
-    const res = await webRpc<{ code: string; customer_status?: "new" | "existing" }>("web_place_order", {
+    const res = await webRpc<Partial<PlacedOrder> & { code: string; created: boolean }>("web_place_order", {
       p_phone_e164: phone.number,
       p_name: input.name,
       p_address: input.address,
@@ -64,6 +66,8 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       p_key: input.key,
       p_session_token: await sessionToken(),
     });
+    // Only brand-new orders are announced; an idempotent retry returns created=false.
+    if (res.created) after(() => notifyNewWebOrder(res as PlacedOrder));
     return { ok: true, code: res.code, customerStatus: res.customer_status ?? null };
   } catch (e) {
     return {
