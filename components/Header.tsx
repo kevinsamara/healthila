@@ -2,13 +2,20 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useState, useSyncExternalStore } from "react";
 import { nav } from "@/lib/site";
 import { cartCount, useCart } from "@/lib/cart";
+
+// The httpOnly session cookie is invisible here; hl_auth is a plain hint set alongside it.
+const noop = () => () => {};
+const readAuthHint = () => document.cookie.split("; ").includes("hl_auth=1");
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const count = cartCount(useCart());
+  usePathname(); // re-render (and re-read the cookie) after login/logout navigations
+  const signedIn = useSyncExternalStore(noop, readAuthHint, () => false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-leaf-100 bg-cream/90 backdrop-blur">
@@ -27,6 +34,13 @@ export function Header() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
+          <Link
+            href={signedIn ? "/akun" : "/masuk"}
+            className="flex h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold text-leaf-700 hover:bg-leaf-50"
+          >
+            <UserIcon />
+            <span className="hidden sm:inline">{signedIn ? "Akun" : "Masuk"}</span>
+          </Link>
           <Link
             href="/keranjang"
             className="relative flex h-10 items-center gap-2 rounded-full bg-leaf-700 px-4 text-sm font-semibold text-white hover:bg-leaf-900"
@@ -76,6 +90,15 @@ function CartIcon() {
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
       <path d="M6 7h12l-1 13H7L6 7z" />
       <path d="M9 7a3 3 0 016 0" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
     </svg>
   );
 }

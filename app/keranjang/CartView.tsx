@@ -6,10 +6,11 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { cartTotal, clearCart, setQty, useCart, type CartItem } from "@/lib/cart";
 import { qtyLabel, rupiah } from "@/lib/format";
 import { waLink } from "@/lib/site";
-import { placeOrder } from "./actions";
+import { getCheckoutProfile, placeOrder } from "./actions";
 
 type Form = { name: string; phone: string; address: string; date: string; notes: string };
 type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string };
+type Profile = NonNullable<Awaited<ReturnType<typeof getCheckoutProfile>>>;
 
 const BUYER_KEY = "healthila_buyer";
 
@@ -18,6 +19,7 @@ export function CartView() {
   const [form, setForm] = useState<Form>({ name: "", phone: "", address: "", date: "", notes: "" });
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [pending, startTransition] = useTransition();
   // One idempotency key per checkout attempt, reused on retry so a double tap never makes two orders.
   const orderKey = useRef<string | null>(null);
@@ -32,6 +34,18 @@ export function CartView() {
     } catch {
       // storage unavailable — start with an empty form
     }
+    // Signed-in buyers: verified phone + saved addresses from the CRM.
+    if (!document.cookie.split("; ").includes("hl_auth=1")) return;
+    void getCheckoutProfile().then((p) => {
+      if (!p) return;
+      setProfile(p);
+      setForm((f) => ({
+        ...f,
+        phone: p.phone,
+        name: f.name || p.name || p.addresses[0]?.recipient || "",
+        address: f.address || p.addresses[0]?.address || "",
+      }));
+    });
   }, []);
 
   if (done) return <OrderPlaced done={done} />;
@@ -134,12 +148,45 @@ export function CartView() {
 
       <form onSubmit={checkout} className="h-fit rounded-3xl bg-white p-6 ring-1 ring-leaf-100">
         <h2 className="text-lg font-bold text-ink">Detail pesanan</h2>
-        <Field label="No. WhatsApp pemesan *" hint="Untuk konfirmasi pesanan & riwayat belanja Anda.">
-          <input value={form.phone} onChange={set("phone")} inputMode="tel" autoComplete="tel" placeholder="0812 3456 7890" className={input} />
-        </Field>
+        {profile ? (
+          <Field label="No. WhatsApp pemesan" hint="✓ Terverifikasi — pesanan tersimpan di akun Anda.">
+            <input value={profile.phone} readOnly className={`${input} bg-leaf-50 text-muted`} />
+          </Field>
+        ) : (
+          <Field label="No. WhatsApp pemesan *" hint="Untuk konfirmasi pesanan & riwayat belanja Anda.">
+            <input value={form.phone} onChange={set("phone")} inputMode="tel" autoComplete="tel" placeholder="0812 3456 7890" className={input} />
+            <span className="mt-1 block text-xs font-normal text-muted">
+              Sudah pernah pesan?{" "}
+              <Link href="/masuk?next=/keranjang" className="font-semibold text-leaf-700 hover:underline">
+                Masuk
+              </Link>{" "}
+              untuk memakai alamat tersimpan.
+            </span>
+          </Field>
+        )}
         <Field label="Nama penerima *">
           <input value={form.name} onChange={set("name")} autoComplete="name" className={input} />
         </Field>
+        {profile && profile.addresses.length > 1 && (
+          <div className="mt-4">
+            <p className="text-sm font-medium text-ink">Alamat tersimpan</p>
+            <div className="mt-1 space-y-1">
+              {profile.addresses.slice(0, 5).map((a) => (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, address: a.address, name: a.recipient ?? f.name }))}
+                  className={`block w-full rounded-xl px-3 py-2 text-left text-xs ring-1 ${
+                    form.address === a.address ? "bg-leaf-50 ring-leaf-500" : "ring-leaf-100 hover:ring-leaf-200"
+                  }`}
+                >
+                  <span className="font-semibold text-ink">{a.recipient ?? "Alamat"}</span>
+                  <span className="mt-0.5 line-clamp-2 block text-muted">{a.address}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <Field label="Alamat pengiriman *">
           <textarea value={form.address} onChange={set("address")} rows={3} autoComplete="street-address" className={input} />
         </Field>
