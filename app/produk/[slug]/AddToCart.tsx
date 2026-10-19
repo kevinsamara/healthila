@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Product } from "@/lib/catalog";
 import { addItem } from "@/lib/cart";
 import { qtyLabel, rupiah } from "@/lib/format";
+import { waLink } from "@/lib/site";
 
 type Option = { id: string | null; label: string; price: number | null; was: number | null };
 
@@ -84,7 +85,22 @@ export function AddToCart({ product }: { product: Product }) {
         </fieldset>
       )}
 
-      {opt.price != null && (
+      {!product.in_stock && (
+        <div className="mt-6 rounded-2xl bg-white p-4 ring-1 ring-leaf-200">
+          <p className="font-bold text-ink">Stok sedang habis</p>
+          <p className="mt-1 text-sm text-muted">Stok buah datang hampir setiap hari. Tanyakan jadwal restock ke admin kami.</p>
+          <a
+            href={waLink(`Halo Healthila, apakah ${product.name} sudah tersedia lagi?`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex h-12 items-center rounded-full bg-leaf-700 px-6 font-bold text-white hover:bg-leaf-900"
+          >
+            Tanya ketersediaan via WhatsApp
+          </a>
+        </div>
+      )}
+
+      {product.in_stock && opt.price != null && (
         <div className="mt-6 flex flex-wrap items-center gap-3">
           <div className="flex h-12 items-center rounded-full bg-white ring-1 ring-leaf-200">
             <button type="button" aria-label="Kurangi" onClick={() => setQty((q) => Math.max(1, q - 1))} className="h-12 w-12 text-xl text-leaf-700">

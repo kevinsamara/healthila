@@ -7,11 +7,13 @@ import { ProductCard } from "@/components/ProductCard";
 export const revalidate = 300;
 
 export default async function Home() {
-  const products = await getProducts();
+  const all = await getProducts();
+  // Showcase only what can be ordered today; sold-out items still appear in the catalog.
+  const products = all.filter((p) => p.in_stock);
   const promos = products.filter((p) => p.promo_price != null || p.packagings.some((k) => k.promo_price != null));
   const featured = pick(products.filter((p) => p.photo_url && p.section === "buah"), promos, 8);
   const parcels = products.filter((p) => p.section === "parcel" && p.photo_url).slice(0, 4);
-  const counts = Object.fromEntries(sections.map((s) => [s.key, products.filter((p) => p.section === s.key).length]));
+  const counts = Object.fromEntries(sections.map((s) => [s.key, all.filter((p) => p.section === s.key).length]));
 
   return (
     <>

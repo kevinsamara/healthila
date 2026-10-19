@@ -19,15 +19,20 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.name}
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className="object-cover transition duration-300 group-hover:scale-105"
+            className={`object-cover transition duration-300 group-hover:scale-105 ${product.in_stock ? "" : "opacity-50 grayscale"}`}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm font-medium text-leaf-500">
             Foto segera hadir
           </div>
         )}
+        {!product.in_stock && (
+          <span className="absolute inset-x-0 bottom-0 bg-ink/75 py-1.5 text-center text-xs font-bold tracking-wide text-white uppercase">
+            Stok habis
+          </span>
+        )}
         <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-          {was != null && <Badge tone="plum">Promo</Badge>}
+          {was != null && product.in_stock && <Badge tone="plum">Promo</Badge>}
           {product.is_new && <Badge tone="lime">Baru</Badge>}
           {product.badges.slice(0, 2).map((b) => (
             <Badge key={b} tone="white">

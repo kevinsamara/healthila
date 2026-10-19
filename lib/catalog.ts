@@ -37,6 +37,7 @@ export type Product = {
   made_to_order: boolean;
   packagings: Packaging[];
   updated_at: string;
+  in_stock: boolean;
 };
 
 function db() {
@@ -52,6 +53,7 @@ function normalize(row: Record<string, unknown>): Product {
     price: num(row.price),
     promo_price: num(row.promo_price),
     badges: (row.badges as string[] | null) ?? [],
+    in_stock: row.in_stock !== false,
     packagings: ((row.packagings as Packaging[] | null) ?? []).map((p) => ({
       ...p,
       quantity: Number(p.quantity),
@@ -71,7 +73,8 @@ export async function getProducts(): Promise<Product[]> {
     console.error("[catalog] getProducts", error.message);
     return [];
   }
-  return (data ?? []).map(normalize);
+  // Sold-out items stay listed (product pages remain indexed) but sink to the end.
+  return (data ?? []).map(normalize).sort((a, b) => Number(b.in_stock) - Number(a.in_stock));
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
