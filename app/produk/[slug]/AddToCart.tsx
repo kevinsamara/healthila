@@ -30,7 +30,7 @@ export function AddToCart({ product }: { product: Product }) {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const opt = options[selected];
-  const unitWord = product.packagings.length ? "pcs" : product.unit;
+  const unitWord = product.base_per_unit || !product.packagings.length ? product.unit : "pcs";
 
   function add() {
     if (opt.price == null) return;
@@ -44,6 +44,8 @@ export function AddToCart({ product }: { product: Product }) {
         unitLabel: unitWord,
         price: opt.price,
         photo: product.photo_url,
+        basePerUnit: product.base_per_unit,
+        baseUnit: product.base_unit,
       },
       qty,
     );
@@ -60,6 +62,9 @@ export function AddToCart({ product }: { product: Product }) {
         )}
         {opt.was != null && <span className="ml-3 text-lg font-medium text-muted line-through">{rupiah(opt.was)}</span>}
       </p>
+      {product.base_per_unit && (
+        <p className="mt-1 text-sm text-muted">Berat per pack ± {Math.round(product.base_per_unit * 1000)} gr</p>
+      )}
 
       {product.packagings.length > 1 && (
         <fieldset className="mt-5">

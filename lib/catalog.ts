@@ -38,6 +38,9 @@ export type Product = {
   packagings: Packaging[];
   updated_at: string;
   in_stock: boolean;
+  /** Set when the site sells per pack while the CRM sells per kg: kg in one pack. */
+  base_per_unit: number | null;
+  base_unit: string | null;
 };
 
 function db() {
@@ -48,17 +51,45 @@ function db() {
 
 function normalize(row: Record<string, unknown>): Product {
   const num = (v: unknown) => (v == null ? null : Number(v));
-  return {
+  const product: Product = {
     ...(row as unknown as Product),
     price: num(row.price),
     promo_price: num(row.promo_price),
     badges: (row.badges as string[] | null) ?? [],
     in_stock: row.in_stock !== false,
+    base_per_unit: null,
+    base_unit: null,
     packagings: ((row.packagings as Packaging[] | null) ?? []).map((p) => ({
       ...p,
       quantity: Number(p.quantity),
       price: num(p.price),
       promo_price: num(p.promo_price),
+    })),
+  };
+  return toPack(product, num(row.pack_grams));
+}
+
+/**
+ * Web-only pack pricing (products.web_pack_grams): the CRM keeps selling per
+ * kg, the site shows e.g. "Rp 50.000 / pack 500gr" derived from the kg price.
+ * Orders still state the kg equivalent so admins fulfil in kg.
+ */
+function toPack(p: Product, grams: number | null): Product {
+  if (!grams || p.unit !== "kg") return p;
+  const kg = grams / 1000;
+  const scale = (v: number | null, perKg = 1) => (v == null ? null : Math.round((v / perKg) * kg / 100) * 100);
+  return {
+    ...p,
+    unit: `pack ${grams}gr`,
+    base_per_unit: kg,
+    base_unit: "kg",
+    price: scale(p.price),
+    promo_price: scale(p.promo_price),
+    packagings: p.packagings.map((k) => ({
+      ...k,
+      quantity: kg,
+      price: scale(k.price, k.quantity || 1),
+      promo_price: scale(k.promo_price, k.quantity || 1),
     })),
   };
 }

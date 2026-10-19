@@ -128,7 +128,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function buildMessage(items: CartItem[], total: number, f: Form) {
   const lines = items.map(
     (i) =>
-      `• ${i.name}${i.variant ? ` (${i.variant})` : ""} — ${qtyLabel(i.qty, i.unitLabel)} × ${rupiah(i.price)} = ${rupiah(i.price * i.qty)}`,
+      `• ${i.name}${i.variant ? ` (${i.variant})` : ""} — ${qtyLabel(i.qty, i.unitLabel)}${
+        i.basePerUnit ? ` (= ${qtyLabel(Math.round(i.qty * i.basePerUnit * 1000) / 1000, i.baseUnit ?? "kg")})` : ""
+      } × ${rupiah(i.price)} = ${rupiah(i.price * i.qty)}`,
   );
   return [
     "Halo Healthila, saya mau pesan:",
@@ -138,13 +140,15 @@ function buildMessage(items: CartItem[], total: number, f: Form) {
     `Subtotal: ${rupiah(total)}`,
     "",
     `Nama: ${f.name.trim()}`,
-    f.phone.trim() && `No. HP: ${f.phone.trim()}`,
+    f.phone.trim() ? `No. HP: ${f.phone.trim()}` : null,
     `Alamat: ${f.address.trim()}`,
-    f.date && `Tanggal kirim: ${new Date(f.date + "T00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
-    f.notes.trim() && `Catatan: ${f.notes.trim()}`,
+    f.date
+      ? `Tanggal kirim: ${new Date(f.date + "T00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`
+      : null,
+    f.notes.trim() ? `Catatan: ${f.notes.trim()}` : null,
     "",
     "(dipesan lewat healthila.id)",
   ]
-    .filter((l): l is string => typeof l === "string")
+    .filter((l): l is string => l !== null)
     .join("\n");
 }

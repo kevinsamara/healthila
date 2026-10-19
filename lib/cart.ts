@@ -18,6 +18,9 @@ export type CartItem = {
   price: number;
   photo: string | null;
   qty: number;
+  /** Web-only packs: base units (kg) in one cart unit, for the order message. */
+  basePerUnit?: number | null;
+  baseUnit?: string | null;
 };
 
 const KEY = "healthila_cart_v2";
@@ -66,7 +69,8 @@ export function useCart() {
 }
 
 export function addItem(item: Omit<CartItem, "key" | "qty">, qty = 1) {
-  const key = `${item.productId}:${item.packagingId ?? "base"}`;
+  // Unit is part of the key so a per-kg line never merges with a per-pack one.
+  const key = `${item.productId}:${item.packagingId ?? "base"}:${item.unitLabel ?? ""}`;
   const items = read();
   const existing = items.find((i) => i.key === key);
   write(
