@@ -66,7 +66,17 @@ function normalize(row: Record<string, unknown>): Product {
       promo_price: num(p.promo_price),
     })),
   };
+  product.product_group = canonicalGroup(product.product_group ?? product.category);
   return toPack(product, num(row.pack_grams));
+}
+
+// The CRM mixes catalog_group and category spellings for the same fruit.
+const GROUP_ALIASES: Record<string, string> = { pir: "Pear", lengkeng: "Kelengkeng", parsel: "Parcel" };
+
+function canonicalGroup(g: string | null): string | null {
+  if (!g) return null;
+  const t = g.trim();
+  return GROUP_ALIASES[t.toLowerCase()] ?? t;
 }
 
 /**

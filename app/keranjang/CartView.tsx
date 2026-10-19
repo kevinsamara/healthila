@@ -77,7 +77,7 @@ export function CartView() {
         phone: form.phone,
         address: form.address,
         date: form.date || null,
-        notes: form.notes.trim() || null,
+        notes: orderNotes(snapshot, form.notes),
         key: orderKey.current!,
         lines: snapshot.map((i) => ({
           productId: i.productId,
@@ -122,6 +122,7 @@ export function CartView() {
                 {i.name}
               </Link>
               {i.variant && <p className="text-sm text-muted">{i.variant}</p>}
+              {i.note && <p className="mt-0.5 text-xs text-plum-700 italic">Catatan: {i.note}</p>}
               <p className="mt-1 text-sm text-muted">
                 {rupiah(i.price)}
                 {i.unitLabel ? ` / ${i.unitLabel}` : ""}
@@ -271,7 +272,7 @@ function buildMessage(items: CartItem[], total: number, f: Form, code: string | 
     (i) =>
       `• ${i.name}${i.variant ? ` (${i.variant})` : ""} — ${qtyLabel(i.qty, i.unitLabel)}${
         i.basePerUnit ? ` (= ${qtyLabel(Math.round(i.qty * i.basePerUnit * 1000) / 1000, i.baseUnit ?? "kg")})` : ""
-      } × ${rupiah(i.price)} = ${rupiah(i.price * i.qty)}`,
+      } × ${rupiah(i.price)} = ${rupiah(i.price * i.qty)}${i.note ? `\n   Catatan: ${i.note}` : ""}`,
   );
   return [
     code ? `Halo Healthila, saya sudah pesan lewat website. Kode pesanan: *${code}*` : "Halo Healthila, saya mau pesan:",
@@ -292,4 +293,10 @@ function buildMessage(items: CartItem[], total: number, f: Form, code: string | 
   ]
     .filter((l): l is string => l !== null)
     .join("\n");
+}
+
+/** Order-level note for the CRM: buyer note plus any per-item requests. */
+function orderNotes(items: CartItem[], buyerNote: string) {
+  const parts = [buyerNote.trim(), ...items.filter((i) => i.note).map((i) => `${i.name}: ${i.note}`)].filter(Boolean);
+  return parts.length ? parts.join("\n").slice(0, 500) : null;
 }

@@ -1,81 +1,108 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/catalog";
-import { displayPrice } from "@/lib/price";
+import { productEmoji } from "@/lib/emoji";
 import { rupiah } from "@/lib/format";
+import { displayPrice } from "@/lib/price";
+import { QuickAdd } from "./QuickAdd";
 
 export function ProductCard({ product }: { product: Product }) {
   const { price, was } = displayPrice(product);
   const fromLabel = product.packagings.length > 1 ? "mulai " : "";
+  const blurb = shortBlurb(product.description);
 
   return (
-    <Link
-      href={`/produk/${product.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-leaf-100 bg-white transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-leaf-900/5"
-    >
-      <div className="relative aspect-square bg-leaf-50">
-        {product.photo_url ? (
-          <Image
-            src={product.photo_url}
-            alt={product.name}
-            fill
-            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-            className={`object-cover transition duration-300 group-hover:scale-105 ${product.in_stock ? "" : "opacity-50 grayscale"}`}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-sm font-medium text-leaf-500">
-            Foto segera hadir
-          </div>
-        )}
+    <div className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-leaf-900/10">
+      <Link href={`/produk/${product.slug}`} className="relative block aspect-square bg-leaf-50">
+        <ProductImage product={product} sizes="(min-width: 1280px) 22vw, (min-width: 640px) 30vw, 50vw" />
         {!product.in_stock && (
           <span className="absolute inset-x-0 bottom-0 bg-ink/75 py-1.5 text-center text-xs font-bold tracking-wide text-white uppercase">
             Stok habis
           </span>
         )}
-        <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-          {was != null && product.in_stock && <Badge tone="plum">Promo</Badge>}
+        <div className="absolute top-3 left-3 flex flex-wrap gap-1">
+          {was != null && product.in_stock && <Badge tone="coral">Promo</Badge>}
           {product.is_new && <Badge tone="lime">Baru</Badge>}
-          {product.badges.slice(0, 2).map((b) => (
-            <Badge key={b} tone="white">
-              {b}
-            </Badge>
-          ))}
         </div>
-      </div>
-      <div className="flex flex-1 flex-col p-3 sm:p-4">
-        <p className="text-xs font-medium text-muted">
+        {product.badges[0] && (
+          <span className="absolute top-3 right-3">
+            <Badge tone="sun">{product.badges[0]}</Badge>
+          </span>
+        )}
+      </Link>
+
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <span className="w-fit rounded-full bg-leaf-50 px-2.5 py-0.5 text-[11px] font-semibold text-leaf-700">
           {product.country_flag ? `${product.country_flag} ` : ""}
           {product.product_group ?? product.category}
-        </p>
-        <h3 className="mt-1 line-clamp-2 text-sm font-semibold text-ink sm:text-base">{product.name}</h3>
+        </span>
+        <Link href={`/produk/${product.slug}`}>
+          <h3 className="mt-2 line-clamp-2 font-display text-lg leading-tight font-bold text-ink hover:text-leaf-700 sm:text-xl">
+            {product.name}
+          </h3>
+        </Link>
+        {blurb && <p className="mt-1 line-clamp-2 text-xs text-muted sm:text-sm">{blurb}</p>}
+
         <div className="mt-auto pt-3">
           {product.price_note ? (
-            <p className="text-sm font-bold text-leaf-700">{product.price_note}</p>
+            <p className="font-bold text-leaf-700">{product.price_note}</p>
           ) : price != null ? (
-            <p className="text-sm sm:text-base">
-              <span className="font-bold text-leaf-700">
+            <p className="flex flex-wrap items-baseline gap-x-1.5">
+              <span className="text-lg font-extrabold text-leaf-700">
                 {fromLabel}
                 {rupiah(price)}
               </span>
-              {product.unit && product.packagings.length === 0 && (
-                <span className="text-xs text-muted"> / {product.unit}</span>
-              )}
-              {was != null && <span className="ml-2 text-xs text-muted line-through">{rupiah(was)}</span>}
+              {product.unit && product.packagings.length === 0 && <span className="text-xs text-muted">/ {product.unit}</span>}
+              {was != null && <span className="text-xs text-muted line-through">{rupiah(was)}</span>}
             </p>
           ) : (
-            <p className="text-sm font-semibold text-plum-700">Tanya harga</p>
+            <p className="font-semibold text-plum-700">Harga by request</p>
           )}
+          <div className="mt-3">
+            <QuickAdd product={product} />
+          </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
-export function Badge({ tone, children }: { tone: "plum" | "lime" | "white"; children: React.ReactNode }) {
+export function ProductImage({ product, sizes, priority }: { product: Product; sizes: string; priority?: boolean }) {
+  if (product.photo_url) {
+    return (
+      <Image
+        src={product.photo_url}
+        alt={product.name}
+        fill
+        sizes={sizes}
+        priority={priority}
+        className={`object-cover transition duration-500 group-hover:scale-105 ${product.in_stock ? "" : "opacity-50 grayscale"}`}
+      />
+    );
+  }
+  return (
+    <div className={`flex h-full items-center justify-center ${product.in_stock ? "" : "opacity-50 grayscale"}`}>
+      <span className="flex aspect-square w-1/2 items-center justify-center rounded-full bg-leaf-100/70 text-[clamp(2.5rem,7vw,5rem)]">
+        {productEmoji(product.product_group, product.category, product.name)}
+      </span>
+    </div>
+  );
+}
+
+/** First sentence of the CRM description, kept short for cards. */
+function shortBlurb(desc: string | null) {
+  if (!desc) return null;
+  const first = desc.split(/\n|(?<=[.!?])\s/)[0]?.trim();
+  return first && first.length > 4 ? first : null;
+}
+
+export function Badge({ tone, children }: { tone: "plum" | "lime" | "white" | "coral" | "sun"; children: React.ReactNode }) {
   const cls = {
     plum: "bg-plum-700 text-white",
     lime: "bg-lime-400 text-leaf-900",
     white: "bg-white/90 text-leaf-900",
+    coral: "bg-coral-500 text-white",
+    sun: "bg-sun-400 text-leaf-900",
   }[tone];
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${cls}`}>{children}</span>;
+  return <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide uppercase ${cls}`}>{children}</span>;
 }

@@ -29,6 +29,7 @@ export function AddToCart({ product }: { product: Product }) {
   const [selected, setSelected] = useState(0);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
+  const [note, setNote] = useState("");
   const opt = options[selected];
   const unitWord = product.base_per_unit || !product.packagings.length ? product.unit : "pcs";
 
@@ -46,6 +47,7 @@ export function AddToCart({ product }: { product: Product }) {
         photo: product.photo_url,
         basePerUnit: product.base_per_unit,
         baseUnit: product.base_unit,
+        note: note.trim() || null,
       },
       qty,
     );
@@ -55,8 +57,8 @@ export function AddToCart({ product }: { product: Product }) {
   return (
     <div className="mt-6">
       {product.price_note && <p className="text-sm font-semibold text-plum-700">{product.price_note}</p>}
-      <p className="mt-1 text-3xl font-extrabold text-leaf-700">
-        {opt.price != null ? rupiah(opt.price) : "Tanya harga"}
+      <p className="mt-1 text-4xl font-extrabold text-leaf-700">
+        {opt.price != null ? rupiah(opt.price) : "Harga by request"}
         {!product.packagings.length && product.unit && opt.price != null && (
           <span className="text-base font-medium text-muted"> / {product.unit}</span>
         )}
@@ -105,24 +107,59 @@ export function AddToCart({ product }: { product: Product }) {
         </div>
       )}
 
+      {product.in_stock && opt.price == null && (
+        <div className="mt-6 rounded-3xl bg-white p-5 ring-1 ring-black/5">
+          <p className="text-sm text-muted">
+            Harga menyesuaikan isi dan ukuran. Ceritakan budget & momennya, admin kami bantu rekomendasikan.
+          </p>
+          <a
+            href={waLink(`Halo Healthila, saya mau pesan ${product.name}${opt.id ? ` (${opt.label})` : ""}. Boleh info harganya?`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 flex h-13 w-full items-center justify-center rounded-full bg-[#25D366] text-base font-bold text-white hover:brightness-95"
+          >
+            Pesan via WhatsApp
+          </a>
+        </div>
+      )}
+
       {product.in_stock && opt.price != null && (
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <div className="flex h-12 items-center rounded-full bg-white ring-1 ring-leaf-200">
-            <button type="button" aria-label="Kurangi" onClick={() => setQty((q) => Math.max(1, q - 1))} className="h-12 w-12 text-xl text-leaf-700">
-              −
-            </button>
-            <span className="min-w-16 text-center font-semibold">{qtyLabel(qty, unitWord)}</span>
-            <button type="button" aria-label="Tambah" onClick={() => setQty((q) => q + 1)} className="h-12 w-12 text-xl text-leaf-700">
-              +
-            </button>
+        <div className="mt-6 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-ink">Jumlah</p>
+            <div className="mt-2 flex items-center gap-4">
+              <div className="flex h-12 items-center rounded-full bg-white ring-1 ring-leaf-200">
+                <button type="button" aria-label="Kurangi" onClick={() => setQty((q) => Math.max(1, q - 1))} className="h-12 w-12 text-xl text-leaf-700">
+                  −
+                </button>
+                <span className="min-w-20 text-center font-semibold">{qtyLabel(qty, unitWord)}</span>
+                <button type="button" aria-label="Tambah" onClick={() => setQty((q) => q + 1)} className="h-12 w-12 text-xl text-leaf-700">
+                  +
+                </button>
+              </div>
+              <p className="text-sm text-muted">
+                Subtotal <span className="font-bold text-ink">{rupiah(opt.price * qty)}</span>
+              </p>
+            </div>
           </div>
+          <label className="block text-sm font-semibold text-ink">
+            Catatan untuk pesanan <span className="font-normal text-muted">(opsional)</span>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value.slice(0, 200))}
+              rows={2}
+              placeholder="Contoh: pilih yang matang, mohon disertakan kartu ucapan."
+              className="mt-2 w-full rounded-2xl border border-leaf-200 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-leaf-700"
+            />
+          </label>
           <button
             type="button"
             onClick={add}
-            className="h-12 flex-1 rounded-full bg-leaf-700 px-6 font-bold text-white hover:bg-leaf-900 sm:flex-none"
+            className="h-13 w-full rounded-full bg-leaf-700 px-6 text-base font-bold text-white hover:bg-leaf-900"
           >
-            Tambah ke keranjang
+            Tambah ke Keranjang
           </button>
+          <p className="text-center text-xs text-muted">Produk dapat ditinjau dan diubah kembali di halaman Keranjang.</p>
         </div>
       )}
 

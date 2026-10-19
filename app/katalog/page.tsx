@@ -44,8 +44,8 @@ export default async function KatalogPage({ searchParams }: PageProps<"/katalog"
     (f.kategori ? 1 : 0) + f.jenis.length + f.asal.length + (f.harga ? 1 : 0) + (f.tersedia ? 1 : 0) + (f.promo ? 1 : 0);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-3xl font-extrabold tracking-tight text-leaf-900">
+    <div className="mx-auto max-w-7xl px-4 py-10">
+      <h1 className="text-5xl font-extrabold text-ink">
         {f.kategori ? sectionLabel(f.kategori) : "Katalog"}
       </h1>
       <p className="mt-2 text-muted">Harga dapat berubah mengikuti musim. Stok dikonfirmasi admin saat pemesanan.</p>
@@ -64,18 +64,18 @@ export default async function KatalogPage({ searchParams }: PageProps<"/katalog"
         <button className="h-11 rounded-full bg-leaf-700 px-5 text-sm font-semibold text-white hover:bg-leaf-900">Cari</button>
       </form>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[230px_1fr]">
+      <div className="mt-8 grid gap-8 lg:grid-cols-[280px_1fr]">
         <aside className="hidden lg:block">
-          <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto pr-2">{sidebar}</div>
+          <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">{sidebar}</div>
         </aside>
 
         <div>
-          <details className="mb-6 rounded-2xl bg-white ring-1 ring-leaf-100 lg:hidden">
+          <details className="mb-6 rounded-3xl bg-white shadow-sm ring-1 ring-black/5 lg:hidden">
             <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-semibold text-ink">
               Filter & urutkan{activeCount ? ` (${activeCount})` : ""}
               <span className="text-leaf-700">▾</span>
             </summary>
-            <div className="border-t border-leaf-100 p-4">{sidebar}</div>
+            <div className="border-t border-black/5 p-5">{sidebar}</div>
           </details>
 
           <p className="mb-4 text-sm text-muted">{products.length} produk</p>
@@ -87,8 +87,8 @@ export default async function KatalogPage({ searchParams }: PageProps<"/katalog"
             </div>
           ) : grouped ? (
             [...byGroup.entries()].map(([group, items]) => (
-              <section key={group} className="mb-10">
-                <h2 className="text-lg font-bold text-leaf-900">
+              <section key={group} className="mb-12">
+                <h2 className="text-3xl font-bold text-ink">
                   {group} <span className="text-sm font-medium text-muted">({items.length})</span>
                 </h2>
                 <Grid items={items} />
@@ -105,7 +105,7 @@ export default async function KatalogPage({ searchParams }: PageProps<"/katalog"
 
 function Grid({ items }: { items: Awaited<ReturnType<typeof getProducts>> }) {
   return (
-    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+    <div className="mt-4 grid grid-cols-2 gap-4 sm:gap-5 xl:grid-cols-3">
       {items.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}

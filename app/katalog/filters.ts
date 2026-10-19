@@ -97,7 +97,8 @@ export function sortProducts(items: Product[], urut: string): Product[] {
     case "az":
       return sorted.sort((a, b) => byStock(a, b) || a.name.localeCompare(b.name, "id"));
     default:
-      return sorted; // already in-stock first, then CRM sort order
+      // In-stock first, then items with a photo; otherwise keep the CRM sort order.
+      return sorted.sort((a, b) => byStock(a, b) || Number(!!b.photo_url) - Number(!!a.photo_url));
   }
 }
 

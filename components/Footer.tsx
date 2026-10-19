@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { sections, site, waLink } from "@/lib/site";
+import { site, waLink } from "@/lib/site";
 
 export function Footer() {
   return (
@@ -14,7 +14,12 @@ export function Footer() {
         </div>
         <FooterCol
           title="Belanja"
-          links={sections.map((s) => ({ href: `/katalog?kategori=${s.key}`, label: s.label }))}
+          links={[
+            { href: "/buah-segar", label: "Buah Segar" },
+            { href: "/jus-dessert", label: "Jus & Dessert" },
+            { href: "/parcel", label: "Parcel & Hampers" },
+            { href: "/katalog", label: "Semua Produk" },
+          ]}
         />
         <FooterCol
           title="Informasi"

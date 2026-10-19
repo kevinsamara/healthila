@@ -21,6 +21,8 @@ export type CartItem = {
   /** Web-only packs: base units (kg) in one cart unit, for the order message. */
   basePerUnit?: number | null;
   baseUnit?: string | null;
+  /** Free-text request for this line (pilih yang matang, kartu ucapan, …). */
+  note?: string | null;
 };
 
 const KEY = "healthila_cart_v2";
@@ -75,7 +77,7 @@ export function addItem(item: Omit<CartItem, "key" | "qty">, qty = 1) {
   const existing = items.find((i) => i.key === key);
   write(
     existing
-      ? items.map((i) => (i.key === key ? { ...i, qty: i.qty + qty } : i))
+      ? items.map((i) => (i.key === key ? { ...i, qty: i.qty + qty, note: item.note || i.note } : i))
       : [...items, { ...item, key, qty }],
   );
 }

@@ -14,23 +14,33 @@ const readAuthHint = () => document.cookie.split("; ").includes("hl_auth=1");
 export function Header() {
   const [open, setOpen] = useState(false);
   const count = cartCount(useCart());
-  usePathname(); // re-render (and re-read the cookie) after login/logout navigations
+  const pathname = usePathname(); // also re-reads the cookie after login/logout navigations
   const signedIn = useSyncExternalStore(noop, readAuthHint, () => false);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-leaf-100 bg-cream/90 backdrop-blur">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-4">
+    <header className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 md:h-[72px]">
         <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
           <Image src="/healthila-logo.png" alt="" width={36} height={36} className="rounded-full" priority />
           <span className="text-xl font-extrabold tracking-tight text-leaf-700">Healthila</span>
         </Link>
 
-        <nav className="ml-6 hidden items-center gap-6 md:flex">
-          {nav.map((n) => (
-            <Link key={n.href} href={n.href} className="text-sm font-medium text-muted hover:text-leaf-700">
-              {n.label}
-            </Link>
-          ))}
+        <nav className="ml-4 hidden items-center lg:flex xl:ml-8 xl:gap-1">
+          {nav.map((n) => {
+            const active = pathname === n.href || pathname.startsWith(n.href + "/");
+            return (
+              <Link
+                key={n.href}
+                href={n.href}
+                className={`relative rounded-full px-3 py-2 text-[15px] font-medium whitespace-nowrap transition ${
+                  active ? "text-coral-500" : "text-ink hover:text-leaf-700"
+                }`}
+              >
+                {n.label}
+                {active && <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-coral-500" />}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -39,23 +49,29 @@ export function Header() {
             className="flex h-10 items-center gap-2 rounded-full px-3 text-sm font-semibold text-leaf-700 hover:bg-leaf-50"
           >
             <UserIcon />
-            <span className="hidden sm:inline">{signedIn ? "Akun" : "Masuk"}</span>
+            <span className="hidden xl:inline">{signedIn ? "Akun" : "Masuk"}</span>
           </Link>
           <Link
             href="/keranjang"
-            className="relative flex h-10 items-center gap-2 rounded-full bg-leaf-700 px-4 text-sm font-semibold text-white hover:bg-leaf-900"
+            aria-label="Keranjang"
+            className="relative flex h-11 w-11 items-center justify-center rounded-xl border-2 border-leaf-700 text-leaf-700 hover:bg-leaf-50"
           >
             <CartIcon />
-            <span className="hidden sm:inline">Keranjang</span>
             {count > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-lime-400 px-1 text-xs font-bold text-leaf-900">
                 {count}
               </span>
             )}
           </Link>
+          <Link
+            href="/katalog"
+            className="hidden h-11 items-center rounded-full bg-sun-400 px-5 text-[15px] font-bold whitespace-nowrap text-leaf-900 shadow-sm hover:bg-sun-300 sm:flex"
+          >
+            Order Sekarang
+          </Link>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-leaf-700 hover:bg-leaf-50 md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-leaf-700 hover:bg-leaf-50 lg:hidden"
             aria-label={open ? "Tutup menu" : "Buka menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -68,7 +84,7 @@ export function Header() {
       </div>
 
       {open && (
-        <nav className="border-t border-leaf-100 bg-cream px-4 py-2 md:hidden">
+        <nav className="border-t border-black/5 bg-white px-4 py-2 lg:hidden">
           {nav.map((n) => (
             <Link
               key={n.href}
@@ -79,6 +95,9 @@ export function Header() {
               {n.label}
             </Link>
           ))}
+          <Link href="/katalog" onClick={() => setOpen(false)} className="block py-3 text-base font-bold text-leaf-700">
+            Lihat semua produk →
+          </Link>
         </nav>
       )}
     </header>
@@ -87,7 +106,7 @@ export function Header() {
 
 function CartIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
       <path d="M6 7h12l-1 13H7L6 7z" />
       <path d="M9 7a3 3 0 016 0" />
     </svg>

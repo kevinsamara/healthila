@@ -1,24 +1,27 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { ArticleCard } from "@/components/ArticleCard";
+import { articles } from "@/lib/articles";
 
 export const metadata: Metadata = {
-  title: "Artikel",
-  description: "Tips memilih buah, resep, dan informasi gizi dari Healthila.",
+  title: "Artikel Edukasi",
+  description: "Cerita & tips hidup sehat dari Healthila: manfaat buah, jus cold-pressed, dan ide hadiah sehat.",
 };
 
-// Articles will be stored in Supabase (web_articles) and managed from Healthila OS.
 export default function ArtikelPage() {
+  const sorted = [...articles].sort((a, b) => b.date.localeCompare(a.date));
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
-      <h1 className="text-3xl font-extrabold tracking-tight text-leaf-900 sm:text-4xl">Artikel</h1>
-      <p className="mt-4 text-lg text-muted">Tips memilih buah, resep sehat, dan info gizi.</p>
-      <div className="mt-10 rounded-3xl bg-white p-10 text-center ring-1 ring-leaf-100">
-        <p className="text-lg font-semibold text-ink">Artikel pertama segera hadir</p>
-        <p className="mt-1 text-muted">Sementara itu, intip katalog buah segar kami.</p>
-        <Link href="/katalog" className="mt-6 inline-block rounded-full bg-leaf-700 px-6 py-3 font-bold text-white hover:bg-leaf-900">
-          Lihat Katalog
-        </Link>
+    <>
+      <section className="bg-leaf-50">
+        <div className="mx-auto max-w-7xl px-4 py-16 text-center">
+          <h1 className="text-5xl font-extrabold text-leaf-900 sm:text-6xl">Artikel Edukasi</h1>
+          <p className="mt-3 text-lg text-muted italic">Cerita & tips, supaya hidup sehat gak ribet</p>
+        </div>
+      </section>
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:grid-cols-2 lg:grid-cols-3">
+        {sorted.map((a) => (
+          <ArticleCard key={a.slug} article={a} />
+        ))}
       </div>
-    </div>
+    </>
   );
 }

@@ -25,8 +25,9 @@ export function sectionLabel(key: string) {
 }
 
 export const nav = [
-  { href: "/katalog", label: "Katalog" },
-  { href: "/katalog?kategori=parcel", label: "Parcel" },
+  { href: "/buah-segar", label: "Buah Segar" },
+  { href: "/jus-dessert", label: "Jus & Dessert" },
+  { href: "/parcel", label: "Parcel" },
   { href: "/artikel", label: "Artikel" },
   { href: "/tentang", label: "Tentang" },
   { href: "/faq", label: "FAQ" },

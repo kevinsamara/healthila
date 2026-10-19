@@ -14,14 +14,29 @@
   --color-plum-900: #4a0f36;
   --color-lime-300: #d8fb6e;
   --color-lime-400: #b5f60a;
+  --color-sun-300: #ffd166;
+  --color-sun-400: #ffb400;
+  --color-sun-500: #f59e0b;
+  --color-coral-500: #ff4d5e;
   --color-cream: #fbf8f1;
   --color-ink: #1d2420;
   --color-muted: #5c6862;
   --font-sans: var(--font-jakarta);
 }
 
+@theme inline {
+  --font-display: var(--font-barlow);
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+h1,
+h2,
+.font-display {
+  font-family: var(--font-barlow), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 body {

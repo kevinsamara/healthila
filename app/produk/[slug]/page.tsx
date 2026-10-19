@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProductBySlug } from "@/lib/catalog";
+import { Badge, ProductCard, ProductImage } from "@/components/ProductCard";
+import { WhatsAppIcon } from "@/components/WhatsAppFab";
+import { getProductBySlug, getProducts, type Product } from "@/lib/catalog";
 import { sectionLabel, waLink } from "@/lib/site";
-import { Badge } from "@/components/ProductCard";
 import { AddToCart } from "./AddToCart";
 
 export const revalidate = 300;
+
+const SECTION_PAGE: Record<Product["section"], string> = {
+  buah: "/buah-segar",
+  jus: "/jus-dessert",
+  dessert: "/jus-dessert",
+  lainnya: "/jus-dessert",
+  parcel: "/parcel",
+};
 
 export async function generateMetadata({ params }: PageProps<"/produk/[slug]">): Promise<Metadata> {
   const product = await getProductBySlug((await params).slug);
@@ -23,61 +31,106 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
   const product = await getProductBySlug((await params).slug);
   if (!product) notFound();
 
+  // Same fruit first, then the rest of the section; available items only.
+  const related = (await getProducts())
+    .filter((p) => p.id !== product.id && p.section === product.section && p.in_stock)
+    .sort((a, b) => Number(b.product_group === product.product_group) - Number(a.product_group === product.product_group))
+    .slice(0, 4);
+  const sectionHref = SECTION_PAGE[product.section];
+  const group = product.product_group ?? product.category;
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <nav className="text-sm text-muted">
-        <Link href="/katalog" className="hover:text-leaf-700">
-          Katalog
-        </Link>{" "}
-        /{" "}
-        <Link href={`/katalog?kategori=${product.section}`} className="hover:text-leaf-700">
-          {sectionLabel(product.section)}
-        </Link>
-      </nav>
+    <>
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <nav className="flex flex-wrap gap-1 text-sm text-muted">
+          <Link href="/" className="hover:text-leaf-700">
+            Home
+          </Link>
+          <span>/</span>
+          <Link href={sectionHref} className="hover:text-leaf-700">
+            {sectionLabel(product.section)}
+          </Link>
+          <span>/</span>
+          <span className="text-ink">{product.name}</span>
+        </nav>
 
-      <div className="mt-6 grid gap-10 md:grid-cols-2">
-        <div className="relative aspect-square overflow-hidden rounded-3xl bg-leaf-50">
-          {product.photo_url ? (
-            <Image src={product.photo_url} alt={product.name} fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" priority />
-          ) : (
-            <div className="flex h-full items-center justify-center text-leaf-500">Foto segera hadir</div>
-          )}
-        </div>
-
-        <div>
-          <div className="flex flex-wrap gap-1">
-            {product.is_new && <Badge tone="lime">Baru</Badge>}
-            {product.badges.map((b) => (
-              <Badge key={b} tone="plum">
-                {b}
-              </Badge>
-            ))}
-          </div>
-          <p className="mt-3 text-sm font-medium text-muted">
-            {product.country_flag ? `${product.country_flag} ` : ""}
-            {product.product_group ?? product.category}
-          </p>
-          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-leaf-900">{product.name}</h1>
-
-          <AddToCart product={product} />
-
-          {product.description && (
-            <div className="mt-8 border-t border-leaf-100 pt-6">
-              <h2 className="font-bold text-ink">Deskripsi</h2>
-              <p className="mt-2 whitespace-pre-line leading-relaxed text-muted">{product.description}</p>
+        <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-14">
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="group relative aspect-square overflow-hidden rounded-[2rem] bg-leaf-50 shadow-sm ring-1 ring-black/5">
+              <ProductImage product={product} sizes="(min-width: 1024px) 45vw, 100vw" priority />
+              <div className="absolute top-4 left-4 flex flex-wrap gap-1.5">
+                {product.is_new && <Badge tone="lime">Baru</Badge>}
+                {product.badges.map((b) => (
+                  <Badge key={b} tone="sun">
+                    {b}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          )}
+          </div>
 
-          <a
-            href={waLink(`Halo Healthila, saya mau tanya tentang ${product.name}`)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-block text-sm font-semibold text-leaf-700 hover:underline"
-          >
-            Ada pertanyaan? Tanya admin via WhatsApp →
-          </a>
+          <div>
+            <Link
+              href={`${sectionHref}${group ? `?jenis=${encodeURIComponent(group)}` : ""}`}
+              className="inline-block rounded-full bg-leaf-50 px-3 py-1 text-sm font-semibold text-leaf-700 hover:bg-leaf-100"
+            >
+              {product.country_flag ? `${product.country_flag} ` : ""}
+              {group}
+            </Link>
+            <h1 className="mt-3 text-4xl leading-tight font-extrabold text-ink sm:text-5xl">{product.name}</h1>
+
+            <AddToCart product={product} />
+
+            <ul className="mt-8 grid gap-3 sm:grid-cols-3">
+              {[
+                ["🏅", "Quality check", "Disortir sebelum dikirim"],
+                ["🚚", "Same-day", "Malang & sekitarnya"],
+                ["💬", "Konfirmasi cepat", "Ongkir via WhatsApp"],
+              ].map(([icon, title, text]) => (
+                <li key={title} className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
+                  <span className="text-2xl">{icon}</span>
+                  <p className="mt-1 text-sm font-bold text-ink">{title}</p>
+                  <p className="text-xs text-muted">{text}</p>
+                </li>
+              ))}
+            </ul>
+
+            {product.description && (
+              <div className="mt-8 rounded-3xl bg-white p-6 ring-1 ring-black/5">
+                <h2 className="text-2xl font-bold text-ink">Tentang produk ini</h2>
+                <p className="mt-3 leading-relaxed whitespace-pre-line text-muted">{product.description}</p>
+              </div>
+            )}
+
+            <a
+              href={waLink(`Halo Healthila, saya mau tanya tentang ${product.name}`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-leaf-700 hover:underline"
+            >
+              <WhatsAppIcon className="h-4 w-4" /> Ada pertanyaan? Tanya admin via WhatsApp
+            </a>
+          </div>
         </div>
       </div>
-    </div>
+
+      {related.length > 0 && (
+        <section className="mt-10 bg-[#f6f8fb]">
+          <div className="mx-auto max-w-7xl px-4 py-16">
+            <div className="flex items-end justify-between gap-4">
+              <h2 className="text-4xl font-extrabold text-ink">{sectionLabel(product.section)} Lainnya</h2>
+              <Link href={sectionHref} className="shrink-0 font-semibold text-leaf-700 hover:underline">
+                Lihat semua →
+              </Link>
+            </div>
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
+              {related.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+    </>
   );
 }
