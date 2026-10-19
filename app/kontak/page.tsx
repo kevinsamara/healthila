@@ -27,6 +27,15 @@ export default function ContactPage() {
           <p className="mt-1 text-xl font-bold text-ink">@healthila.id</p>
         </a>
       </div>
+      <a
+        href={site.googleMaps}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="not-prose mt-4 block rounded-2xl bg-white p-6 ring-1 ring-leaf-100 hover:ring-leaf-200"
+      >
+        <p className="text-sm text-muted">Lokasi toko</p>
+        <p className="mt-1 text-xl font-bold text-ink">Buka di Google Maps →</p>
+      </a>
       {/* TODO: alamat toko & jam buka — menunggu data dari owner */}
     </ContentPage>
   );

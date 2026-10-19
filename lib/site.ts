@@ -8,6 +8,8 @@ export const site = {
   whatsapp: "628123321229",
   whatsappDisplay: "+62 812-3321-229",
   instagram: "https://instagram.com/healthila.id",
+  // Google Maps listing "Healthila (Buah Fresh & Parcel Buah Malang)", by CID.
+  googleMaps: "https://maps.google.com/?cid=10950299846344208284",
 };
 
 export type SectionKey = "buah" | "jus" | "dessert" | "parcel" | "lainnya";

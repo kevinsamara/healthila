@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getGoogleReviews } from "@/lib/google-reviews";
+import { site } from "@/lib/site";
 import { testimonials } from "@/lib/testimonials";
 
 export function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -70,33 +72,91 @@ const toneCls = {
   leaf: { card: "bg-leaf-50", quote: "text-leaf-500/25", name: "text-leaf-700" },
 };
 
-export function Testimonials() {
+export async function Testimonials() {
+  const google = await getGoogleReviews();
+  const tones = Object.keys(toneCls) as (keyof typeof toneCls)[];
+  // Live Google reviews when configured; otherwise the quotes from the old site.
+  const items = google?.reviews.length
+    ? google.reviews.slice(0, 4).map((r, i) => ({
+        quote: r.text,
+        name: r.author,
+        sub: r.when,
+        rating: r.rating,
+        href: r.authorUri,
+        tone: tones[i % tones.length],
+      }))
+    : testimonials.map((t) => ({ quote: t.quote, name: t.name, sub: t.city, rating: 5, href: null, tone: t.tone }));
+  const mapsHref = google?.mapsUri ?? site.googleMaps;
+
   return (
     <section className="bg-[#f6f8fb]">
       <div className="mx-auto max-w-5xl px-4 py-20">
         <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" />
-        <div className="mt-12 grid gap-6 md:grid-cols-2">
-          {testimonials.map((t) => {
+        {google && (
+          <a
+            href={mapsHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mx-auto mt-6 flex w-fit items-center gap-3 rounded-full bg-white px-5 py-2.5 shadow-sm ring-1 ring-black/5 hover:ring-leaf-500"
+          >
+            <GoogleG />
+            <span className="font-display text-2xl font-bold text-ink">{google.rating.toFixed(1)}</span>
+            <span className="text-sun-400">★★★★★</span>
+            <span className="text-sm text-muted">{google.count} ulasan Google</span>
+          </a>
+        )}
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {items.map((t) => {
             const c = toneCls[t.tone];
             return (
-              <figure key={t.name} className={`relative overflow-hidden rounded-3xl p-8 ${c.card}`}>
+              <figure key={t.name + t.quote.slice(0, 20)} className={`relative flex flex-col overflow-hidden rounded-3xl p-8 ${c.card}`}>
                 <span className={`absolute top-2 right-6 font-display text-[9rem] leading-none font-extrabold ${c.quote}`} aria-hidden>
                   “
                 </span>
-                <p className="text-xl tracking-widest text-sun-400" aria-label="5 dari 5 bintang">
-                  ★★★★★
+                <p className="text-xl tracking-widest text-sun-400" aria-label={`${t.rating} dari 5 bintang`}>
+                  {"★".repeat(t.rating)}
+                  <span className="text-black/10">{"★".repeat(5 - t.rating)}</span>
                 </p>
-                <blockquote className="relative mt-4 text-lg leading-relaxed text-ink/85 italic">“{t.quote}”</blockquote>
-                <figcaption className="mt-6">
-                  <span className={`block font-display text-xl font-bold ${c.name}`}>{t.name}</span>
-                  <span className="text-sm text-muted">{t.city}</span>
+                <blockquote className="relative mt-4 line-clamp-6 text-lg leading-relaxed text-ink/85 italic">“{t.quote}”</blockquote>
+                <figcaption className="mt-auto flex items-end justify-between gap-3 pt-6">
+                  <span>
+                    {t.href ? (
+                      <a href={t.href} target="_blank" rel="noopener noreferrer" className={`block font-display text-xl font-bold hover:underline ${c.name}`}>
+                        {t.name}
+                      </a>
+                    ) : (
+                      <span className={`block font-display text-xl font-bold ${c.name}`}>{t.name}</span>
+                    )}
+                    <span className="text-sm text-muted">{t.sub}</span>
+                  </span>
+                  {google && (
+                    <span className="flex items-center gap-1 text-xs text-muted">
+                      <GoogleG small /> Google
+                    </span>
+                  )}
                 </figcaption>
               </figure>
             );
           })}
         </div>
+        <p className="mt-8 text-center">
+          <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="font-semibold text-leaf-700 hover:underline">
+            Lihat semua ulasan di Google Maps →
+          </a>
+        </p>
       </div>
     </section>
+  );
+}
+
+function GoogleG({ small }: { small?: boolean }) {
+  return (
+    <svg viewBox="0 0 48 48" className={small ? "h-3.5 w-3.5" : "h-6 w-6"} aria-hidden>
+      <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z" />
+      <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
+      <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
+    </svg>
   );
 }
 
