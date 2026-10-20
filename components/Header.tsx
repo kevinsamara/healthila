@@ -20,7 +20,8 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 md:h-[72px]">
-        <Link href="/" className="shrink-0" onClick={() => setOpen(false)} aria-label="Healthila — beranda">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" onClick={() => setOpen(false)} aria-label="Healthila — beranda">
+          <Image src="/healthila-mark.png" alt="" width={256} height={256} priority className="h-10 w-10 rounded-full md:h-12 md:w-12" />
           <Image
             src="/healthila-wordmark.png"
             alt="Healthila — fruitful heart, eating smart"
@@ -31,7 +32,7 @@ export function Header() {
           />
         </Link>
 
-        <nav className="ml-4 hidden items-center lg:flex xl:ml-8 xl:gap-1">
+        <nav className="ml-6 hidden items-center gap-0.5 xl:flex">
           {nav.map((n) => {
             const active = pathname === n.href || pathname.startsWith(n.href + "/");
             return (
@@ -77,7 +78,7 @@ export function Header() {
           </Link>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full text-leaf-700 hover:bg-leaf-50 lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-leaf-700 hover:bg-leaf-50 xl:hidden"
             aria-label={open ? "Tutup menu" : "Buka menu"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
@@ -90,7 +91,7 @@ export function Header() {
       </div>
 
       {open && (
-        <nav className="border-t border-black/5 bg-white px-4 py-2 lg:hidden">
+        <nav className="border-t border-black/5 bg-white px-4 py-2 xl:hidden">
           {nav.map((n) => (
             <Link
               key={n.href}

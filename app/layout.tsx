@@ -30,7 +30,6 @@ export const metadata: Metadata = {
     siteName: site.name,
     images: ["/healthila-logo.png"],
   },
-  icons: { apple: "/apple-touch-icon.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
