@@ -41,6 +41,8 @@ export type ReviewsStatus = {
   message?: string;
   placeId?: string;
   data?: GoogleReviews;
+  /** Result of the extra "newest reviews" lookup (legacy Places API). */
+  newest?: { ok: boolean; count: number; message?: string };
 };
 
 type Fetch = { next?: { revalidate: number }; cache?: RequestCache };
@@ -150,9 +152,28 @@ export async function loadGoogleReviews(
         when: r.relativePublishTimeDescription ?? "",
       }))
       .filter((r) => r.rating >= 4 && r.text.length > 0);
+
+    // Places API (New) only returns the 5 "most relevant" (mostly older)
+    // reviews; add the 5 newest from the legacy endpoint so the mix has both.
+    const newest = await fetchNewestReviews(key, placeId, opts);
+    const seen = new Set(
+      reviews.map((r) => `${r.author}|${r.text.slice(0, 40)}`),
+    );
+    for (const r of newest.reviews) {
+      const k = `${r.author}|${r.text.slice(0, 40)}`;
+      if (!seen.has(k) && r.rating >= 4 && r.text) {
+        seen.add(k);
+        reviews.push(r);
+      }
+    }
     return {
       ok: true,
       step: "ok",
+      newest: {
+        ok: newest.ok,
+        count: newest.reviews.length,
+        message: newest.message,
+      },
       placeId,
       data: {
         rating: p.rating,
@@ -169,6 +190,63 @@ export async function loadGoogleReviews(
     return {
       ok: false,
       step: "details",
+      message: e instanceof Error ? e.message : String(e),
+    };
+  }
+}
+
+/** Legacy Place Details with reviews_sort=newest. Optional: failures are ignored. */
+async function fetchNewestReviews(
+  key: string,
+  placeId: string,
+  opts: Fetch,
+): Promise<{ ok: boolean; reviews: GoogleReview[]; message?: string }> {
+  try {
+    const url = new URL(
+      "https://maps.googleapis.com/maps/api/place/details/json",
+    );
+    url.searchParams.set("place_id", placeId);
+    url.searchParams.set("fields", "reviews");
+    url.searchParams.set("reviews_sort", "newest");
+    url.searchParams.set("reviews_no_translations", "true");
+    url.searchParams.set("language", "id");
+    url.searchParams.set("key", key);
+    const res = await fetch(url, opts);
+    const j = (await res.json().catch(() => null)) as {
+      status?: string;
+      error_message?: string;
+      result?: {
+        reviews?: {
+          author_name?: string;
+          author_url?: string;
+          profile_photo_url?: string;
+          rating?: number;
+          text?: string;
+          relative_time_description?: string;
+        }[];
+      };
+    } | null;
+    if (!res.ok || j?.status !== "OK")
+      return {
+        ok: false,
+        reviews: [],
+        message: j?.error_message ?? j?.status ?? res.statusText,
+      };
+    return {
+      ok: true,
+      reviews: (j.result?.reviews ?? []).map((r) => ({
+        author: r.author_name ?? "Pelanggan Healthila",
+        authorUri: r.author_url ?? null,
+        photo: r.profile_photo_url ?? null,
+        rating: r.rating ?? 0,
+        text: (r.text ?? "").trim(),
+        when: r.relative_time_description ?? "",
+      })),
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      reviews: [],
       message: e instanceof Error ? e.message : String(e),
     };
   }

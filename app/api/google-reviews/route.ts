@@ -17,6 +17,8 @@ export async function GET() {
       rating: r.data?.rating ?? null,
       reviewCount: r.data?.count ?? null,
       reviewsReturned: r.data?.reviews.length ?? 0,
+      fiveStar: r.data?.reviews.filter((x) => x.rating === 5).length ?? 0,
+      newest: r.newest ?? null,
     },
     { headers: { "Cache-Control": "no-store" } },
   );
