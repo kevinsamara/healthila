@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArticleCard } from "@/components/ArticleCard";
+import { HeroCarousel } from "@/components/HeroCarousel";
 import { CtaBand, HowToOrder, SectionTitle, Testimonials, WhyHealthila } from "@/components/HomeSections";
 import { ProductCard } from "@/components/ProductCard";
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
@@ -78,7 +79,7 @@ export default async function Home() {
               </a>
             </div>
           </div>
-          <HeroCollage products={featured.slice(0, 4)} />
+          <HeroCollage products={available.filter((p) => p.photo_url)} />
         </div>
       </section>
 
@@ -166,13 +167,6 @@ function HeroCollage({ products }: { products: Product[] }) {
       </div>
     );
   }
-  return (
-    <div className="grid grid-cols-2 gap-4">
-      {products.map((p, i) => (
-        <div key={p.id} className={`relative aspect-square overflow-hidden rounded-3xl bg-leaf-500 shadow-xl shadow-black/20 ${i % 2 ? "translate-y-8" : ""}`}>
-          <Image src={p.photo_url!} alt={p.name} fill sizes="(min-width: 768px) 25vw, 50vw" className="object-cover" priority={i < 2} />
-        </div>
-      ))}
-    </div>
-  );
+  // Every in-stock product with a photo is a candidate; the carousel picks 12 at random.
+  return <HeroCarousel pool={products.map((p) => ({ id: p.id, slug: p.slug, name: p.name, photo: p.photo_url! }))} />;
 }
