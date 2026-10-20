@@ -1,17 +1,20 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { submitParcelRequest } from "@/app/parcel/custom/actions";
 import { getCheckoutProfile } from "@/app/keranjang/actions";
 import { rupiah } from "@/lib/format";
+import { CARD_STYLES, RIBBON_EXTRA, RIBBON_FREE, type ParcelContainer } from "@/lib/parcel-options";
 import { waLink } from "@/lib/site";
 import { WhatsAppIcon } from "../WhatsAppFab";
-import { ParcelVisual, type ShapeKey } from "./ParcelVisual";
+import { ParcelVisual } from "./ParcelVisual";
 
-export type FruitOption = { name: string; emoji: string; art: string | null; varieties: number };
+export type ContainerOption = Omit<ParcelContainer, "crmMatch"> & { photo: string | null };
+export type FruitGroup = { name: string; emoji: string; art: string | null; items: { id: string; name: string }[] };
 
 const RIBBONS = [
-  { name: "Merah", hex: "#e11d48" },
+  { name: RIBBON_FREE, hex: "#d71920" },
   { name: "Pink", hex: "#f472b6" },
   { name: "Emas", hex: "#d4a017" },
   { name: "Hijau", hex: "#04724a" },
@@ -21,41 +24,34 @@ const RIBBONS = [
   { name: "Cokelat", hex: "#8a5523" },
 ];
 
-const SHAPES: { key: ShapeKey; label: string; desc: string; icon: string }[] = [
-  { key: "keranjang", label: "Keranjang Rotan", desc: "Klasik & paling populer", icon: "🧺" },
-  { key: "box", label: "Box / Hampers", desc: "Rapi, elegan, mudah dibawa", icon: "🎁" },
-  { key: "tas", label: "Tas Jinjing", desc: "Simpel untuk kunjungan", icon: "🛍️" },
-  { key: "tower", label: "Fruit Tower", desc: "Bertingkat, mewah untuk acara", icon: "🗼" },
-  { key: "plate", label: "Fruit Plate", desc: "Buah di piring saji", icon: "🍽️" },
-];
-
 const OCCASIONS = [
-  { label: "Ulang Tahun", icon: "🎂", ribbon: "#ff4d5e" },
-  { label: "Get Well Soon", icon: "💐", ribbon: "#38bdf8" },
-  { label: "Lebaran / Hari Raya", icon: "🌙", ribbon: "#04724a" },
-  { label: "Imlek", icon: "🏮", ribbon: "#dc2626" },
-  { label: "Natal", icon: "🎄", ribbon: "#b91c1c" },
-  { label: "Anniversary", icon: "💞", ribbon: "#a12a72" },
-  { label: "Terima Kasih", icon: "🙏", ribbon: "#f59e0b" },
-  { label: "Corporate / Kantor", icon: "🏢", ribbon: "#1d4ed8" },
-  { label: "Duka Cita", icon: "🕊️", ribbon: "#64748b" },
-  { label: "Lainnya", icon: "✨", ribbon: "#7f1a5c" },
+  { label: "Ulang Tahun", icon: "🎂" },
+  { label: "Get Well Soon", icon: "💐" },
+  { label: "Lebaran / Hari Raya", icon: "🌙" },
+  { label: "Imlek", icon: "🏮" },
+  { label: "Natal", icon: "🎄" },
+  { label: "Anniversary", icon: "💞" },
+  { label: "Terima Kasih", icon: "🙏" },
+  { label: "Corporate / Kantor", icon: "🏢" },
+  { label: "Duka Cita", icon: "🕊️" },
+  { label: "Lainnya", icon: "✨" },
 ];
 
-const BUDGETS = [250_000, 350_000, 500_000, 750_000, 1_000_000];
+const STEPS = ["Wadah", "Acara", "Budget", "Buah", "Pita", "Ucapan", "Kirim"] as const;
+const ANY = " (apa saja)";
 
-const STEPS = ["Bentuk", "Acara", "Budget", "Buah", "Pita", "Ucapan", "Kirim"] as const;
-
-export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
+export function ParcelBuilder({ containers, fruits }: { containers: ContainerOption[]; fruits: FruitGroup[] }) {
   const [step, setStep] = useState(0);
-  const [shape, setShape] = useState<ShapeKey>("keranjang");
+  const [containerKey, setContainerKey] = useState(containers[0]?.key ?? "");
   const [occasion, setOccasion] = useState<string | null>(null);
   const [budget, setBudget] = useState<number | null>(null);
   const [customBudget, setCustomBudget] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
+  const [openGroup, setOpenGroup] = useState<string | null>(fruits[0]?.name ?? null);
+  const [ribbonName, setRibbonName] = useState(RIBBON_FREE);
+  const [cardStyle, setCardStyle] = useState<(typeof CARD_STYLES)[number]["key"]>("healthila");
   const [card, setCard] = useState({ to: "", from: "", message: "" });
   const [contact, setContact] = useState({ name: "", phone: "", date: "", notes: "" });
-  const [ribbonPick, setRibbonPick] = useState<string | null>(null);
   const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [doneCode, setDoneCode] = useState<string | null>(null);
@@ -71,17 +67,31 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
     });
   }, []);
 
-  // Ribbon follows the occasion until the customer picks one.
-  const ribbonColor = RIBBONS.find((r) => r.name === ribbonPick);
-  const ribbon = ribbonColor?.hex ?? OCCASIONS.find((o) => o.label === occasion)?.ribbon ?? "#7f1a5c";
+  const container = containers.find((c) => c.key === containerKey) ?? containers[0];
+  const ribbon = RIBBONS.find((r) => r.name === ribbonName) ?? RIBBONS[0];
+  const ribbonCost = ribbonName === RIBBON_FREE ? 0 : RIBBON_EXTRA;
+  const cardCost = CARD_STYLES.find((c) => c.key === cardStyle)?.price ?? 0;
+  const addons = ribbonCost + cardCost;
+  const minPrice = container.start + addons;
+  const budgetPresets = useMemo(() => presets(minPrice), [minPrice]);
+  const budgetValue = budget ?? (Number(customBudget.replace(/\D/g, "")) || null);
+  const budgetOk = !!budgetValue && budgetValue >= minPrice;
+
+  // One 3D fruit per picked item, using its fruit type's illustration.
   const visualFruits = useMemo(
-    () => picked.map((n) => fruits.find((f) => f.name === n) ?? { emoji: "🍎", art: null }).map((f) => ({ emoji: f.emoji, art: f.art })),
+    () =>
+      picked.map((p) => {
+        const g = fruits.find((f) => p === f.name + ANY || f.items.some((i) => i.name === p));
+        return { emoji: g?.emoji ?? "🍎", art: g?.art ?? null };
+      }),
     [picked, fruits],
   );
-  const shapeLabel = SHAPES.find((s) => s.key === shape)!.label;
-  const budgetValue = budget ?? (Number(customBudget.replace(/\D/g, "")) || null);
 
-  const canNext = [true, !!occasion, !!budgetValue && budgetValue >= 100_000, picked.length > 0, true, true, true][step];
+  const canNext = [true, !!occasion, budgetOk, picked.length > 0, true, true, true][step];
+
+  function toggle(name: string) {
+    setPicked((p) => (p.includes(name) ? p.filter((x) => x !== name) : [...p, name]));
+  }
 
   function submit() {
     if (!contact.name.trim() || !(verifiedPhone || contact.phone.trim())) {
@@ -93,14 +103,17 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
       const res = await submitParcelRequest({
         name: contact.name,
         phone: verifiedPhone ?? contact.phone,
-        shape: shapeLabel,
+        shape: container.label,
         occasion,
         budget: budgetValue,
         fruits: picked,
-        ribbon: ribbonPick,
-        cardTo: card.to,
-        cardFrom: card.from,
-        cardMessage: card.message,
+        ribbon: ribbonName,
+        cardStyle: CARD_STYLES.find((c) => c.key === cardStyle)!.label,
+        cardTo: cardStyle === "none" ? "" : card.to,
+        cardFrom: cardStyle === "none" ? "" : card.from,
+        cardMessage: cardStyle === "none" ? "" : card.message,
+        addons,
+        minPrice,
         date: contact.date || null,
         notes: contact.notes,
       });
@@ -109,22 +122,19 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
     });
   }
 
-  function toggle(name: string) {
-    setPicked((p) => (p.includes(name) ? p.filter((x) => x !== name) : [...p, name]));
-  }
-
+  const cardLabel = CARD_STYLES.find((c) => c.key === cardStyle)!.label;
   const message = [
     doneCode ? `Halo Healthila, saya sudah isi konsultasi parcel di website. Kode: *${doneCode}*` : "Halo Healthila, saya mau *konsultasi parcel custom*:",
     "",
-    `🧺 Bentuk: ${shapeLabel}`,
+    `🧺 Wadah: ${container.label} (mulai ${rupiah(container.start)})`,
     `🎉 Acara: ${occasion ?? "-"}`,
     `💰 Budget: ${budgetValue ? rupiah(budgetValue) : "-"}`,
     `🍇 Buah pilihan: ${picked.join(", ") || "-"}`,
-    `🎀 Pita: ${ribbonPick ?? "ikut tema acara"}`,
-    "",
-    card.message.trim() ? `💌 Kartu ucapan:\n"${card.message.trim()}"` : "💌 Kartu ucapan: tidak perlu",
-    card.to.trim() ? `Untuk: ${card.to.trim()}` : null,
-    card.from.trim() ? `Dari: ${card.from.trim()}` : null,
+    `🎀 Pita: ${ribbonName}${ribbonCost ? ` (+${rupiah(ribbonCost)})` : " (gratis)"}`,
+    `💌 ${cardLabel}${cardCost ? ` (+${rupiah(cardCost)})` : ""}`,
+    cardStyle !== "none" && card.message.trim() ? `"${card.message.trim()}"` : null,
+    cardStyle !== "none" && card.to.trim() ? `Untuk: ${card.to.trim()}` : null,
+    cardStyle !== "none" && card.from.trim() ? `Dari: ${card.from.trim()}` : null,
     "",
     contact.name.trim() ? `Nama pemesan: ${contact.name.trim()}` : null,
     contact.date
@@ -136,6 +146,8 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
   ]
     .filter((l): l is string => l !== null)
     .join("\n");
+
+  const groups = [...new Set(containers.map((c) => c.group))];
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_440px] lg:items-start">
@@ -163,12 +175,48 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
 
         <div className="mt-6 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5 sm:p-8">
           {step === 0 && (
-            <Step title="Mau parcel berbentuk apa?">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {SHAPES.map((s) => (
-                  <Choice key={s.key} active={shape === s.key} onClick={() => setShape(s.key)} icon={s.icon} label={s.label} desc={s.desc} />
-                ))}
-              </div>
+            <Step title="Pilih wadah parcel" hint="Harga mulai dari — isi & jumlah buah menyesuaikan budget Kakak.">
+              {groups.map((g) => (
+                <div key={g} className="mb-6 last:mb-0">
+                  <p className="mb-2 text-xs font-bold tracking-widest text-muted uppercase">{g}</p>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {containers
+                      .filter((c) => c.group === g)
+                      .map((c) => {
+                        const on = c.key === containerKey;
+                        return (
+                          <button
+                            key={c.key}
+                            type="button"
+                            onClick={() => {
+                              setContainerKey(c.key);
+                              setBudget(null);
+                            }}
+                            aria-pressed={on}
+                            className={`flex items-center gap-3 rounded-2xl p-2.5 text-left transition ${
+                              on ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] ring-1 ring-transparent hover:ring-black/10"
+                            }`}
+                          >
+                            <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-white">
+                              {c.photo ? (
+                                <Image src={c.photo} alt="" fill sizes="64px" className="object-cover" />
+                              ) : (
+                                <span className="flex h-full items-center justify-center text-3xl">
+                                  {c.shape === "tas" ? "🛍️" : c.shape === "box" ? "🎁" : c.shape === "tower" ? "🗼" : c.shape === "plate" ? "🍽️" : "🧺"}
+                                </span>
+                              )}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block font-bold leading-tight text-ink">{c.label}</span>
+                              <span className="block text-xs text-muted">{c.desc}</span>
+                              <span className="mt-0.5 block text-sm font-bold text-plum-700">mulai {rupiah(c.start)}</span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              ))}
             </Step>
           )}
 
@@ -183,9 +231,12 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
           )}
 
           {step === 2 && (
-            <Step title="Berapa budget-nya?" hint="Isi & jumlah buah akan disesuaikan tim kami dengan budget ini (belum termasuk ongkir).">
+            <Step
+              title="Berapa budget-nya?"
+              hint={`${container.label} mulai ${rupiah(container.start)}${addons ? ` + add-on ${rupiah(addons)}` : ""}. Belum termasuk ongkir.`}
+            >
               <div className="flex flex-wrap gap-2">
-                {BUDGETS.map((b) => (
+                {budgetPresets.map((b) => (
                   <button
                     key={b}
                     type="button"
@@ -197,7 +248,7 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
                       budget === b ? "bg-plum-700 text-white" : "bg-white text-ink ring-1 ring-black/10 hover:ring-plum-500"
                     }`}
                   >
-                    {b >= 1_000_000 ? "Rp 1 juta+" : rupiah(b)}
+                    {rupiah(b)}
                   </button>
                 ))}
               </div>
@@ -213,103 +264,132 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
                       const digits = e.target.value.replace(/\D/g, "");
                       setCustomBudget(digits ? Number(digits).toLocaleString("id-ID") : "");
                     }}
-                    placeholder="400.000"
+                    placeholder={minPrice.toLocaleString("id-ID")}
                     className="w-full bg-transparent px-2 py-3 outline-none"
                   />
                 </div>
               </label>
-              {budgetValue != null && budgetValue < 100_000 && (
-                <p className="mt-2 text-sm text-plum-700">Minimal budget parcel Rp 100.000.</p>
+              {budgetValue != null && budgetValue < minPrice && (
+                <p className="mt-2 text-sm text-plum-700">Minimal {rupiah(minPrice)} untuk {container.label}.</p>
               )}
             </Step>
           )}
 
           {step === 3 && (
-            <Step title="Buah apa saja yang diinginkan?" hint="Pilih sebanyak yang Kakak mau — tidak perlu jumlah, tim kami yang mengatur komposisinya.">
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 xl:grid-cols-5">
-                {fruits.map((f) => {
-                  const on = picked.includes(f.name);
+            <Step title="Buah apa saja yang diinginkan?" hint="Pilih jenis atau varietas spesifik — tidak perlu jumlah, tim kami yang mengatur komposisinya.">
+              <div className="space-y-2">
+                {fruits.map((g) => {
+                  const count = picked.filter((p) => p === g.name + ANY || g.items.some((i) => i.name === p)).length;
+                  const open = openGroup === g.name;
                   return (
-                    <button
-                      key={f.name}
-                      type="button"
-                      onClick={() => toggle(f.name)}
-                      aria-pressed={on}
-                      className={`relative flex flex-col items-center rounded-2xl p-3 text-center transition ${
-                        on ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] ring-1 ring-transparent hover:ring-black/10"
-                      }`}
-                    >
-                      {on && <span className="absolute top-1.5 right-2 text-xs font-bold text-plum-700">✓</span>}
-                      {f.art ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- small CDN illustration
-                        <img src={f.art} alt="" width={44} height={44} loading="lazy" className="h-11 w-11" />
-                      ) : (
-                        <span className="text-4xl leading-[44px]">{f.emoji}</span>
+                    <div key={g.name} className={`rounded-2xl ring-1 transition ${count ? "bg-plum-50/60 ring-plum-200" : "bg-[#f7f6f2] ring-transparent"}`}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenGroup(open ? null : g.name)}
+                        className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+                        aria-expanded={open}
+                      >
+                        <FruitIcon g={g} />
+                        <span className="flex-1 font-bold text-ink">{g.name}</span>
+                        {count > 0 && <span className="rounded-full bg-plum-700 px-2 py-0.5 text-xs font-bold text-white">{count}</span>}
+                        <span className="text-xs text-muted">{g.items.length} pilihan</span>
+                        <span className={`text-muted transition ${open ? "rotate-180" : ""}`}>▾</span>
+                      </button>
+                      {open && (
+                        <div className="flex flex-wrap gap-2 px-3 pb-3">
+                          <Pill on={picked.includes(g.name + ANY)} onClick={() => toggle(g.name + ANY)}>
+                            ✨ {g.name} apa saja (pilihkan terbaik)
+                          </Pill>
+                          {g.items.map((i) => (
+                            <Pill key={i.id} on={picked.includes(i.name)} onClick={() => toggle(i.name)}>
+                              {i.name}
+                            </Pill>
+                          ))}
+                        </div>
                       )}
-                      <span className="mt-1 text-sm font-semibold text-ink">{f.name}</span>
-                      <span className="text-[11px] text-muted">{f.varieties} pilihan</span>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
-              <p className="mt-4 text-sm text-muted">{picked.length ? `${picked.length} buah dipilih` : "Belum ada buah dipilih"}</p>
+              <p className="mt-4 text-sm text-muted">{picked.length ? `${picked.length} pilihan: ${picked.join(", ")}` : "Belum ada buah dipilih"}</p>
             </Step>
           )}
 
           {step === 4 && (
-            <Step title="Pilih warna pita" hint="Kosongkan untuk mengikuti tema acara.">
-              <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
-                <button
-                  type="button"
-                  onClick={() => setRibbonPick(null)}
-                  aria-pressed={!ribbonPick}
-                  className={`flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold transition ${
-                    !ribbonPick ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] hover:ring-1 hover:ring-black/10"
-                  }`}
-                >
-                  <span className="h-10 w-10 rounded-full ring-1 ring-black/10" style={{ background: OCCASIONS.find((o) => o.label === occasion)?.ribbon ?? "#7f1a5c" }} />
-                  Ikut acara
-                </button>
-                {RIBBONS.map((r) => (
-                  <button
-                    key={r.name}
-                    type="button"
-                    onClick={() => setRibbonPick(r.name)}
-                    aria-pressed={ribbonPick === r.name}
-                    className={`flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold transition ${
-                      ribbonPick === r.name ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] hover:ring-1 hover:ring-black/10"
-                    }`}
-                  >
-                    <span className="h-10 w-10 rounded-full shadow-inner ring-1 ring-black/10" style={{ background: r.hex }} />
-                    {r.name}
-                  </button>
-                ))}
+            <Step title="Pilih warna pita" hint={`Pita ${RIBBON_FREE} gratis. Warna lain +${rupiah(RIBBON_EXTRA)}.`}>
+              <div className="grid grid-cols-4 gap-3 sm:grid-cols-4">
+                {RIBBONS.map((r) => {
+                  const on = ribbonName === r.name;
+                  return (
+                    <button
+                      key={r.name}
+                      type="button"
+                      onClick={() => setRibbonName(r.name)}
+                      aria-pressed={on}
+                      className={`flex flex-col items-center gap-1.5 rounded-2xl p-3 text-center text-xs font-semibold transition ${
+                        on ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] hover:ring-1 hover:ring-black/10"
+                      }`}
+                    >
+                      <span className="h-10 w-10 rounded-full shadow-inner ring-1 ring-black/10" style={{ background: r.hex }} />
+                      {r.name}
+                      <span className={r.name === RIBBON_FREE ? "text-leaf-700" : "font-normal text-muted"}>
+                        {r.name === RIBBON_FREE ? "Gratis" : `+${rupiah(RIBBON_EXTRA)}`}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </Step>
           )}
 
           {step === 5 && (
-            <Step title="Kartu ucapan" hint="Opsional. Kami tulis rapi di kartu dan sertakan di parcel.">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Input label="Untuk" value={card.to} onChange={(v) => setCard((c) => ({ ...c, to: v }))} placeholder="Ibu Sari" />
-                <Input label="Dari" value={card.from} onChange={(v) => setCard((c) => ({ ...c, from: v }))} placeholder="Keluarga Budi" />
+            <Step title="Kartu ucapan">
+              <div className="grid gap-3 sm:grid-cols-3">
+                {CARD_STYLES.map((c) => (
+                  <button
+                    key={c.key}
+                    type="button"
+                    onClick={() => setCardStyle(c.key)}
+                    aria-pressed={cardStyle === c.key}
+                    className={`rounded-2xl p-4 text-left transition ${
+                      cardStyle === c.key ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] ring-1 ring-transparent hover:ring-black/10"
+                    }`}
+                  >
+                    <span className="block font-bold text-ink">{c.label}</span>
+                    {c.desc && <span className="block text-xs text-muted">{c.desc}</span>}
+                    <span className={`mt-1 block text-sm font-bold ${c.price ? "text-plum-700" : "text-leaf-700"}`}>
+                      {c.price ? `+${rupiah(c.price)}` : "Gratis"}
+                    </span>
+                  </button>
+                ))}
               </div>
-              <label className="mt-3 block text-sm font-medium text-ink">
-                Pesan
-                <textarea
-                  value={card.message}
-                  onChange={(e) => setCard((c) => ({ ...c, message: e.target.value.slice(0, 200) }))}
-                  rows={4}
-                  placeholder="Semoga lekas sembuh dan sehat selalu 💚"
-                  className="mt-1 w-full rounded-xl border border-black/15 px-4 py-3 outline-none focus:border-plum-500"
-                />
-                <span className="text-xs text-muted">{card.message.length}/200</span>
-              </label>
+              {cardStyle !== "none" && (
+                <>
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    <Input label="Untuk" value={card.to} onChange={(v) => setCard((c) => ({ ...c, to: v }))} placeholder="Ibu Sari" />
+                    <Input label="Dari" value={card.from} onChange={(v) => setCard((c) => ({ ...c, from: v }))} placeholder="Keluarga Budi" />
+                  </div>
+                  <label className="mt-3 block text-sm font-medium text-ink">
+                    Pesan
+                    <textarea
+                      value={card.message}
+                      onChange={(e) => setCard((c) => ({ ...c, message: e.target.value.slice(0, 200) }))}
+                      rows={4}
+                      placeholder="Semoga lekas sembuh dan sehat selalu 💚"
+                      className="mt-1 w-full rounded-xl border border-black/15 px-4 py-3 outline-none focus:border-plum-500"
+                    />
+                    <span className="text-xs text-muted">{card.message.length}/200</span>
+                  </label>
+                  {cardStyle === "custom" && (
+                    <p className="mt-2 text-sm text-muted">Admin akan menghubungi Kakak untuk detail desain (tema, warna, logo).</p>
+                  )}
+                </>
+              )}
             </Step>
           )}
 
           {step === 6 && !doneCode && (
-            <Step title="Hampir selesai!" hint="Ringkasan dikirim ke admin via WhatsApp untuk rekomendasi isi, harga final, dan ongkir.">
+            <Step title="Hampir selesai!" hint="Admin akan menghubungi via WhatsApp untuk rekomendasi isi, harga final, dan ongkir.">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input label="Nama Kakak *" value={contact.name} onChange={(v) => setContact((c) => ({ ...c, name: v }))} />
                 {verifiedPhone ? (
@@ -331,16 +411,19 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
                   />
                 </label>
               </div>
-              <Input label="Catatan lain (opsional)" value={contact.notes} onChange={(v) => setContact((c) => ({ ...c, notes: v }))} placeholder="Mis. tanpa durian, warna pita hijau" />
+              <Input label="Catatan lain (opsional)" value={contact.notes} onChange={(v) => setContact((c) => ({ ...c, notes: v }))} placeholder="Mis. tanpa durian, tambah bunga" />
 
               <dl className="mt-6 grid gap-x-6 gap-y-2 rounded-2xl bg-[#f7f6f2] p-5 text-sm sm:grid-cols-2">
-                <Summary k="Bentuk" v={shapeLabel} />
+                <Summary k="Wadah" v={`${container.label} — mulai ${rupiah(container.start)}`} />
                 <Summary k="Acara" v={occasion ?? "-"} />
                 <Summary k="Budget" v={budgetValue ? rupiah(budgetValue) : "-"} />
                 <Summary k="Buah" v={picked.join(", ") || "-"} />
-                <Summary k="Pita" v={ribbonPick ?? "Ikut tema acara"} />
-                <Summary k="Ucapan" v={card.message.trim() || "Tanpa kartu"} />
+                <Summary k="Pita" v={`${ribbonName} ${ribbonCost ? `(+${rupiah(ribbonCost)})` : "(gratis)"}`} />
+                <Summary k="Kartu" v={`${cardLabel} ${cardCost ? `(+${rupiah(cardCost)})` : ""}`} />
               </dl>
+              <p className="mt-3 text-sm text-muted">
+                Estimasi mulai dari <span className="font-bold text-ink">{rupiah(minPrice)}</span> (wadah + add-on), belum termasuk ongkir.
+              </p>
 
               {error && (
                 <p className="mt-4 rounded-xl bg-plum-50 px-3 py-2 text-sm font-medium text-plum-700" role="alert">
@@ -355,7 +438,7 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
               >
                 {pending ? "Mengirim…" : "Kirim Konsultasi"}
               </button>
-              <p className="mt-2 text-center text-xs text-muted">Konsultasi gratis & belum mengikat. Admin akan menghubungi Kakak via WhatsApp.</p>
+              <p className="mt-2 text-center text-xs text-muted">Konsultasi gratis & belum mengikat.</p>
             </Step>
           )}
 
@@ -403,17 +486,64 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
       <aside className="order-first lg:sticky lg:top-24 lg:order-none">
         <div className="overflow-hidden rounded-3xl bg-gradient-to-b from-plum-50 to-white p-4 shadow-sm ring-1 ring-black/5">
           <div className="aspect-[10/9]">
-            <ParcelVisual shape={shape} fruits={visualFruits} ribbon={ribbon} card={card.message.trim() || null} />
+            <ParcelVisual
+              shape={container.shape}
+              fruits={visualFruits}
+              ribbon={ribbon.hex}
+              card={cardStyle === "none" ? null : card.message.trim() || null}
+            />
           </div>
           <div className="mt-2 flex flex-wrap justify-center gap-1.5 text-xs">
-            <Tag>{shapeLabel}</Tag>
+            <Tag>{container.label}</Tag>
             {occasion && <Tag>{occasion}</Tag>}
             {budgetValue ? <Tag>{rupiah(budgetValue)}</Tag> : null}
           </div>
+          <p className="mt-2 text-center text-sm">
+            Mulai dari <span className="font-bold text-plum-700">{rupiah(minPrice)}</span>
+          </p>
+          {container.photo && (
+            <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white p-2 ring-1 ring-black/5">
+              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+                <Image src={container.photo} alt={container.label} fill sizes="56px" className="object-cover" />
+              </span>
+              <span className="text-xs text-muted">Contoh {container.label} asli dari Healthila.</span>
+            </div>
+          )}
           <p className="mt-3 text-center text-[11px] text-muted">Ilustrasi. Komposisi & jumlah final ditentukan tim Healthila.</p>
         </div>
       </aside>
     </div>
+  );
+}
+
+/** Budget shortcuts from the floor price upward, rounded to 50rb. */
+function presets(min: number) {
+  const base = Math.ceil(min / 50_000) * 50_000;
+  return [...new Set([min, base + 50_000, base + 150_000, base + 300_000, base + 500_000])].sort((a, b) => a - b);
+}
+
+function FruitIcon({ g }: { g: FruitGroup }) {
+  return g.art ? (
+    // eslint-disable-next-line @next/next/no-img-element -- small CDN illustration
+    <img src={g.art} alt="" width={36} height={36} loading="lazy" className="h-9 w-9" />
+  ) : (
+    <span className="flex h-9 w-9 items-center justify-center text-3xl">{g.emoji}</span>
+  );
+}
+
+function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
+        on ? "bg-plum-700 text-white" : "bg-white text-ink ring-1 ring-black/10 hover:ring-plum-500"
+      }`}
+    >
+      {on ? "✓ " : ""}
+      {children}
+    </button>
   );
 }
 
@@ -427,7 +557,7 @@ function Step({ title, hint, children }: { title: string; hint?: string; childre
   );
 }
 
-function Choice({ active, onClick, icon, label, desc }: { active: boolean; onClick: () => void; icon: string; label: string; desc?: string }) {
+function Choice({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: string; label: string }) {
   return (
     <button
       type="button"
@@ -438,10 +568,7 @@ function Choice({ active, onClick, icon, label, desc }: { active: boolean; onCli
       }`}
     >
       <span className="text-3xl">{icon}</span>
-      <span>
-        <span className="block font-bold text-ink">{label}</span>
-        {desc && <span className="block text-sm text-muted">{desc}</span>}
-      </span>
+      <span className="font-bold text-ink">{label}</span>
     </button>
   );
 }

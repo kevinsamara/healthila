@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { ParcelBuilder, type FruitOption } from "@/components/parcel/ParcelBuilder";
+import { ParcelBuilder, type ContainerOption, type FruitGroup } from "@/components/parcel/ParcelBuilder";
 import { getProducts } from "@/lib/catalog";
 import { productEmoji } from "@/lib/emoji";
 import { fruitArt } from "@/lib/fruit-art";
+import { PARCEL_CONTAINERS } from "@/lib/parcel-options";
 
 export const metadata: Metadata = {
   title: "Rancang Parcel Custom",
@@ -12,15 +13,30 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function ParcelCustomPage() {
-  // Fruit types currently in stock; operations pick the actual varieties.
-  const counts = new Map<string, number>();
-  for (const p of await getProducts()) {
+  const products = await getProducts();
+
+  // Fruit types in stock with their specific varieties; ops decide quantities.
+  const byGroup = new Map<string, { id: string; name: string }[]>();
+  for (const p of products) {
     if (p.section !== "buah" || !p.in_stock || !p.product_group || p.product_group === "Sayuran") continue;
-    counts.set(p.product_group, (counts.get(p.product_group) ?? 0) + 1);
+    byGroup.set(p.product_group, [...(byGroup.get(p.product_group) ?? []), { id: p.id, name: p.name }]);
   }
-  const fruits: FruitOption[] = [...counts.entries()]
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "id"))
-    .map(([name, varieties]) => ({ name, varieties, emoji: productEmoji(name), art: fruitArt(name) }));
+  const fruits: FruitGroup[] = [...byGroup.entries()]
+    .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "id"))
+    .map(([name, items]) => ({
+      name,
+      emoji: productEmoji(name),
+      art: fruitArt(name),
+      items: items.sort((a, b) => a.name.localeCompare(b.name, "id")),
+    }));
+
+  // Real photos of each container from the CRM parcel products.
+  const parcels = products.filter((p) => p.section === "parcel" && p.photo_url);
+  // RegExp can't cross to the client component, so it's dropped here.
+  const containers: ContainerOption[] = PARCEL_CONTAINERS.map(({ crmMatch, ...c }) => ({
+    ...c,
+    photo: crmMatch ? (parcels.find((p) => crmMatch.test(p.name))?.photo_url ?? null) : null,
+  }));
 
   return (
     <>
@@ -34,7 +50,7 @@ export default async function ParcelCustomPage() {
         </div>
       </section>
       <div className="mx-auto max-w-7xl px-4 py-10">
-        <ParcelBuilder fruits={fruits} />
+        <ParcelBuilder containers={containers} fruits={fruits} />
       </div>
     </>
   );
