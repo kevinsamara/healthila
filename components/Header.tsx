@@ -20,7 +20,7 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 md:h-[72px]">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" onClick={() => setOpen(false)} aria-label="Healthila — beranda">
+        <Link href="/" className="flex shrink-0 items-center gap-2" onClick={() => setOpen(false)} aria-label="Healthila — beranda">
           <Image src="/healthila-mark.png" alt="" width={256} height={256} priority className="h-10 w-10 rounded-full md:h-12 md:w-12" />
           <Image
             src="/healthila-wordmark.png"
@@ -28,7 +28,7 @@ export function Header() {
             width={640}
             height={190}
             priority
-            className="h-10 w-auto md:h-12"
+            className="h-[30px] w-auto md:h-9"
           />
         </Link>
 
