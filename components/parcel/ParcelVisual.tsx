@@ -41,13 +41,13 @@ export function ParcelVisual({
   card,
 }: {
   shape: ShapeKey;
-  fruits: string[]; // emoji, one per selected fruit type
+  fruits: { emoji: string; art: string | null }[]; // one per selected fruit type
   ribbon: string; // colour
   card: string | null;
 }) {
   const slots = LAYOUT[shape];
   // Spread the selected fruits evenly across the slots.
-  const placed = fruits.length ? slots.map((slot, i) => ({ ...slot, e: fruits[(i * 7 + Math.floor(i / fruits.length)) % fruits.length] })) : [];
+  const placed = fruits.length ? slots.map((slot, i) => ({ ...slot, f: fruits[(i * 7 + Math.floor(i / fruits.length)) % fruits.length] })) : [];
 
   return (
     <svg viewBox="0 0 400 360" className="h-full w-full" role="img" aria-label="Pratinjau parcel">
@@ -88,20 +88,33 @@ export function ParcelVisual({
 
       {/* Fruit */}
       <g>
-        {placed.map((f, i) => (
-          <text
-            key={`${shape}-${i}-${f.e}`}
-            x={f.x}
-            y={f.y}
-            fontSize={f.s}
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="parcel-pop"
-            style={{ animationDelay: `${i * 25}ms` }}
-          >
-            {f.e}
-          </text>
-        ))}
+        {placed.map((p, i) =>
+          p.f.art ? (
+            <image
+              key={`${shape}-${i}-${p.f.art}`}
+              href={p.f.art}
+              x={p.x - p.s * 0.62}
+              y={p.y - p.s * 0.62}
+              width={p.s * 1.24}
+              height={p.s * 1.24}
+              className="parcel-pop"
+              style={{ animationDelay: `${i * 25}ms` }}
+            />
+          ) : (
+            <text
+              key={`${shape}-${i}-${p.f.emoji}`}
+              x={p.x}
+              y={p.y}
+              fontSize={p.s}
+              textAnchor="middle"
+              dominantBaseline="central"
+              className="parcel-pop"
+              style={{ animationDelay: `${i * 25}ms` }}
+            >
+              {p.f.emoji}
+            </text>
+          ),
+        )}
       </g>
 
       {/* Front of the container (over the fruit) */}

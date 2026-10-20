@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ParcelBuilder, type FruitOption } from "@/components/parcel/ParcelBuilder";
 import { getProducts } from "@/lib/catalog";
 import { productEmoji } from "@/lib/emoji";
+import { fruitArt } from "@/lib/fruit-art";
 
 export const metadata: Metadata = {
   title: "Rancang Parcel Custom",
@@ -19,7 +20,7 @@ export default async function ParcelCustomPage() {
   }
   const fruits: FruitOption[] = [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "id"))
-    .map(([name, varieties]) => ({ name, varieties, emoji: productEmoji(name) }));
+    .map(([name, varieties]) => ({ name, varieties, emoji: productEmoji(name), art: fruitArt(name) }));
 
   return (
     <>

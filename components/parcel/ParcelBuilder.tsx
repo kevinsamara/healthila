@@ -1,12 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { submitParcelRequest } from "@/app/parcel/custom/actions";
+import { getCheckoutProfile } from "@/app/keranjang/actions";
 import { rupiah } from "@/lib/format";
 import { waLink } from "@/lib/site";
 import { WhatsAppIcon } from "../WhatsAppFab";
 import { ParcelVisual, type ShapeKey } from "./ParcelVisual";
 
-export type FruitOption = { name: string; emoji: string; varieties: number };
+export type FruitOption = { name: string; emoji: string; art: string | null; varieties: number };
+
+const RIBBONS = [
+  { name: "Merah", hex: "#e11d48" },
+  { name: "Pink", hex: "#f472b6" },
+  { name: "Emas", hex: "#d4a017" },
+  { name: "Hijau", hex: "#04724a" },
+  { name: "Biru", hex: "#2563eb" },
+  { name: "Ungu", hex: "#7f1a5c" },
+  { name: "Putih", hex: "#f8fafc" },
+  { name: "Cokelat", hex: "#8a5523" },
+];
 
 const SHAPES: { key: ShapeKey; label: string; desc: string; icon: string }[] = [
   { key: "keranjang", label: "Keranjang Rotan", desc: "Klasik & paling populer", icon: "🧺" },
@@ -31,7 +44,7 @@ const OCCASIONS = [
 
 const BUDGETS = [250_000, 350_000, 500_000, 750_000, 1_000_000];
 
-const STEPS = ["Bentuk", "Acara", "Budget", "Buah", "Ucapan", "Kirim"] as const;
+const STEPS = ["Bentuk", "Acara", "Budget", "Buah", "Pita", "Ucapan", "Kirim"] as const;
 
 export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
   const [step, setStep] = useState(0);
@@ -41,26 +54,73 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
   const [customBudget, setCustomBudget] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
   const [card, setCard] = useState({ to: "", from: "", message: "" });
-  const [contact, setContact] = useState({ name: "", date: "", notes: "" });
+  const [contact, setContact] = useState({ name: "", phone: "", date: "", notes: "" });
+  const [ribbonPick, setRibbonPick] = useState<string | null>(null);
+  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [doneCode, setDoneCode] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
-  const ribbon = OCCASIONS.find((o) => o.label === occasion)?.ribbon ?? "#7f1a5c";
-  const emojis = useMemo(() => picked.map((n) => fruits.find((f) => f.name === n)?.emoji ?? "🍎"), [picked, fruits]);
+  // Signed-in buyers: phone is already verified, prefill name too.
+  useEffect(() => {
+    if (!document.cookie.split("; ").includes("hl_auth=1")) return;
+    void getCheckoutProfile().then((p) => {
+      if (!p) return;
+      setVerifiedPhone(p.phone);
+      setContact((c) => ({ ...c, phone: p.phone, name: c.name || p.name || "" }));
+    });
+  }, []);
+
+  // Ribbon follows the occasion until the customer picks one.
+  const ribbonColor = RIBBONS.find((r) => r.name === ribbonPick);
+  const ribbon = ribbonColor?.hex ?? OCCASIONS.find((o) => o.label === occasion)?.ribbon ?? "#7f1a5c";
+  const visualFruits = useMemo(
+    () => picked.map((n) => fruits.find((f) => f.name === n) ?? { emoji: "🍎", art: null }).map((f) => ({ emoji: f.emoji, art: f.art })),
+    [picked, fruits],
+  );
   const shapeLabel = SHAPES.find((s) => s.key === shape)!.label;
   const budgetValue = budget ?? (Number(customBudget.replace(/\D/g, "")) || null);
 
-  const canNext = [true, !!occasion, !!budgetValue && budgetValue >= 100_000, picked.length > 0, true, true][step];
+  const canNext = [true, !!occasion, !!budgetValue && budgetValue >= 100_000, picked.length > 0, true, true, true][step];
+
+  function submit() {
+    if (!contact.name.trim() || !(verifiedPhone || contact.phone.trim())) {
+      setError("Mohon isi nama dan nomor WhatsApp.");
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const res = await submitParcelRequest({
+        name: contact.name,
+        phone: verifiedPhone ?? contact.phone,
+        shape: shapeLabel,
+        occasion,
+        budget: budgetValue,
+        fruits: picked,
+        ribbon: ribbonPick,
+        cardTo: card.to,
+        cardFrom: card.from,
+        cardMessage: card.message,
+        date: contact.date || null,
+        notes: contact.notes,
+      });
+      if (res.ok) setDoneCode(res.code);
+      else setError(res.error);
+    });
+  }
 
   function toggle(name: string) {
     setPicked((p) => (p.includes(name) ? p.filter((x) => x !== name) : [...p, name]));
   }
 
   const message = [
-    "Halo Healthila, saya mau *konsultasi parcel custom*:",
+    doneCode ? `Halo Healthila, saya sudah isi konsultasi parcel di website. Kode: *${doneCode}*` : "Halo Healthila, saya mau *konsultasi parcel custom*:",
     "",
     `🧺 Bentuk: ${shapeLabel}`,
     `🎉 Acara: ${occasion ?? "-"}`,
     `💰 Budget: ${budgetValue ? rupiah(budgetValue) : "-"}`,
     `🍇 Buah pilihan: ${picked.join(", ") || "-"}`,
+    `🎀 Pita: ${ribbonPick ?? "ikut tema acara"}`,
     "",
     card.message.trim() ? `💌 Kartu ucapan:\n"${card.message.trim()}"` : "💌 Kartu ucapan: tidak perlu",
     card.to.trim() ? `Untuk: ${card.to.trim()}` : null,
@@ -180,7 +240,12 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
                       }`}
                     >
                       {on && <span className="absolute top-1.5 right-2 text-xs font-bold text-plum-700">✓</span>}
-                      <span className="text-3xl">{f.emoji}</span>
+                      {f.art ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- small CDN illustration
+                        <img src={f.art} alt="" width={44} height={44} loading="lazy" className="h-11 w-11" />
+                      ) : (
+                        <span className="text-4xl leading-[44px]">{f.emoji}</span>
+                      )}
                       <span className="mt-1 text-sm font-semibold text-ink">{f.name}</span>
                       <span className="text-[11px] text-muted">{f.varieties} pilihan</span>
                     </button>
@@ -192,6 +257,38 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
           )}
 
           {step === 4 && (
+            <Step title="Pilih warna pita" hint="Kosongkan untuk mengikuti tema acara.">
+              <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
+                <button
+                  type="button"
+                  onClick={() => setRibbonPick(null)}
+                  aria-pressed={!ribbonPick}
+                  className={`flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold transition ${
+                    !ribbonPick ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] hover:ring-1 hover:ring-black/10"
+                  }`}
+                >
+                  <span className="h-10 w-10 rounded-full ring-1 ring-black/10" style={{ background: OCCASIONS.find((o) => o.label === occasion)?.ribbon ?? "#7f1a5c" }} />
+                  Ikut acara
+                </button>
+                {RIBBONS.map((r) => (
+                  <button
+                    key={r.name}
+                    type="button"
+                    onClick={() => setRibbonPick(r.name)}
+                    aria-pressed={ribbonPick === r.name}
+                    className={`flex flex-col items-center gap-2 rounded-2xl p-3 text-xs font-semibold transition ${
+                      ribbonPick === r.name ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] hover:ring-1 hover:ring-black/10"
+                    }`}
+                  >
+                    <span className="h-10 w-10 rounded-full shadow-inner ring-1 ring-black/10" style={{ background: r.hex }} />
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            </Step>
+          )}
+
+          {step === 5 && (
             <Step title="Kartu ucapan" hint="Opsional. Kami tulis rapi di kartu dan sertakan di parcel.">
               <div className="grid gap-3 sm:grid-cols-2">
                 <Input label="Untuk" value={card.to} onChange={(v) => setCard((c) => ({ ...c, to: v }))} placeholder="Ibu Sari" />
@@ -211,10 +308,19 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
             </Step>
           )}
 
-          {step === 5 && (
+          {step === 6 && !doneCode && (
             <Step title="Hampir selesai!" hint="Ringkasan dikirim ke admin via WhatsApp untuk rekomendasi isi, harga final, dan ongkir.">
               <div className="grid gap-3 sm:grid-cols-2">
-                <Input label="Nama Kakak" value={contact.name} onChange={(v) => setContact((c) => ({ ...c, name: v }))} />
+                <Input label="Nama Kakak *" value={contact.name} onChange={(v) => setContact((c) => ({ ...c, name: v }))} />
+                {verifiedPhone ? (
+                  <label className="block text-sm font-medium text-ink">
+                    No. WhatsApp
+                    <input value={verifiedPhone} readOnly className="mt-1 w-full rounded-xl border border-black/10 bg-leaf-50 px-4 py-3 text-muted" />
+                    <span className="text-xs text-leaf-700">✓ Terverifikasi</span>
+                  </label>
+                ) : (
+                  <Input label="No. WhatsApp *" value={contact.phone} onChange={(v) => setContact((c) => ({ ...c, phone: v }))} placeholder="0812 3456 7890" />
+                )}
                 <label className="block text-sm font-medium text-ink">
                   Tanggal dibutuhkan
                   <input
@@ -232,18 +338,43 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
                 <Summary k="Acara" v={occasion ?? "-"} />
                 <Summary k="Budget" v={budgetValue ? rupiah(budgetValue) : "-"} />
                 <Summary k="Buah" v={picked.join(", ") || "-"} />
+                <Summary k="Pita" v={ribbonPick ?? "Ikut tema acara"} />
                 <Summary k="Ucapan" v={card.message.trim() || "Tanpa kartu"} />
               </dl>
 
+              {error && (
+                <p className="mt-4 rounded-xl bg-plum-50 px-3 py-2 text-sm font-medium text-plum-700" role="alert">
+                  {error}
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={pending}
+                onClick={submit}
+                className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-plum-700 text-lg font-bold text-white hover:bg-plum-900 disabled:opacity-60"
+              >
+                {pending ? "Mengirim…" : "Kirim Konsultasi"}
+              </button>
+              <p className="mt-2 text-center text-xs text-muted">Konsultasi gratis & belum mengikat. Admin akan menghubungi Kakak via WhatsApp.</p>
+            </Step>
+          )}
+
+          {step === 6 && doneCode && (
+            <div className="py-6 text-center">
+              <p className="text-sm font-semibold tracking-wide text-plum-500 uppercase">Konsultasi terkirim</p>
+              <p className="mt-2 font-display text-4xl font-extrabold text-plum-900">{doneCode}</p>
+              <p className="mx-auto mt-3 max-w-md text-muted">
+                Terima kasih! Tim kami akan menghubungi Kakak dengan rekomendasi isi & harga. Mau lebih cepat? Kirim juga ringkasannya ke WhatsApp.
+              </p>
               <a
                 href={waLink(message)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full bg-[#25D366] text-lg font-bold text-white hover:brightness-95"
+                className="mx-auto mt-6 flex h-14 max-w-sm items-center justify-center gap-2 rounded-full bg-[#25D366] text-lg font-bold text-white hover:brightness-95"
               >
-                <WhatsAppIcon className="h-6 w-6" /> Kirim ke Admin via WhatsApp
+                <WhatsAppIcon className="h-6 w-6" /> Chat Admin via WhatsApp
               </a>
-            </Step>
+            </div>
           )}
 
           {step < STEPS.length - 1 && (
@@ -272,7 +403,7 @@ export function ParcelBuilder({ fruits }: { fruits: FruitOption[] }) {
       <aside className="order-first lg:sticky lg:top-24 lg:order-none">
         <div className="overflow-hidden rounded-3xl bg-gradient-to-b from-plum-50 to-white p-4 shadow-sm ring-1 ring-black/5">
           <div className="aspect-[10/9]">
-            <ParcelVisual shape={shape} fruits={emojis} ribbon={ribbon} card={card.message.trim() || null} />
+            <ParcelVisual shape={shape} fruits={visualFruits} ribbon={ribbon} card={card.message.trim() || null} />
           </div>
           <div className="mt-2 flex flex-wrap justify-center gap-1.5 text-xs">
             <Tag>{shapeLabel}</Tag>
