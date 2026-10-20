@@ -25,32 +25,48 @@ export type GoogleReviews = {
 };
 
 const API = "https://places.googleapis.com/v1";
-const DAY = 60 * 60 * 24;
+// An hour, so a fix to the key/API setting shows up the same day.
+const TTL = 60 * 60;
 
-async function resolvePlaceId(key: string): Promise<string | null> {
-  if (process.env.GOOGLE_PLACE_ID) return process.env.GOOGLE_PLACE_ID;
-  const res = await fetch(`${API}/places:searchText`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key, "X-Goog-FieldMask": "places.id" },
-    body: JSON.stringify({ textQuery: "Healthila Buah Fresh & Parcel Buah Malang", languageCode: "id" }),
-    next: { revalidate: DAY },
-  });
-  if (!res.ok) throw new Error(`searchText ${res.status}`);
-  const json = (await res.json()) as { places?: { id: string }[] };
-  return json.places?.[0]?.id ?? null;
+export type ReviewsStatus = {
+  ok: boolean;
+  step: "no_key" | "search" | "no_place" | "details" | "no_rating" | "ok";
+  httpStatus?: number;
+  message?: string;
+  placeId?: string;
+  data?: GoogleReviews;
+};
+
+type Fetch = { next?: { revalidate: number }; cache?: RequestCache };
+
+async function googleError(res: Response) {
+  const j = (await res.json().catch(() => null)) as { error?: { message?: string; status?: string } } | null;
+  return j?.error?.message ?? j?.error?.status ?? res.statusText;
 }
 
-export async function getGoogleReviews(): Promise<GoogleReviews | null> {
+/** Full lookup with the step that failed — used by the page and the status route. */
+export async function loadGoogleReviews(opts: Fetch = { next: { revalidate: TTL } }): Promise<ReviewsStatus> {
   const key = process.env.GOOGLE_PLACES_API_KEY;
-  if (!key) return null;
+  if (!key) return { ok: false, step: "no_key", message: "GOOGLE_PLACES_API_KEY belum di-set" };
   try {
-    const id = await resolvePlaceId(key);
-    if (!id) return null;
-    const res = await fetch(`${API}/places/${id}?languageCode=id`, {
+    let placeId = process.env.GOOGLE_PLACE_ID || null;
+    if (!placeId) {
+      const res = await fetch(`${API}/places:searchText`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Goog-Api-Key": key, "X-Goog-FieldMask": "places.id,places.displayName" },
+        body: JSON.stringify({ textQuery: "Healthila Buah Fresh & Parcel Buah Malang", languageCode: "id" }),
+        ...opts,
+      });
+      if (!res.ok) return { ok: false, step: "search", httpStatus: res.status, message: await googleError(res) };
+      const json = (await res.json()) as { places?: { id: string }[] };
+      placeId = json.places?.[0]?.id ?? null;
+      if (!placeId) return { ok: false, step: "no_place", message: "Listing Healthila tidak ditemukan; set GOOGLE_PLACE_ID" };
+    }
+    const res = await fetch(`${API}/places/${placeId}?languageCode=id`, {
       headers: { "X-Goog-Api-Key": key, "X-Goog-FieldMask": "rating,userRatingCount,googleMapsUri,reviews" },
-      next: { revalidate: DAY },
+      ...opts,
     });
-    if (!res.ok) throw new Error(`details ${res.status}`);
+    if (!res.ok) return { ok: false, step: "details", httpStatus: res.status, message: await googleError(res), placeId };
     const p = (await res.json()) as {
       rating?: number;
       userRatingCount?: number;
@@ -63,6 +79,7 @@ export async function getGoogleReviews(): Promise<GoogleReviews | null> {
         authorAttribution?: { displayName?: string; uri?: string; photoUri?: string };
       }[];
     };
+    if (!p.rating) return { ok: false, step: "no_rating", placeId, message: "Listing belum punya rating" };
     const reviews = (p.reviews ?? [])
       .map((r) => ({
         author: r.authorAttribution?.displayName ?? "Pelanggan Healthila",
@@ -73,10 +90,19 @@ export async function getGoogleReviews(): Promise<GoogleReviews | null> {
         when: r.relativePublishTimeDescription ?? "",
       }))
       .filter((r) => r.rating >= 4 && r.text.length > 0);
-    if (!p.rating) return null;
-    return { rating: p.rating, count: p.userRatingCount ?? 0, mapsUri: p.googleMapsUri ?? null, reviews };
+    return {
+      ok: true,
+      step: "ok",
+      placeId,
+      data: { rating: p.rating, count: p.userRatingCount ?? 0, mapsUri: p.googleMapsUri ?? null, reviews },
+    };
   } catch (e) {
-    console.error("[google-reviews]", e instanceof Error ? e.message : e);
-    return null;
+    return { ok: false, step: "details", message: e instanceof Error ? e.message : String(e) };
   }
+}
+
+export async function getGoogleReviews(): Promise<GoogleReviews | null> {
+  const r = await loadGoogleReviews();
+  if (!r.ok) console.error("[google-reviews]", r.step, r.httpStatus ?? "", r.message ?? "");
+  return r.data ?? null;
 }

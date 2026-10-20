@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { site } from "@/lib/site";
 import { testimonials } from "@/lib/testimonials";
+import { TestimonialSlider, type SlideItem } from "./TestimonialSlider";
 
 export function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
@@ -76,21 +77,32 @@ export async function Testimonials() {
   const google = await getGoogleReviews();
   const tones = Object.keys(toneCls) as (keyof typeof toneCls)[];
   // Live Google reviews when configured; otherwise the quotes from the old site.
-  const items = google?.reviews.length
-    ? google.reviews.slice(0, 4).map((r, i) => ({
+  const items: SlideItem[] = google?.reviews.length
+    ? google.reviews.map((r, i) => ({
+        key: `g${i}`,
         quote: r.text,
         name: r.author,
         sub: r.when,
         rating: r.rating,
         href: r.authorUri,
         tone: tones[i % tones.length],
+        google: true,
       }))
-    : testimonials.map((t) => ({ quote: t.quote, name: t.name, sub: t.city, rating: 5, href: null, tone: t.tone }));
+    : testimonials.map((t, i) => ({
+        key: `s${i}`,
+        quote: t.quote,
+        name: t.name,
+        sub: t.city,
+        rating: 5,
+        href: null,
+        tone: t.tone,
+        google: false,
+      }));
   const mapsHref = google?.mapsUri ?? site.googleMaps;
 
   return (
     <section className="bg-[#f6f8fb]">
-      <div className="mx-auto max-w-5xl px-4 py-20">
+      <div className="mx-auto max-w-7xl px-4 py-20">
         <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" />
         {google && (
           <a
@@ -105,39 +117,8 @@ export async function Testimonials() {
             <span className="text-sm text-muted">{google.count} ulasan Google</span>
           </a>
         )}
-        <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {items.map((t) => {
-            const c = toneCls[t.tone];
-            return (
-              <figure key={t.name + t.quote.slice(0, 20)} className={`relative flex flex-col overflow-hidden rounded-3xl p-8 ${c.card}`}>
-                <span className={`absolute top-2 right-6 font-display text-[9rem] leading-none font-extrabold ${c.quote}`} aria-hidden>
-                  “
-                </span>
-                <p className="text-xl tracking-widest text-sun-400" aria-label={`${t.rating} dari 5 bintang`}>
-                  {"★".repeat(t.rating)}
-                  <span className="text-black/10">{"★".repeat(5 - t.rating)}</span>
-                </p>
-                <blockquote className="relative mt-4 line-clamp-6 text-lg leading-relaxed text-ink/85 italic">“{t.quote}”</blockquote>
-                <figcaption className="mt-auto flex items-end justify-between gap-3 pt-6">
-                  <span>
-                    {t.href ? (
-                      <a href={t.href} target="_blank" rel="noopener noreferrer" className={`block font-display text-xl font-bold hover:underline ${c.name}`}>
-                        {t.name}
-                      </a>
-                    ) : (
-                      <span className={`block font-display text-xl font-bold ${c.name}`}>{t.name}</span>
-                    )}
-                    <span className="text-sm text-muted">{t.sub}</span>
-                  </span>
-                  {google && (
-                    <span className="flex items-center gap-1 text-xs text-muted">
-                      <GoogleG small /> Google
-                    </span>
-                  )}
-                </figcaption>
-              </figure>
-            );
-          })}
+        <div className="mt-10">
+          <TestimonialSlider items={items} />
         </div>
         <p className="mt-8 text-center">
           <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="font-semibold text-leaf-700 hover:underline">
