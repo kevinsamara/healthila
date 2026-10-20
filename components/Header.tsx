@@ -20,9 +20,15 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-black/5 bg-white/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 md:h-[72px]">
-        <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
-          <Image src="/healthila-logo.png" alt="" width={36} height={36} className="rounded-full" priority />
-          <span className="text-xl font-extrabold tracking-tight text-leaf-700">Healthila</span>
+        <Link href="/" className="shrink-0" onClick={() => setOpen(false)} aria-label="Healthila — beranda">
+          <Image
+            src="/healthila-wordmark.png"
+            alt="Healthila — fruitful heart, eating smart"
+            width={640}
+            height={190}
+            priority
+            className="h-10 w-auto md:h-12"
+          />
         </Link>
 
         <nav className="ml-4 hidden items-center lg:flex xl:ml-8 xl:gap-1">

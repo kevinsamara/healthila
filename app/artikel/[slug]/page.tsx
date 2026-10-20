@@ -2,21 +2,31 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArticleCard, ArticleCover } from "@/components/ArticleCard";
-import { articles, categoryTone, getArticle } from "@/lib/articles";
+import { categoryTone, getArticle, getArticles } from "@/lib/articles";
 
-export function generateStaticParams() {
-  return articles.map((a) => ({ slug: a.slug }));
+export const revalidate = 300;
+
+export async function generateStaticParams() {
+  return (await getArticles()).map((a) => ({ slug: a.slug }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/artikel/[slug]">): Promise<Metadata> {
-  const a = getArticle((await params).slug);
-  return a ? { title: a.title, description: a.excerpt, openGraph: { type: "article" } } : { title: "Artikel tidak ditemukan" };
+export async function generateMetadata({
+  params,
+}: PageProps<"/artikel/[slug]">): Promise<Metadata> {
+  const a = await getArticle((await params).slug);
+  return a
+    ? { title: a.title, description: a.excerpt, openGraph: { type: "article" } }
+    : { title: "Artikel tidak ditemukan" };
 }
 
-export default async function ArticlePage({ params }: PageProps<"/artikel/[slug]">) {
-  const a = getArticle((await params).slug);
+export default async function ArticlePage({
+  params,
+}: PageProps<"/artikel/[slug]">) {
+  const a = await getArticle((await params).slug);
   if (!a) notFound();
-  const others = articles.filter((x) => x.slug !== a.slug).slice(0, 2);
+  const others = (await getArticles())
+    .filter((x) => x.slug !== a.slug)
+    .slice(0, 2);
 
   return (
     <article>
@@ -25,12 +35,18 @@ export default async function ArticlePage({ params }: PageProps<"/artikel/[slug]
           <Link href="/artikel" className="hover:text-leaf-700">
             Artikel
           </Link>{" "}
-          / <span className={categoryTone[a.category]}>{a.category}</span>
+          / <span className={categoryTone(a.category)}>{a.category}</span>
         </nav>
-        <h1 className="mt-4 text-4xl leading-tight font-extrabold text-ink sm:text-5xl">{a.title}</h1>
+        <h1 className="mt-4 text-4xl leading-tight font-extrabold text-ink sm:text-5xl">
+          {a.title}
+        </h1>
         <p className="mt-3 text-sm text-muted">
-          {new Date(a.date + "T00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })} ·{" "}
-          {a.readMinutes} menit baca
+          {new Date(a.date + "T00:00").toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}{" "}
+          · {a.readMinutes} menit baca
         </p>
       </div>
 
@@ -53,14 +69,16 @@ export default async function ArticlePage({ params }: PageProps<"/artikel/[slug]
             <p key={i}>{block}</p>
           ),
         )}
-        <div className="not-prose mt-10">
-          <Link
-            href={a.related.href}
-            className="inline-flex h-12 items-center rounded-full bg-leaf-700 px-6 text-base font-bold text-white hover:bg-leaf-900"
-          >
-            {a.related.label} →
-          </Link>
-        </div>
+        {a.related && (
+          <div className="not-prose mt-10">
+            <Link
+              href={a.related.href}
+              className="inline-flex h-12 items-center rounded-full bg-leaf-700 px-6 text-base font-bold text-white hover:bg-leaf-900"
+            >
+              {a.related.label} →
+            </Link>
+          </div>
+        )}
       </div>
 
       {others.length > 0 && (

@@ -1,14 +1,16 @@
 import type { Metadata } from "next";
 import { ArticleCard } from "@/components/ArticleCard";
-import { articles } from "@/lib/articles";
+import { getArticles } from "@/lib/articles";
+
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: "Artikel Edukasi",
   description: "Cerita & tips hidup sehat dari Healthila: manfaat buah, jus cold-pressed, dan ide hadiah sehat.",
 };
 
-export default function ArtikelPage() {
-  const sorted = [...articles].sort((a, b) => b.date.localeCompare(a.date));
+export default async function ArtikelPage() {
+  const sorted = await getArticles();
   return (
     <>
       <section className="bg-leaf-50">
@@ -18,6 +20,7 @@ export default function ArtikelPage() {
         </div>
       </section>
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-12 sm:grid-cols-2 lg:grid-cols-3">
+        {sorted.length === 0 && <p className="col-span-full text-center text-muted">Artikel segera hadir.</p>}
         {sorted.map((a) => (
           <ArticleCard key={a.slug} article={a} />
         ))}

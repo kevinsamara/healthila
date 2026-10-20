@@ -4,14 +4,14 @@ import { ArticleCard } from "@/components/ArticleCard";
 import { CtaBand, HowToOrder, SectionTitle, Testimonials, WhyHealthila } from "@/components/HomeSections";
 import { ProductCard } from "@/components/ProductCard";
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
-import { articles } from "@/lib/articles";
+import { getArticles } from "@/lib/articles";
 import { getProducts, type Product } from "@/lib/catalog";
 import { waLink, type SectionKey } from "@/lib/site";
 
 export const revalidate = 300;
 
 export default async function Home() {
-  const all = await getProducts();
+  const [all, articles] = await Promise.all([getProducts(), getArticles()]);
   // Showcase only what can be ordered today; sold-out items still appear in the catalog.
   const available = all.filter((p) => p.in_stock);
   const promos = available.filter((p) => p.promo_price != null || p.packagings.some((k) => k.promo_price != null));

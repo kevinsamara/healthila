@@ -18,6 +18,7 @@ export function Footer() {
             { href: "/buah-segar", label: "Buah Segar" },
             { href: "/jus-dessert", label: "Jus & Dessert" },
             { href: "/parcel", label: "Parcel & Hampers" },
+            { href: "/lainnya", label: "Lainnya" },
             { href: "/katalog", label: "Semua Produk" },
           ]}
         />

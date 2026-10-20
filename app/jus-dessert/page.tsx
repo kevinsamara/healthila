@@ -12,7 +12,7 @@ export default async function JusDessertPage({ searchParams }: PageProps<"/jus-d
       {...categoryParams(await searchParams)}
       config={{
         path: "/jus-dessert",
-        sections: ["jus", "dessert", "lainnya"],
+        sections: ["jus", "dessert"],
         title: "Jus & Dessert",
         subtitle: "Cold-pressed juice tanpa gula tambahan dan dessert berbahan buah yang ringan di tubuh. Dibuat fresh setiap hari.",
         gradient: "bg-gradient-to-br from-leaf-900 via-leaf-700 to-[#5fcf8f]",

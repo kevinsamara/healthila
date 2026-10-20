@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Badge, ProductCard, ProductImage } from "@/components/ProductCard";
+import { Badge, ProductCard } from "@/components/ProductCard";
+import { ProductGallery } from "@/components/ProductGallery";
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { getProductBySlug, getProducts, type Product } from "@/lib/catalog";
 import { sectionLabel, waLink } from "@/lib/site";
@@ -13,7 +14,7 @@ const SECTION_PAGE: Record<Product["section"], string> = {
   buah: "/buah-segar",
   jus: "/jus-dessert",
   dessert: "/jus-dessert",
-  lainnya: "/jus-dessert",
+  lainnya: "/lainnya",
   parcel: "/parcel",
 };
 
@@ -56,9 +57,9 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
 
         <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-14">
           <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="group relative aspect-square overflow-hidden rounded-[2rem] bg-leaf-50 shadow-sm ring-1 ring-black/5">
-              <ProductImage product={product} sizes="(min-width: 1024px) 45vw, 100vw" priority />
-              <div className="absolute top-4 left-4 flex flex-wrap gap-1.5">
+            <ProductGallery product={product} />
+            {(product.is_new || product.badges.length > 0) && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
                 {product.is_new && <Badge tone="lime">Baru</Badge>}
                 {product.badges.map((b) => (
                   <Badge key={b} tone="sun">
@@ -66,7 +67,7 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
                   </Badge>
                 ))}
               </div>
-            </div>
+            )}
           </div>
 
           <div>

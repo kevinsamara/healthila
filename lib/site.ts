@@ -30,6 +30,7 @@ export const nav = [
   { href: "/buah-segar", label: "Buah Segar" },
   { href: "/jus-dessert", label: "Jus & Dessert" },
   { href: "/parcel", label: "Parcel" },
+  { href: "/lainnya", label: "Lainnya" },
   { href: "/artikel", label: "Artikel" },
   { href: "/tentang", label: "Tentang" },
   { href: "/faq", label: "FAQ" },

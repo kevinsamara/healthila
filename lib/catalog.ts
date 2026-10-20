@@ -17,6 +17,7 @@ export type Packaging = {
   is_default: boolean;
   /** Selling unit of the variant in the CRM (kg, pcs, …). */
   unit: string | null;
+  photo_url: string | null;
 };
 
 export type Product = {

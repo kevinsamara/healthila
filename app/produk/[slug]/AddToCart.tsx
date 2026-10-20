@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/lib/catalog";
@@ -7,8 +8,9 @@ import { addItem } from "@/lib/cart";
 import { qtyLabel, rupiah } from "@/lib/format";
 import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
+import { selectVariant, useSelectedVariant } from "@/lib/variant-store";
 
-type Option = { id: string | null; label: string; price: number | null; was: number | null };
+type Option = { id: string | null; label: string; price: number | null; was: number | null; photo?: string | null };
 
 export function AddToCart({ product }: { product: Product }) {
   const options: Option[] = product.packagings.length
@@ -17,6 +19,7 @@ export function AddToCart({ product }: { product: Product }) {
         label: k.name,
         price: k.promo_price ?? k.price,
         was: k.promo_price != null ? k.price : null,
+        photo: k.photo_url,
       }))
     : [
         {
@@ -27,7 +30,10 @@ export function AddToCart({ product }: { product: Product }) {
         },
       ];
 
-  const [selected, setSelected] = useState(0);
+  // Shared with ProductGallery: picking a variant slides the gallery to its photo.
+  const variantId = useSelectedVariant(product.id, options[0].id);
+  const selected = Math.max(0, options.findIndex((o) => o.id === variantId));
+  const setSelected = (i: number) => selectVariant(product.id, options[i].id);
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   const [note, setNote] = useState("");
@@ -79,10 +85,15 @@ export function AddToCart({ product }: { product: Product }) {
                   setSelected(i);
                   setAdded(false);
                 }}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold ring-1 ${
+                className={`flex items-center gap-2 rounded-xl py-2 text-sm font-semibold ring-1 ${o.photo ? "pr-4 pl-2" : "px-4"} ${
                   i === selected ? "bg-leaf-700 text-white ring-leaf-700" : "bg-white text-ink ring-leaf-200 hover:ring-leaf-500"
                 }`}
               >
+                {o.photo && (
+                  <span className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg">
+                    <Image src={o.photo} alt="" fill sizes="32px" className="object-cover" />
+                  </span>
+                )}
                 {o.label}
                 {o.price != null && <span className="ml-2 font-normal opacity-80">{rupiah(o.price)}</span>}
               </button>
