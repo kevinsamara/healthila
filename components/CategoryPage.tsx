@@ -11,6 +11,8 @@ export type CategoryConfig = {
   /** Tailwind gradient classes for the hero. */
   gradient: string;
   extra?: React.ReactNode;
+  /** Optional call-to-action under the hero subtitle. */
+  heroCta?: { href: string; label: string };
 };
 
 const groupOf = (p: Product) => p.product_group ?? p.category ?? "Lainnya";
@@ -39,6 +41,14 @@ export async function CategoryPage({ config, jenis, tersedia }: { config: Catego
         <div className="relative mx-auto max-w-7xl px-4 py-16 text-center text-white sm:py-24">
           <h1 className="text-5xl font-extrabold sm:text-7xl">{config.title}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-white/90 sm:text-lg">{config.subtitle}</p>
+          {config.heroCta && (
+            <Link
+              href={config.heroCta.href}
+              className="mt-7 inline-flex h-12 items-center rounded-full bg-sun-400 px-7 font-bold text-leaf-900 shadow-lg shadow-black/10 hover:bg-sun-300"
+            >
+              {config.heroCta.label}
+            </Link>
+          )}
         </div>
       </section>
 
