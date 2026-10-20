@@ -10,6 +10,10 @@ export const site = {
   instagram: "https://instagram.com/healthila.id",
   // Google Maps listing "Healthila (Buah Fresh & Parcel Buah Malang)", by CID.
   googleMaps: "https://maps.google.com/?cid=10950299846344208284",
+  // Store pin (from the Maps listing) for the keyless embed on /kontak.
+  mapEmbed:
+    "https://maps.google.com/maps?q=Healthila%20(Buah%20Fresh%20%26%20Parcel%20Buah%20Malang)&ll=-7.9653613,112.6084339&z=16&output=embed",
+  directions: "https://www.google.com/maps/dir/?api=1&destination=-7.9653613,112.6084339",
 };
 
 export type SectionKey = "buah" | "jus" | "dessert" | "parcel" | "lainnya";
