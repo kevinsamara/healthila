@@ -77,8 +77,10 @@ export async function Testimonials() {
   const google = await getGoogleReviews();
   const tones = Object.keys(toneCls) as (keyof typeof toneCls)[];
   // Live Google reviews when configured; otherwise the quotes from the old site.
-  const items: SlideItem[] = google?.reviews.length
-    ? google.reviews.map((r, i) => ({
+  // Only 5-star reviews; the slider shuffles them on every visit.
+  const fiveStar = google?.reviews.filter((r) => r.rating === 5) ?? [];
+  const items: SlideItem[] = fiveStar.length
+    ? fiveStar.map((r, i) => ({
         key: `g${i}`,
         quote: r.text,
         name: r.author,

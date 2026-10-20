@@ -20,7 +20,13 @@ const toneCls = {
 };
 
 /** Swipeable testimonial carousel: 1 card on phones, 2 on tablet, 3 on desktop. Auto-advances. */
-export function TestimonialSlider({ items }: { items: SlideItem[] }) {
+export function TestimonialSlider({ items: initial }: { items: SlideItem[] }) {
+  // The page is cached, so shuffle in the browser: a new order on every refresh.
+  const [items, setItems] = useState(initial);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- shuffle once after hydration
+    setItems(shuffle(initial));
+  }, [initial]);
   const track = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(0);
   const [pages, setPages] = useState(1);
@@ -147,4 +153,13 @@ function NavButton({ label, onClick, children }: { label: string; onClick: () =>
       {children}
     </button>
   );
+}
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }
