@@ -46,8 +46,9 @@ async function googleError(res: Response) {
 
 /** Full lookup with the step that failed — used by the page and the status route. */
 export async function loadGoogleReviews(opts: Fetch = { next: { revalidate: TTL } }): Promise<ReviewsStatus> {
-  const key = process.env.GOOGLE_PLACES_API_KEY;
-  if (!key) return { ok: false, step: "no_key", message: "GOOGLE_PLACES_API_KEY belum di-set" };
+  // Same name as the CRM works too (GOOGLE_MAPS_API_KEY); the key needs Places API (New).
+  const key = process.env.GOOGLE_PLACES_API_KEY || process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) return { ok: false, step: "no_key", message: "GOOGLE_PLACES_API_KEY / GOOGLE_MAPS_API_KEY belum di-set" };
   try {
     let placeId = process.env.GOOGLE_PLACE_ID || null;
     if (!placeId) {
