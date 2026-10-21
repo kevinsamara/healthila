@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { site } from "@/lib/site";
-import { testimonials } from "@/lib/testimonials";
+import { getTestimonials } from "@/lib/testimonials";
 import { TestimonialSlider, type SlideItem } from "./TestimonialSlider";
 
 export function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -74,32 +74,34 @@ const toneCls = {
 };
 
 export async function Testimonials() {
-  const google = await getGoogleReviews();
+  const [google, curated] = await Promise.all([getGoogleReviews(), getTestimonials()]);
   const tones = Object.keys(toneCls) as (keyof typeof toneCls)[];
-  // Live Google reviews when configured; otherwise the quotes from the old site.
-  // Only 5-star reviews; the slider shuffles them on every visit.
-  const fiveStar = google?.reviews.filter((r) => r.rating === 5) ?? [];
-  const items: SlideItem[] = fiveStar.length
-    ? fiveStar.map((r, i) => ({
-        key: `g${i}`,
-        quote: r.text,
-        name: r.author,
-        sub: r.when,
-        rating: r.rating,
-        href: r.authorUri,
-        tone: tones[i % tones.length],
-        google: true,
-      }))
-    : testimonials.map((t, i) => ({
-        key: `s${i}`,
-        quote: t.quote,
-        name: t.name,
-        sub: t.city,
-        rating: 5,
-        href: null,
-        tone: t.tone,
-        google: false,
-      }));
+  // Live Google reviews (only the 5 Google picks) + reviews curated in the CRM
+  // (old and new); 5-star only, de-duplicated, shuffled per visit by the slider.
+  const key = (name: string, quote: string) => `${name.trim().toLowerCase()}|${quote.trim().slice(0, 40).toLowerCase()}`;
+  const seen = new Set<string>();
+  const pool: Omit<SlideItem, "tone" | "key">[] = [];
+  for (const r of google?.reviews ?? []) {
+    if (r.rating !== 5 || seen.has(key(r.author, r.text))) continue;
+    seen.add(key(r.author, r.text));
+    pool.push({ quote: r.text, name: r.author, sub: r.when, rating: 5, href: r.authorUri, google: true });
+  }
+  for (const t of curated) {
+    if (t.rating !== 5 || seen.has(key(t.name, t.quote))) continue;
+    seen.add(key(t.name, t.quote));
+    const when = t.review_date
+      ? new Date(t.review_date + "T00:00").toLocaleDateString("id-ID", { month: "long", year: "numeric" })
+      : null;
+    pool.push({
+      quote: t.quote,
+      name: t.name,
+      sub: [t.city, when].filter(Boolean).join(" · "),
+      rating: 5,
+      href: t.link,
+      google: t.source === "google",
+    });
+  }
+  const items: SlideItem[] = pool.map((p, i) => ({ ...p, key: `t${i}`, tone: tones[i % tones.length] }));
   const mapsHref = google?.mapsUri ?? site.googleMaps;
 
   return (

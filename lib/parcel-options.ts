@@ -19,7 +19,7 @@ export const PARCEL_CONTAINERS: ParcelContainer[] = [
   { key: "tas-medium", label: "Tas Jinjing Medium", group: "Tas Jinjing", desc: "Simpel untuk kunjungan", start: 100_000, shape: "tas", crmMatch: /tas jinjing/i },
   { key: "tas-coldpressed", label: "Tas Jinjing Coldpressed", group: "Tas Jinjing", desc: "Isi jus cold-pressed", start: 125_000, shape: "tas" },
   { key: "tas-large", label: "Tas Jinjing Large", group: "Tas Jinjing", desc: "Lebih lega, buah lebih banyak", start: 150_000, shape: "tas" },
-  { key: "box-mika", label: "Box Mika Jinjing", group: "Box", desc: "Box bening dengan tali", start: 150_000, shape: "box", crmMatch: /box jinjing/i },
+  { key: "box-mika", label: "Box Mika Jinjing", group: "Box", desc: "Box bening dengan tali", start: 125_000, shape: "box", crmMatch: /box jinjing/i },
   { key: "besek", label: "Besek Jinjing", group: "Box", desc: "Anyaman bambu tradisional", start: 150_000, shape: "keranjang" },
   { key: "fruit-in-box", label: "Fruit in Box", group: "Box", desc: "Box 22×22 rapi & elegan", start: 200_000, shape: "box", crmMatch: /fruit in box/i },
   { key: "freshness", label: "Parcel Freshness", group: "Keranjang", desc: "Keranjang rotan ukuran kecil", start: 250_000, shape: "keranjang", crmMatch: /freshness/i },
