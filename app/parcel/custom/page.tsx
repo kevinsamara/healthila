@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { ParcelBuilder, type ContainerOption, type FruitGroup } from "@/components/parcel/ParcelBuilder";
+import { ParcelBuilder, type FruitGroup } from "@/components/parcel/ParcelBuilder";
 import { getProducts } from "@/lib/catalog";
 import { productEmoji } from "@/lib/emoji";
 import { fruitArt } from "@/lib/fruit-art";
-import { PARCEL_CONTAINERS } from "@/lib/parcel-options";
+import { getFruitArt, getParcelContainers } from "@/lib/parcel-visuals";
 
 export const metadata: Metadata = {
   title: "Rancang Parcel Custom",
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const revalidate = 300;
 
 export default async function ParcelCustomPage() {
-  const products = await getProducts();
+  const [products, art] = await Promise.all([getProducts(), getFruitArt()]);
 
   // Fruit types in stock with their specific varieties; ops decide quantities.
   const byGroup = new Map<string, { id: string; name: string }[]>();
@@ -26,17 +26,15 @@ export default async function ParcelCustomPage() {
     .map(([name, items]) => ({
       name,
       emoji: productEmoji(name),
-      art: fruitArt(name),
-      items: items.sort((a, b) => a.name.localeCompare(b.name, "id")),
+      // Uploaded real PNG first, then the 3D illustration.
+      art: art.byGroup.get(name.toLowerCase()) ?? fruitArt(name),
+      items: items.sort((a, b) => a.name.localeCompare(b.name, "id")).map((i) => ({ ...i, art: art.byProduct.get(i.id) ?? null })),
     }));
 
-  // Real photos of each container from the CRM parcel products.
+  // Containers, prices and PNG layers from Healthila OS; static list as fallback
+  // (with photos matched from the CRM parcel products).
   const parcels = products.filter((p) => p.section === "parcel" && p.photo_url);
-  // RegExp can't cross to the client component, so it's dropped here.
-  const containers: ContainerOption[] = PARCEL_CONTAINERS.map(({ crmMatch, ...c }) => ({
-    ...c,
-    photo: crmMatch ? (parcels.find((p) => crmMatch.test(p.name))?.photo_url ?? null) : null,
-  }));
+  const containers = await getParcelContainers((c) => parcels.find((p) => c.crmMatch?.test(p.name))?.photo_url ?? null);
 
   return (
     <>

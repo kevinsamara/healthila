@@ -3,12 +3,13 @@ import type { ShapeKey } from "@/components/parcel/ParcelVisual";
 /**
  * Parcel containers for /parcel/custom with "start from" prices (Healthila
  * Gifts catalog + owner's price list, Oct 2026). `crmMatch` finds the CRM
- * parcel product whose photo is shown on the option.
+ * parcel product whose photo is shown on the option. Fallback only — the live
+ * list is edited in Healthila OS › Website › Parcel (web_parcel_containers).
  */
 export type ParcelContainer = {
   key: string;
   label: string;
-  group: "Tas Jinjing" | "Box" | "Keranjang" | "Platter & Cake";
+  group: string;
   desc: string;
   start: number;
   shape: ShapeKey;

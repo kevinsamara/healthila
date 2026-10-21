@@ -8,10 +8,23 @@ import { rupiah } from "@/lib/format";
 import { CARD_STYLES, RIBBON_EXTRA, RIBBON_FREE, type ParcelContainer } from "@/lib/parcel-options";
 import { waLink } from "@/lib/site";
 import { WhatsAppIcon } from "../WhatsAppFab";
+import { ParcelPhotoVisual } from "./ParcelPhotoVisual";
 import { ParcelVisual } from "./ParcelVisual";
+import type { FillArea } from "@/lib/parcel-composite";
 
-export type ContainerOption = Omit<ParcelContainer, "crmMatch"> & { photo: string | null };
-export type FruitGroup = { name: string; emoji: string; art: string | null; items: { id: string; name: string }[] };
+export type ContainerOption = Omit<ParcelContainer, "crmMatch"> & {
+  photo: string | null;
+  /** Real PNG layers uploaded in Healthila OS; without `back` the SVG illustration is used. */
+  back: string | null;
+  front: string | null;
+  fill: FillArea;
+};
+export type FruitGroup = {
+  name: string;
+  emoji: string;
+  art: string | null;
+  items: { id: string; name: string; art: string | null }[];
+};
 
 const RIBBONS = [
   { name: RIBBON_FREE, hex: "#d71920" },
@@ -77,12 +90,13 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
   const budgetValue = budget ?? (Number(customBudget.replace(/\D/g, "")) || null);
   const budgetOk = !!budgetValue && budgetValue >= minPrice;
 
-  // One 3D fruit per picked item, using its fruit type's illustration.
+  // One fruit per picked item: the variety's own PNG, else its fruit type's.
   const visualFruits = useMemo(
     () =>
       picked.map((p) => {
         const g = fruits.find((f) => p === f.name + ANY || f.items.some((i) => i.name === p));
-        return { emoji: g?.emoji ?? "🍎", art: g?.art ?? null };
+        const item = g?.items.find((i) => i.name === p);
+        return { emoji: g?.emoji ?? "🍎", art: item?.art ?? g?.art ?? null };
       }),
     [picked, fruits],
   );
@@ -486,12 +500,23 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
       <aside className="order-first lg:sticky lg:top-24 lg:order-none">
         <div className="overflow-hidden rounded-3xl bg-gradient-to-b from-plum-50 to-white p-4 shadow-sm ring-1 ring-black/5">
           <div className="aspect-[10/9]">
-            <ParcelVisual
-              shape={container.shape}
-              fruits={visualFruits}
-              ribbon={ribbon.hex}
-              card={cardStyle === "none" ? null : card.message.trim() || null}
-            />
+            {container.back ? (
+              <ParcelPhotoVisual
+                back={container.back}
+                front={container.front}
+                fill={container.fill}
+                fruits={visualFruits}
+                ribbon={ribbon.hex}
+                card={cardStyle === "none" ? null : card.message.trim() || null}
+              />
+            ) : (
+              <ParcelVisual
+                shape={container.shape}
+                fruits={visualFruits}
+                ribbon={ribbon.hex}
+                card={cardStyle === "none" ? null : card.message.trim() || null}
+              />
+            )}
           </div>
           <div className="mt-2 flex flex-wrap justify-center gap-1.5 text-xs">
             <Tag>{container.label}</Tag>
