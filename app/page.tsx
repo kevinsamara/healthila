@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArticleCard } from "@/components/ArticleCard";
-import { HeroCarousel } from "@/components/HeroCarousel";
+import { HeroCarousel, type HeroPhoto, type HeroSlide } from "@/components/HeroCarousel";
 import { CtaBand, HowToOrder, SectionTitle, Testimonials, WhyHealthila } from "@/components/HomeSections";
 import { ProductCard } from "@/components/ProductCard";
-import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { getArticles } from "@/lib/articles";
 import { getProducts, type Product } from "@/lib/catalog";
 import { waLink, type SectionKey } from "@/lib/site";
@@ -55,37 +54,7 @@ export default async function Home() {
 
   return (
     <>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-leaf-700 text-white">
-        <div className="pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-white/5" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 py-16 md:grid-cols-2 md:py-24">
-          <div>
-            <p className="inline-block rounded-full bg-lime-400 px-3 py-1 text-xs font-bold tracking-wide text-leaf-900 uppercase">
-              fruitful heart, eating smart
-            </p>
-            <h1 className="mt-5 text-5xl leading-[1.05] font-extrabold sm:text-7xl">
-              Buah segar pilihan, diantar ke rumah Kakak di Malang.
-            </h1>
-            <p className="mt-5 max-w-md text-lg text-leaf-100">
-              Buah lokal & impor, jus cold-pressed, dessert, dan parcel buah. Pesan online, konfirmasi cepat via WhatsApp.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/katalog" className="flex h-13 items-center rounded-full bg-sun-400 px-7 font-bold text-leaf-900 hover:bg-sun-300">
-                Order Sekarang
-              </Link>
-              <a
-                href={waLink("Halo Healthila, saya mau tanya produk")}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-13 items-center gap-2 rounded-full border border-white/40 px-6 font-semibold hover:bg-white/10"
-              >
-                <WhatsAppIcon className="h-5 w-5" /> Chat WhatsApp
-              </a>
-            </div>
-          </div>
-          <HeroCollage products={available.filter((p) => p.photo_url)} />
-        </div>
-      </section>
+      <HeroCarousel slides={heroSlides(available)} />
 
       {/* Category banners */}
       <section className="mx-auto max-w-7xl px-4 py-16">
@@ -164,16 +133,53 @@ function pick(base: Product[], priority: Product[], n: number) {
   return out;
 }
 
-function HeroCollage({ products }: { products: Product[] }) {
-  if (products.length < 4) {
-    return (
-      <div className="flex justify-center">
-        <Image src="/healthila-logo.png" alt="Healthila" width={300} height={300} className="rounded-full" priority />
-      </div>
-    );
-  }
-  // Every in-stock product with a photo is a candidate; the carousel picks 12 at random.
-  return <HeroCarousel pool={products.map((p) => ({ id: p.id, slug: p.slug, name: p.name, photo: p.photo_url! }))} />;
+/** Hero slides: one per main category, each with photos from that category. */
+function heroSlides(available: Product[]): HeroSlide[] {
+  const photos = (keys: SectionKey[]): HeroPhoto[] =>
+    available
+      .filter((p) => keys.includes(p.section) && p.photo_url)
+      .map((p) => ({ id: p.id, slug: p.slug, name: p.name, photo: p.photo_url! }));
+  const slides: HeroSlide[] = [
+    {
+      key: "buah",
+      bg: "bg-leaf-700",
+      badge: "fruitful heart, eating smart",
+      badgeClass: "bg-lime-400 text-leaf-900",
+      heading: "Buah segar pilihan, diantar ke rumah Kakak di Malang.",
+      text: "Buah lokal & impor, disortir setiap pagi. Pesan online, konfirmasi cepat via WhatsApp.",
+      textClass: "text-leaf-100",
+      cta: { href: "/buah-segar", label: "Order Sekarang", className: "bg-sun-400 text-leaf-900 hover:bg-sun-300" },
+      whatsapp: waLink("Halo Healthila, saya mau tanya produk"),
+      photos: photos(["buah"]),
+    },
+    {
+      key: "jus",
+      bg: "bg-gradient-to-br from-sun-400 via-[#ff8a3d] to-coral-500",
+      badge: "Dibuat fresh setiap hari",
+      badgeClass: "bg-white text-coral-500",
+      heading: "Jus cold-pressed & dessert buah, tanpa gula tambahan.",
+      text: "Diperas dari buah segar pilihan, plus dessert buah yang ringan untuk teman santai. Siap diantar se-Malang.",
+      textClass: "text-white/90",
+      cta: { href: "/jus-dessert", label: "Lihat Jus & Dessert", className: "bg-leaf-900 text-white hover:bg-leaf-700" },
+      whatsapp: waLink("Halo Healthila, saya mau pesan jus / dessert"),
+      photos: photos(["jus", "dessert"]),
+    },
+    {
+      key: "parcel",
+      bg: "bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500",
+      badge: "Parcel & hampers buah",
+      badgeClass: "bg-sun-400 text-plum-700",
+      heading: "Parcel buah & hampers untuk setiap momen.",
+      text: "Ulang tahun, jenguk, lamaran, hari raya — dirangkai elegan, bisa custom isi dan budget.",
+      textClass: "text-white/90",
+      cta: { href: "/parcel", label: "Lihat Parcel", className: "bg-sun-400 text-leaf-900 hover:bg-sun-300" },
+      secondary: { href: "/parcel/custom", label: "Rancang Parcel" },
+      whatsapp: waLink("Halo Healthila, saya mau tanya parcel"),
+      photos: photos(["parcel"]),
+    },
+  ];
+  // Keep the buah slide (it carries the h1); drop others without photos.
+  return slides.filter((sl, i) => i === 0 || sl.photos.length >= 2);
 }
 
 /** Plain-language copy for "toko buah malang", "parcel malang" & co. searches. */
