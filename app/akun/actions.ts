@@ -10,6 +10,13 @@ export type Reminder = { id: string; label: string; recipient: string | null; mo
 export type Subscription = {
   id: string;
   code: string;
+  kind: string;
+  title: string | null;
+  unit_label: string | null;
+  quantity: number | null;
+  weekdays: number[];
+  audience: string | null;
+  pax: number | null;
   budget_idr: number;
   interval_weeks: number;
   weekday: number;

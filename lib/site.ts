@@ -38,6 +38,7 @@ export const nav = [
   { href: "/buah-segar", label: "Buah Segar" },
   { href: "/jus-dessert", label: "Jus & Dessert" },
   { href: "/parcel", label: "Parcel" },
+  { href: "/langganan", label: "Langganan" },
   { href: "/lainnya", label: "Lainnya" },
   { href: "/artikel", label: "Artikel" },
   { href: "/tentang", label: "Tentang" },

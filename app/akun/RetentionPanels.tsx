@@ -115,15 +115,19 @@ export function SubscriptionsPanel({ initial }: { initial: Subscription[] }) {
             <li key={s.id} className="rounded-2xl bg-white p-4 text-sm ring-1 ring-leaf-100">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <b className="text-ink">
-                  Paket {rupiah(s.budget_idr)} · {s.interval_weeks === 2 ? "2 minggu sekali" : "tiap minggu"}
+                  {s.title ?? "Langganan"}
+                  {s.quantity ? ` ${s.quantity} ${s.unit_label ?? ""}` : ""} · {rupiah(s.budget_idr)}/kiriman
                 </b>
                 <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${s.status === "active" ? "bg-lime-100 text-leaf-900" : "bg-sun-300/40 text-ink"}`}>
                   {s.status === "active" ? "Aktif" : "Dijeda"}
                 </span>
               </div>
               <p className="mt-1 text-muted">
-                Tiap {DAYS[s.weekday]}
-                {s.slot ? ` ${SLOTS[s.slot].toLowerCase()}` : ""} · {s.code}
+                {s.interval_weeks === 2 ? "2 minggu sekali, " : "Tiap "}
+                {(s.weekdays?.length ? s.weekdays : [s.weekday]).map((d) => DAYS[d]).join(", ")}
+                {s.slot ? ` ${SLOTS[s.slot].toLowerCase()}` : ""}
+                {s.audience ? ` · ${s.audience}` : ""}
+                {s.pax ? ` · ${s.pax} pax` : ""} · {s.code}
                 {s.status === "active" && (
                   <>
                     {" "}

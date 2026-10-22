@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getAccount, type AccountOrder } from "@/lib/session";
 import { rupiah } from "@/lib/format";
 import { logout } from "../masuk/actions";
+import { getProfile } from "@/lib/profile";
 import { manageReminders, manageSubscriptions } from "./actions";
 import { RemindersPanel, SubscriptionsPanel } from "./RetentionPanels";
 
@@ -12,7 +13,7 @@ export const metadata: Metadata = { title: "Akun Saya", robots: { index: false }
 export default async function AkunPage() {
   const account = await getAccount();
   if (!account) redirect("/masuk?next=/akun");
-  const [reminders, subscriptions] = await Promise.all([manageReminders("list"), manageSubscriptions("list")]);
+  const [reminders, subscriptions, profile] = await Promise.all([manageReminders("list"), manageSubscriptions("list"), getProfile()]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -22,6 +23,15 @@ export default async function AkunPage() {
             {account.name ? `Halo, ${account.name.split(" ")[0]}` : "Akun Saya"}
           </h1>
           <p className="mt-1 text-muted">WhatsApp {account.phone}</p>
+          <p className="mt-1 text-sm text-muted">
+            🎂{" "}
+            {profile?.birth_date
+              ? new Date(profile.birth_date + "T00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+              : "Tanggal lahir belum diisi"}{" "}
+            <Link href="/profil/tanggal-lahir?next=/akun" className="font-semibold text-leaf-700 underline">
+              {profile?.birth_date ? "ubah" : "isi untuk voucher ulang tahun"}
+            </Link>
+          </p>
         </div>
         <form action={logout}>
           <button className="rounded-full border border-leaf-200 px-4 py-2 text-sm font-semibold text-muted hover:text-plum-700">

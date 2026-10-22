@@ -34,7 +34,7 @@ export function LoginForm({ next }: { next: string }) {
         setError(res.error);
         return;
       }
-      router.replace(next);
+      router.replace(res.askBirthDate ? `/profil/tanggal-lahir?next=${encodeURIComponent(next)}` : next);
       router.refresh();
     });
   }

@@ -32,7 +32,7 @@ export async function requestOtp(rawPhone: string): Promise<Result> {
   }
 }
 
-export async function verifyOtp(phone: string, code: string): Promise<{ ok: false; error: string } | { ok: true }> {
+export async function verifyOtp(phone: string, code: string): Promise<{ ok: false; error: string } | { ok: true; askBirthDate: boolean }> {
   if (!/^\+[1-9]\d{7,14}$/.test(phone) || !/^\d{6}$/.test(code.trim())) {
     return { ok: false, error: "Masukkan 6 digit kode dari WhatsApp." };
   }
@@ -42,7 +42,13 @@ export async function verifyOtp(phone: string, code: string): Promise<{ ok: fals
       p_code: code.trim(),
     });
     await startSession(token, expires_in);
-    return { ok: true };
+    // First login: ask the birth date once (birthday voucher).
+    const profile = await webRpc<{ birth_date: string | null; asked: boolean }>("web_profile_manage", {
+      p_session_token: token,
+      p_action: "get",
+      p: {},
+    }).catch(() => null);
+    return { ok: true, askBirthDate: !!profile && !profile.asked && !profile.birth_date };
   } catch (e) {
     return { ok: false, error: e instanceof WebRpcError ? e.message : "Terjadi kesalahan, silakan coba lagi." };
   }
