@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import type { Product } from "@/lib/catalog";
-import { productEmoji } from "@/lib/emoji";
+import { FruitGlyph } from "@/lib/icons";
 import { selectVariant, useSelectedVariant } from "@/lib/variant-store";
 
 type Slide = { url: string; label: string | null; variantId: string | null };
@@ -56,8 +56,8 @@ export function ProductGallery({ product }: { product: Product }) {
   if (slides.length === 0) {
     return (
       <div className={`flex aspect-square items-center justify-center rounded-[2rem] bg-leaf-50 ring-1 ring-black/5 ${dim}`}>
-        <span className="flex aspect-square w-1/2 items-center justify-center rounded-full bg-leaf-100/70 text-8xl">
-          {productEmoji(product.product_group, product.category, product.name)}
+        <span className="flex aspect-square w-1/2 items-center justify-center rounded-full bg-leaf-100/70 text-leaf-700">
+          <FruitGlyph hints={[product.product_group, product.category, product.name]} className="h-1/2 w-1/2" strokeWidth={1.5} />
         </span>
       </div>
     );

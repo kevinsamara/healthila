@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/catalog";
-import { productEmoji } from "@/lib/emoji";
+import { FruitGlyph } from "@/lib/icons";
 import { rupiah } from "@/lib/format";
 import { cardUnit, displayPrice } from "@/lib/price";
 import { QuickAdd } from "./QuickAdd";
@@ -90,8 +90,8 @@ export function ProductImage({ product, sizes, priority }: { product: Product; s
   }
   return (
     <div className={`flex h-full items-center justify-center ${product.in_stock ? "" : "opacity-50 grayscale"}`}>
-      <span className="flex aspect-square w-1/2 items-center justify-center rounded-full bg-leaf-100/70 text-[clamp(2.5rem,7vw,5rem)]">
-        {productEmoji(product.product_group, product.category, product.name)}
+      <span className="flex aspect-square w-1/2 items-center justify-center rounded-full bg-leaf-100/70 text-leaf-700">
+        <FruitGlyph hints={[product.product_group, product.category, product.name]} className="h-1/2 w-1/2" strokeWidth={1.5} />
       </span>
     </div>
   );

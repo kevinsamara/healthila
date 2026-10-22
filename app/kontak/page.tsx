@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { site, waLink } from "@/lib/site";
+import { Clock, MapPin } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Lokasi Toko Buah Healthila Malang",
@@ -67,7 +68,7 @@ export default async function KontakPage() {
 
           <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
             <p className="flex items-center gap-2 text-sm font-medium text-muted">
-              📍 Lokasi toko
+              <MapPin className="h-4 w-4" /> Lokasi toko
             </p>
             <p className="mt-2 text-lg font-semibold text-ink">
               {place?.address ?? "Healthila — Buah Fresh & Parcel Buah Malang"}
@@ -94,7 +95,9 @@ export default async function KontakPage() {
 
           {place && place.hours.length > 0 && (
             <div className="rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-              <p className="text-sm font-medium text-muted">🕒 Jam buka</p>
+              <p className="flex items-center gap-2 text-sm font-medium text-muted">
+                <Clock className="h-4 w-4" /> Jam buka
+              </p>
               <ul className="mt-3 space-y-1.5 text-sm">
                 {place.hours.map((line, i) => {
                   const [day, ...rest] = line.split(": ");

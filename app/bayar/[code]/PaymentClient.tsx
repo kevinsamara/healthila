@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { rupiah } from "@/lib/format";
 import { uploadPaymentProof } from "./actions";
+import { Camera, CircleCheck } from "lucide-react";
 
 export function CopyAmount({ amount }: { amount: number }) {
   const [copied, setCopied] = useState(false);
@@ -20,7 +21,7 @@ export function CopyAmount({ amount }: { amount: number }) {
       title="Salin nominal"
     >
       <span className="text-4xl font-extrabold text-leaf-900">{rupiah(amount)}</span>
-      <span className="ml-2 align-middle text-xs font-semibold text-leaf-700">{copied ? "✓ disalin" : "salin"}</span>
+      <span className="ml-2 align-middle text-xs font-semibold text-leaf-700">{copied ? "disalin" : "salin"}</span>
     </button>
   );
 }
@@ -93,11 +94,13 @@ export function ProofUpload({ code, k, submitted }: { code: string; k: string | 
     <div className="mx-auto mt-6 max-w-sm rounded-2xl bg-leaf-50 p-4">
       {done && (
         <p className="mb-3 rounded-xl bg-white px-3 py-2 text-sm text-leaf-900">
-          ✅ Bukti bayar terkirim. Admin akan mengecek mutasi dan mengonfirmasi lewat WhatsApp. Salah upload? Kirim ulang di bawah.
+          <CircleCheck className="mr-1 inline h-4 w-4 text-leaf-700 align-[-3px]" />
+          Bukti bayar terkirim. Admin akan mengecek mutasi dan mengonfirmasi lewat WhatsApp. Salah upload? Kirim ulang di bawah.
         </p>
       )}
       <label className="block cursor-pointer rounded-xl border border-dashed border-leaf-300 bg-white px-3 py-3 text-center text-sm text-leaf-700 hover:border-leaf-500">
-        {file ? file.name : done ? "Ganti bukti bayar" : "📷 Pilih screenshot bukti bayar"}
+        {!file && <Camera className="mr-1.5 inline h-4 w-4 align-[-3px]" />}
+        {file ? file.name : done ? "Ganti bukti bayar" : "Pilih screenshot bukti bayar"}
         <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
       </label>
       {error && <p className="mt-2 text-sm font-medium text-plum-700">{error}</p>}

@@ -10,6 +10,7 @@ import { trackEvent } from "@/lib/analytics";
 import { jakartaNow, sameDayCutoff, slotOpen, slotTime, type DeliverySlot } from "@/lib/delivery";
 import { FREE_SHIPPING, waLink } from "@/lib/site";
 import { checkVoucher, estimateShipping, getCheckoutProfile, placeOrder } from "./actions";
+import { AlarmClock, Cake, Ticket, Truck } from "lucide-react";
 
 type Form = { name: string; phone: string; address: string; date: string; notes: string; slot: number | null };
 type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string; freeShippingMax: number | null };
@@ -181,7 +182,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
       <form onSubmit={checkout} className="h-fit rounded-3xl bg-white p-6 ring-1 ring-leaf-100">
         <h2 className="text-lg font-bold text-ink">Detail pesanan</h2>
         {profile ? (
-          <Field label="No. WhatsApp pemesan" hint="✓ Terverifikasi — pesanan tersimpan di akun Anda.">
+          <Field label="No. WhatsApp pemesan" hint="Terverifikasi — pesanan tersimpan di akun Anda.">
             <input value={profile.phone} readOnly className={`${input} bg-leaf-50 text-muted`} />
           </Field>
         ) : (
@@ -310,7 +311,10 @@ function VoucherField({
   if (applied)
     return (
       <p className="mt-3 flex items-center justify-between rounded-xl bg-lime-100 px-3 py-2 text-xs font-medium text-leaf-900">
-        🎟️ Voucher {applied.code} terpakai
+        <span>
+          <Ticket className="mr-1 inline h-4 w-4 align-[-3px]" />
+          Voucher {applied.code} terpakai
+        </span>
         <button type="button" onClick={() => onApply(null)} className="text-plum-700 underline">
           hapus
         </button>
@@ -418,7 +422,7 @@ function FreeShippingNote({ left }: { left: number | null | undefined }) {
   if (left === 0) return null;
   return (
     <p className="mt-3 rounded-xl bg-lime-100 px-3 py-2 text-xs font-medium text-leaf-900">
-      🚚{" "}
+      <Truck className="mr-1 inline h-4 w-4 align-[-3px]" />
       {left != null ? (
         <>
           Pesanan ini dapat <b>FREE ONGKIR s.d. {rupiah(FREE_SHIPPING.max)}</b> — sisa {left}× lagi untuk nomor Kakak.
@@ -443,7 +447,8 @@ function OrderPlaced({ done }: { done: Done }) {
       </p>
       {done.freeShippingMax ? (
         <p className="mt-4 rounded-2xl bg-lime-100 px-4 py-2.5 text-sm font-semibold text-leaf-900">
-          🚚 Pesanan ini dapat FREE ONGKIR s.d. {rupiah(done.freeShippingMax)}
+          <Truck className="mr-1.5 inline h-4 w-4 align-[-3px]" />
+          Pesanan ini dapat FREE ONGKIR s.d. {rupiah(done.freeShippingMax)}
         </p>
       ) : null}
       <a
@@ -455,7 +460,9 @@ function OrderPlaced({ done }: { done: Done }) {
         Kirim ke WhatsApp
       </a>
       <div className="mt-6 rounded-2xl bg-leaf-50 p-4 text-left text-sm">
-        <p className="font-semibold text-ink">Biar tidak lupa momen berikutnya 🎂</p>
+        <p className="font-semibold text-ink"><Cake className="mr-1.5 inline h-4 w-4 align-[-3px]" />
+          Biar tidak lupa momen berikutnya
+        </p>
         <p className="mt-1 text-muted">Simpan tanggal ulang tahun atau anniversary — kami ingatkan via WhatsApp 3 hari sebelumnya.</p>
         <Link href="/akun#pengingat" className="mt-2 inline-block font-semibold text-leaf-700 underline">
           Atur pengingat
@@ -548,7 +555,8 @@ function SlotPicker({
       <p className="mt-1.5 text-xs text-muted">
         {cutoff ? (
           <>
-            ⏰ Pesan sebelum <b className="text-ink">{cutoff}</b> WIB bisa diantar hari ini.
+            <AlarmClock className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+            Pesan sebelum <b className="text-ink">{cutoff}</b> WIB bisa diantar hari ini.
           </>
         ) : (
           "Pengantaran hari ini sudah tutup — pesanan dikirim besok atau di tanggal pilihan Kakak."

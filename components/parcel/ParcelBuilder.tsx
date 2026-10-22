@@ -1,6 +1,27 @@
 "use client";
 
 import Image from "next/image";
+import {
+  BadgeCheck,
+  Bird,
+  Building2,
+  Cake,
+  Check,
+  Flower2,
+  Gift,
+  HandHeart,
+  Heart,
+  LampWallUp,
+  Layers,
+  type LucideIcon,
+  Moon,
+  ShoppingBag,
+  ShoppingBasket,
+  Sparkles,
+  TreePine,
+  UtensilsCrossed,
+} from "lucide-react";
+import { DynIcon, FruitGlyph } from "@/lib/icons";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { submitParcelRequest } from "@/app/parcel/custom/actions";
 import { getCheckoutProfile } from "@/app/keranjang/actions";
@@ -38,18 +59,20 @@ const RIBBONS = [
   { name: "Cokelat", hex: "#8a5523" },
 ];
 
-const OCCASIONS = [
-  { label: "Ulang Tahun", icon: "🎂" },
-  { label: "Get Well Soon", icon: "💐" },
-  { label: "Lebaran / Hari Raya", icon: "🌙" },
-  { label: "Imlek", icon: "🏮" },
-  { label: "Natal", icon: "🎄" },
-  { label: "Anniversary", icon: "💞" },
-  { label: "Terima Kasih", icon: "🙏" },
-  { label: "Corporate / Kantor", icon: "🏢" },
-  { label: "Duka Cita", icon: "🕊️" },
-  { label: "Lainnya", icon: "✨" },
+const OCCASIONS: { label: string; icon: LucideIcon }[] = [
+  { label: "Ulang Tahun", icon: Cake },
+  { label: "Get Well Soon", icon: Flower2 },
+  { label: "Lebaran / Hari Raya", icon: Moon },
+  { label: "Imlek", icon: LampWallUp },
+  { label: "Natal", icon: TreePine },
+  { label: "Anniversary", icon: Heart },
+  { label: "Terima Kasih", icon: HandHeart },
+  { label: "Corporate / Kantor", icon: Building2 },
+  { label: "Duka Cita", icon: Bird },
+  { label: "Lainnya", icon: Sparkles },
 ];
+
+const SHAPE_ICON: Record<string, LucideIcon> = { tas: ShoppingBag, box: Gift, tower: Layers, plate: UtensilsCrossed, keranjang: ShoppingBasket };
 
 const STEPS = ["Wadah", "Acara", "Budget", "Buah", "Pita", "Ucapan", "Kirim"] as const;
 const ANY = " (apa saja)";
@@ -97,7 +120,7 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
       picked.map((p) => {
         const g = fruits.find((f) => p === f.name + ANY || f.items.some((i) => i.name === p));
         const item = g?.items.find((i) => i.name === p);
-        return { emoji: g?.emoji ?? "🍎", art: item?.art ?? g?.art ?? null };
+        return { emoji: "", art: item?.art ?? g?.art ?? null };
       }),
     [picked, fruits],
   );
@@ -183,7 +206,7 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
                 }`}
               >
                 <span className={`flex h-5 w-5 items-center justify-center rounded-full text-xs ${i === step ? "bg-white/20" : "bg-black/5"}`}>
-                  {i < step ? "✓" : i + 1}
+                  {i < step ? <Check className="h-3 w-3" strokeWidth={3} /> : i + 1}
                 </span>
                 {s}
               </button>
@@ -219,9 +242,7 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
                               {c.photo ? (
                                 <Image src={c.photo} alt="" fill sizes="64px" className="object-cover" />
                               ) : (
-                                <span className="flex h-full items-center justify-center text-3xl">
-                                  {c.shape === "tas" ? "🛍️" : c.shape === "box" ? "🎁" : c.shape === "tower" ? "🗼" : c.shape === "plate" ? "🍽️" : "🧺"}
-                                </span>
+                                <ShapeIcon shape={c.shape} />
                               )}
                             </span>
                             <span className="min-w-0">
@@ -316,7 +337,8 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
                       {open && (
                         <div className="flex flex-wrap gap-2 px-3 pb-3">
                           <Pill on={picked.includes(g.name + ANY)} onClick={() => toggle(g.name + ANY)}>
-                            ✨ {g.name} apa saja (pilihkan terbaik)
+                            <Sparkles className="mr-1 inline h-3.5 w-3.5" />
+                            {g.name} apa saja (pilihkan terbaik)
                           </Pill>
                           {g.items.map((i) => (
                             <Pill key={i.id} on={picked.includes(i.name)} onClick={() => toggle(i.name)}>
@@ -393,7 +415,7 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
                       value={card.message}
                       onChange={(e) => setCard((c) => ({ ...c, message: e.target.value.slice(0, 200) }))}
                       rows={4}
-                      placeholder="Semoga lekas sembuh dan sehat selalu 💚"
+                      placeholder="Semoga lekas sembuh dan sehat selalu"
                       className="mt-1 w-full rounded-xl border border-black/15 px-4 py-3 outline-none focus:border-plum-500"
                     />
                     <span className="text-xs text-muted">{card.message.length}/200</span>
@@ -414,7 +436,9 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
                   <label className="block text-sm font-medium text-ink">
                     No. WhatsApp
                     <input value={verifiedPhone} readOnly className="mt-1 w-full rounded-xl border border-black/10 bg-leaf-50 px-4 py-3 text-muted" />
-                    <span className="text-xs text-leaf-700">✓ Terverifikasi</span>
+                    <span className="inline-flex items-center gap-1 text-xs text-leaf-700">
+                      <BadgeCheck className="h-3.5 w-3.5" /> Terverifikasi
+                    </span>
                   </label>
                 ) : (
                   <Input label="No. WhatsApp *" value={contact.phone} onChange={(v) => setContact((c) => ({ ...c, phone: v }))} placeholder="0812 3456 7890" />
@@ -556,7 +580,7 @@ function FruitIcon({ g }: { g: FruitGroup }) {
     // eslint-disable-next-line @next/next/no-img-element -- small CDN illustration
     <img src={g.art} alt="" width={36} height={36} loading="lazy" className="h-9 w-9" />
   ) : (
-    <span className="flex h-9 w-9 items-center justify-center text-3xl">{g.emoji}</span>
+    <FruitFallback name={g.name} />
   );
 }
 
@@ -570,7 +594,7 @@ function Pill({ on, onClick, children }: { on: boolean; onClick: () => void; chi
         on ? "bg-plum-700 text-white" : "bg-white text-ink ring-1 ring-black/10 hover:ring-plum-500"
       }`}
     >
-      {on ? "✓ " : ""}
+      {on && <Check className="mr-1 inline h-3.5 w-3.5" strokeWidth={3} />}
       {children}
     </button>
   );
@@ -586,7 +610,23 @@ function Step({ title, hint, children }: { title: string; hint?: string; childre
   );
 }
 
-function Choice({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: string; label: string }) {
+function ShapeIcon({ shape }: { shape: string }) {
+  return (
+    <span className="flex h-full items-center justify-center text-plum-700">
+      <DynIcon icon={SHAPE_ICON[shape] ?? ShoppingBasket} className="h-8 w-8" strokeWidth={1.6} />
+    </span>
+  );
+}
+
+function FruitFallback({ name }: { name: string }) {
+  return (
+    <span className="flex h-9 w-9 items-center justify-center text-leaf-700">
+      <FruitGlyph hints={[name]} className="h-7 w-7" strokeWidth={1.6} />
+    </span>
+  );
+}
+
+function Choice({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: LucideIcon; label: string }) {
   return (
     <button
       type="button"
@@ -596,7 +636,9 @@ function Choice({ active, onClick, icon, label }: { active: boolean; onClick: ()
         active ? "bg-plum-50 ring-2 ring-plum-500" : "bg-[#f7f6f2] ring-1 ring-transparent hover:ring-black/10"
       }`}
     >
-      <span className="text-3xl">{icon}</span>
+      <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${active ? "bg-plum-700 text-white" : "bg-white text-plum-700"}`}>
+        <DynIcon icon={icon} className="h-6 w-6" strokeWidth={1.8} />
+      </span>
       <span className="font-bold text-ink">{label}</span>
     </button>
   );

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { CorporateForm } from "./CorporateForm";
+import { MapPin, Package, Receipt, Tag, type LucideIcon } from "lucide-react";
+import { DynIcon } from "@/lib/icons";
 
 export const metadata: Metadata = {
   title: "Parcel & Buah untuk Perusahaan — Pesanan Korporat Malang",
@@ -7,11 +9,11 @@ export const metadata: Metadata = {
     "Pesanan korporat Healthila Malang: parcel buah untuk klien & karyawan, hampers hari raya jumlah banyak, buah rutin untuk kantor dan acara. Kirim ke banyak alamat, kartu custom logo.",
 };
 
-const PERKS = [
-  ["📦", "Jumlah banyak", "Puluhan sampai ratusan paket dengan isi seragam."],
-  ["🏷️", "Kartu custom", "Kartu ucapan dengan logo & nama perusahaan."],
-  ["📍", "Banyak alamat", "Kami atur pengiriman ke tiap penerima di Malang."],
-  ["🧾", "Invoice resmi", "Penawaran & invoice untuk kebutuhan administrasi."],
+const PERKS: [LucideIcon, string, string][] = [
+  [Package, "Jumlah banyak", "Puluhan sampai ratusan paket dengan isi seragam."],
+  [Tag, "Kartu custom", "Kartu ucapan dengan logo & nama perusahaan."],
+  [MapPin, "Banyak alamat", "Kami atur pengiriman ke tiap penerima di Malang."],
+  [Receipt, "Invoice resmi", "Penawaran & invoice untuk kebutuhan administrasi."],
 ];
 
 export default function KorporatPage() {
@@ -30,7 +32,7 @@ export default function KorporatPage() {
         <div className="grid content-start gap-4 sm:grid-cols-2">
           {PERKS.map(([icon, title, text]) => (
             <div key={title} className="rounded-2xl bg-white p-5 ring-1 ring-leaf-100">
-              <span className="text-3xl">{icon}</span>
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700"><DynIcon icon={icon} className="h-6 w-6" strokeWidth={1.8} /></span>
               <p className="mt-2 font-bold text-ink">{title}</p>
               <p className="mt-1 text-sm text-muted">{text}</p>
             </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Star } from "lucide-react";
 
 export type SlideItem = {
   key: string;
@@ -94,9 +95,10 @@ export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem
                 <span className={`absolute top-1 right-5 font-display text-[8rem] leading-none font-extrabold ${c.quote}`} aria-hidden>
                   “
                 </span>
-                <p className="text-xl tracking-widest text-sun-400" aria-label={`${t.rating} dari 5 bintang`}>
-                  {"★".repeat(t.rating)}
-                  <span className="text-black/10">{"★".repeat(5 - t.rating)}</span>
+                <p className="flex gap-0.5" aria-label={`${t.rating} dari 5 bintang`}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star key={n} className={`h-5 w-5 ${n <= t.rating ? "fill-sun-400 text-sun-400" : "fill-black/10 text-black/10"}`} />
+                  ))}
                 </p>
                 <blockquote className="relative mt-4 line-clamp-6 leading-relaxed text-ink/85 italic">“{t.quote}”</blockquote>
                 <figcaption className="mt-auto flex items-end justify-between gap-3 pt-6">

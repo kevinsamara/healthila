@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { categoryTone, type Article } from "@/lib/articles";
+import { EmojiGlyph } from "@/lib/icons";
 
 export function ArticleCard({ article }: { article: Article }) {
   return (
@@ -37,7 +38,17 @@ export function ArticleCover({ article, className = "" }: { article: Article; cl
     <div className={`relative flex items-center justify-center overflow-hidden bg-gradient-to-br ${article.cover.gradient} ${className}`}>
       <div className="absolute -top-10 -left-10 h-40 w-40 rounded-full bg-white/15" />
       <div className="absolute -right-8 -bottom-12 h-48 w-48 rounded-full bg-white/10" />
-      <span className="relative text-7xl drop-shadow-sm transition duration-500 group-hover:scale-110 sm:text-8xl">{article.cover.emoji}</span>
+      <CoverIcon emoji={article.cover.emoji} />
     </div>
+  );
+}
+
+function CoverIcon({ emoji }: { emoji: string }) {
+  return (
+    <EmojiGlyph
+      emoji={emoji}
+      className="relative h-20 w-20 text-white drop-shadow-sm transition duration-500 group-hover:scale-110 sm:h-24 sm:w-24"
+      strokeWidth={1.4}
+    />
   );
 }

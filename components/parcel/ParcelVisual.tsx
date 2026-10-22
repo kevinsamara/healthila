@@ -101,18 +101,18 @@ export function ParcelVisual({
               style={{ animationDelay: `${i * 25}ms` }}
             />
           ) : (
-            <text
-              key={`${shape}-${i}-${p.f.emoji}`}
-              x={p.x}
-              y={p.y}
-              fontSize={p.s}
-              textAnchor="middle"
-              dominantBaseline="central"
+            // No illustration for this fruit: a plain fruit-coloured ball.
+            <circle
+              key={`${shape}-${i}-ball`}
+              cx={p.x}
+              cy={p.y}
+              r={p.s * 0.42}
+              fill={["#f97316", "#84cc16", "#e11d48", "#facc15", "#a855f7"][i % 5]}
+              stroke="#fff"
+              strokeWidth={2}
               className="parcel-pop"
               style={{ animationDelay: `${i * 25}ms` }}
-            >
-              {p.f.emoji}
-            </text>
+            />
           ),
         )}
       </g>

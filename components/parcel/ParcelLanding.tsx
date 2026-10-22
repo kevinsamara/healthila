@@ -6,6 +6,8 @@ import type { Product } from "@/lib/catalog";
 import { rupiah } from "@/lib/format";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { waLink } from "@/lib/site";
+import { Camera, Clock, MessageCircle, ShieldCheck, ShoppingBasket, Star, type LucideIcon } from "lucide-react";
+import { DynIcon } from "@/lib/icons";
 
 /**
  * /parcel landing sections — built to answer what a gift buyer worries about
@@ -33,7 +35,8 @@ export async function ParcelHero({ parcels }: { parcels: Product[] }) {
               Lihat koleksi
             </a>
             <Link href="/parcel/custom" className="flex h-12 items-center rounded-full bg-white px-6 font-bold text-plum-700 hover:bg-white/90">
-              🧺 Rancang sendiri
+              <ShoppingBasket className="mr-1.5 inline h-4 w-4" />
+              Rancang sendiri
             </Link>
             <a
               href={waLink("Halo Healthila, saya mau konsultasi parcel. Momennya: … budget: …")}
@@ -47,7 +50,8 @@ export async function ParcelHero({ parcels }: { parcels: Product[] }) {
           <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/90">
             {place?.rating ? (
               <li>
-                ⭐ <b className="text-white">{place.rating.toFixed(1)}</b> dari {place.count} ulasan Google
+                <Star className="mr-1 inline h-4 w-4 fill-sun-400 text-sun-400 align-[-2px]" />
+                <b className="text-white">{place.rating.toFixed(1)}</b> dari {place.count} ulasan Google
               </li>
             ) : null}
             {Number.isFinite(from) && (
@@ -80,11 +84,11 @@ export async function ParcelHero({ parcels }: { parcels: Product[] }) {
 }
 
 const PROMISES = [
-  ["💬", "Dibantu memilih", "Ceritakan momen dan budget, tim kami rekomendasikan isi dan ukuran yang pas — gratis."],
-  ["🍇", "Buah terjamin", "Disortir sebelum dirangkai. Ada yang kurang layak? Kirim foto, kami ganti."],
-  ["📸", "Lihat dulu sebelum dikirim", "Foto parcel jadi dikirim ke WhatsApp Kakak sebelum kurir berangkat."],
-  ["🕐", "Tiba sesuai jadwal", "Pilih tanggal & jam antar. Same-day se-Malang, kartu ucapan gratis."],
-] as const;
+  [MessageCircle, "Dibantu memilih", "Ceritakan momen dan budget, tim kami rekomendasikan isi dan ukuran yang pas — gratis."],
+  [ShieldCheck, "Buah terjamin", "Disortir sebelum dirangkai. Ada yang kurang layak? Kirim foto, kami ganti."],
+  [Camera, "Lihat dulu sebelum dikirim", "Foto parcel jadi dikirim ke WhatsApp Kakak sebelum kurir berangkat."],
+  [Clock, "Tiba sesuai jadwal", "Pilih tanggal & jam antar. Same-day se-Malang, kartu ucapan gratis."],
+] as [LucideIcon, string, string][];
 
 export function ParcelPromises() {
   return (
@@ -92,7 +96,7 @@ export function ParcelPromises() {
       <div className="relative grid gap-3 rounded-3xl bg-white p-4 shadow-xl shadow-black/5 ring-1 ring-black/5 sm:grid-cols-2 lg:grid-cols-4">
         {PROMISES.map(([icon, title, text]) => (
           <div key={title} className="flex gap-3 rounded-2xl p-3">
-            <span className="text-3xl">{icon}</span>
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-plum-50 text-plum-700"><DynIcon icon={icon} className="h-6 w-6" strokeWidth={1.8} /></span>
             <div>
               <p className="font-bold text-ink">{title}</p>
               <p className="mt-0.5 text-sm leading-snug text-muted">{text}</p>

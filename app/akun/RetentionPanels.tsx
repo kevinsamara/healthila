@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { rupiah } from "@/lib/format";
 import { manageReminders, manageSubscriptions, type Reminder, type Subscription } from "./actions";
+import { Cake } from "lucide-react";
 
 const MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
 export const DAYS = ["", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
@@ -41,7 +42,8 @@ export function RemindersPanel({ initial }: { initial: Reminder[] }) {
                 <b className="text-ink">{r.label}</b>
                 {r.recipient ? <span className="text-muted"> · {r.recipient}</span> : null}
                 <span className="ml-2 text-muted">
-                  🎂 {r.day} {MONTHS[r.month - 1]}
+                  <Cake className="mr-1 inline h-4 w-4 align-[-3px]" />
+                  {r.day} {MONTHS[r.month - 1]}
                 </span>
               </span>
               <button type="button" disabled={pending} onClick={() => run(() => manageReminders("delete", { id: r.id }))} className="text-xs text-plum-700 underline">
@@ -136,7 +138,7 @@ export function SubscriptionsPanel({ initial }: { initial: Subscription[] }) {
                   </>
                 )}
               </p>
-              {s.preferences && <p className="mt-1 text-xs text-muted">🍎 {s.preferences}</p>}
+              {s.preferences && <p className="mt-1 text-xs text-muted">Preferensi: {s.preferences}</p>}
               <div className="mt-3 flex gap-2 text-xs">
                 {s.status === "active" ? (
                   <button type="button" disabled={pending} onClick={() => act("pause", s.id)} className="rounded-full border border-leaf-200 px-3 py-1 font-semibold">

@@ -3,23 +3,25 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { Apple, Building2, Check, CupSoda, House, type LucideIcon, Salad, School, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
+import { DynIcon } from "@/lib/icons";
 import type { DeliverySlot } from "@/lib/delivery";
 import { rupiah } from "@/lib/format";
 import type { SubscriptionPlan } from "@/lib/subscriptions";
 import { manageSubscriptions } from "../akun/actions";
 import { DAYS } from "../akun/RetentionPanels";
 
-const KIND_UI: Record<SubscriptionPlan["kind"], { letter: string; emoji: string }> = {
-  buah_utuh: { letter: "A", emoji: "🍎" },
-  buah_potong: { letter: "B", emoji: "🍉" },
-  jus: { letter: "C", emoji: "🧃" },
+const KIND_UI: Record<SubscriptionPlan["kind"], { letter: string; icon: LucideIcon }> = {
+  buah_utuh: { letter: "A", icon: Apple },
+  buah_potong: { letter: "B", icon: Salad },
+  jus: { letter: "C", icon: CupSoda },
 };
 const AUDIENCES = [
-  { key: "rumah", label: "Rumah", emoji: "🏠", text: "Keluarga di rumah" },
-  { key: "sekolah", label: "Sekolah", emoji: "🏫", text: "Kantin, bekal, acara sekolah" },
-  { key: "kantor", label: "Kantor", emoji: "🏢", text: "Pantry & tim kantor" },
-  { key: "lainnya", label: "Lainnya", emoji: "✨", text: "Komunitas, gym, klinik…" },
+  { key: "rumah", label: "Rumah", icon: House, text: "Keluarga di rumah" },
+  { key: "sekolah", label: "Sekolah", icon: School, text: "Kantin, bekal, acara sekolah" },
+  { key: "kantor", label: "Kantor", icon: Building2, text: "Pantry & tim kantor" },
+  { key: "lainnya", label: "Lainnya", icon: Sparkles, text: "Komunitas, gym, klinik…" },
 ] as const;
 const PAX = [
   { label: "1–2 orang", value: 2 },
@@ -153,7 +155,9 @@ export function SubscribeWizard({
               onClick={() => set({ kind: p.kind, option: null, weekdays: d.weekdays.slice(0, p.multi_day ? 7 : 1) })}
               className={`${card(d.kind === p.kind)} disabled:cursor-not-allowed disabled:opacity-55`}
             >
-              <span className="text-3xl">{KIND_UI[p.kind].emoji}</span>
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700">
+                <DynIcon icon={KIND_UI[p.kind].icon} className="h-6 w-6" strokeWidth={1.8} />
+              </span>
               <span className="mt-2 block font-bold text-ink">
                 {KIND_UI[p.kind].letter}. {p.title}
               </span>
@@ -182,7 +186,9 @@ export function SubscribeWizard({
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {AUDIENCES.map((a) => (
               <button key={a.key} type="button" onClick={() => set({ audience: a.key })} className={card(d.audience === a.key)}>
-                <span className="text-2xl">{a.emoji}</span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700">
+                  <DynIcon icon={a.icon} className="h-5 w-5" strokeWidth={1.8} />
+                </span>
                 <span className="mt-1 block font-bold text-ink">{a.label}</span>
                 <span className="text-xs text-muted">{a.text}</span>
               </button>
@@ -381,7 +387,7 @@ function Step({
     <section className="rounded-3xl bg-white p-5 ring-1 ring-leaf-100 sm:p-6">
       <div className="flex items-center gap-3">
         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold ${done ? "bg-leaf-700 text-white" : "bg-leaf-50 text-leaf-700"}`}>
-          {done ? "✓" : n}
+          {done ? <Check className="h-4 w-4" strokeWidth={3} /> : n}
         </span>
         <h2 className="flex-1 text-lg font-bold text-ink">{title}</h2>
         {done && summary && (

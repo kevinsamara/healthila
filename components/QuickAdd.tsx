@@ -6,6 +6,7 @@ import type { Product } from "@/lib/catalog";
 import { addItem } from "@/lib/cart";
 import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
+import { Check } from "lucide-react";
 
 /** Card-level add button: one tap for single-option products, otherwise opens the product page. */
 export function QuickAdd({ product }: { product: Product }) {
@@ -65,7 +66,8 @@ export function QuickAdd({ product }: { product: Product }) {
       onClick={add}
       className={`${base} ${added ? "bg-lime-400 text-leaf-900" : "bg-leaf-700 text-white hover:bg-leaf-900"}`}
     >
-      {added ? "✓ Masuk keranjang" : "Tambah ke Keranjang"}
+      {added && <Check className="mr-1 inline h-4 w-4 align-[-3px]" strokeWidth={3} />}
+      {added ? "Masuk keranjang" : "Tambah ke Keranjang"}
     </button>
   );
 }

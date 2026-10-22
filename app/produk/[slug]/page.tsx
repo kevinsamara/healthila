@@ -8,6 +8,8 @@ import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { getProductBySlug, getProducts, type Product } from "@/lib/catalog";
 import { sectionLabel, waLink } from "@/lib/site";
 import { AddToCart } from "./AddToCart";
+import { Gift, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
+import { DynIcon } from "@/lib/icons";
 
 export const revalidate = 300;
 
@@ -98,13 +100,13 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
             <AddToCart product={product} />
 
             <ul className="mt-8 grid gap-3 sm:grid-cols-3">
-              {[
-                ["🏅", "Garansi segar", "Klaim cukup kirim foto"],
-                ["🚚", "Same-day", "Malang & sekitarnya"],
-                ["🎁", "Free ongkir s.d. 10rb", "2 pembelian pertama via website"],
-              ].map(([icon, title, text]) => (
+              {([
+                [ShieldCheck, "Garansi segar", "Klaim cukup kirim foto"],
+                [Truck, "Same-day", "Malang & sekitarnya"],
+                [Gift, "Free ongkir s.d. 10rb", "2 pembelian pertama via website"],
+              ] as [LucideIcon, string, string][]).map(([icon, title, text]) => (
                 <li key={title} className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
-                  <span className="text-2xl">{icon}</span>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700"><DynIcon icon={icon} className="h-5 w-5" strokeWidth={1.8} /></span>
                   <p className="mt-1 text-sm font-bold text-ink">{title}</p>
                   <p className="text-xs text-muted">{text}</p>
                 </li>

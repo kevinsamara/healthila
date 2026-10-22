@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getProducts, type Product } from "@/lib/catalog";
+import { DynIcon } from "@/lib/icons";
 import { OCCASIONS, PRICE_BANDS } from "@/lib/occasions";
 import { displayPrice } from "@/lib/price";
 import type { SectionKey } from "@/lib/site";
@@ -161,7 +162,8 @@ export async function CategoryPage({
                     active={momen === o.key}
                     small
                   >
-                    {o.emoji} {o.label}
+                    <DynIcon icon={o.icon} className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+                    {o.label}
                   </Chip>
                 ))}
               </div>

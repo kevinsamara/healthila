@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { site } from "@/lib/site";
+import { Camera, Star } from "lucide-react";
 
 /**
  * Home "Kenapa Healthila ada" — Golden Circle (why → how → what) next to the
@@ -40,10 +41,14 @@ export async function AboutHealthila() {
                     <figcaption className="absolute inset-x-0 bottom-0 truncate bg-black/45 px-1.5 py-0.5 text-[9px] text-white">
                       {p.authorUri ? (
                         <a href={p.authorUri} target="_blank" rel="noopener noreferrer">
-                          📷 {p.author}
+                          <Camera className="mr-0.5 inline h-2.5 w-2.5" />
+                          {p.author}
                         </a>
                       ) : (
-                        <>📷 {p.author}</>
+                        <>
+                          <Camera className="mr-0.5 inline h-2.5 w-2.5" />
+                          {p.author}
+                        </>
                       )}
                     </figcaption>
                   )}
@@ -54,7 +59,8 @@ export async function AboutHealthila() {
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
             {place?.rating ? (
               <span className="font-semibold text-ink">
-                ⭐ {place.rating.toFixed(1)} · {place.count} ulasan Google
+                <Star className="mr-1 inline h-4 w-4 fill-sun-400 text-sun-400 align-[-3px]" />
+                {place.rating.toFixed(1)} · {place.count} ulasan Google
               </span>
             ) : null}
             <a href={site.directions} target="_blank" rel="noopener noreferrer" className="font-semibold text-leaf-700 hover:underline">

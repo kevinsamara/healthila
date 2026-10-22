@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
 import { FREE_SHIPPING, site, waLink } from "@/lib/site";
 import { rupiah } from "@/lib/format";
+import { Camera, Clock, Mail, Search, ShieldCheck, Truck } from "lucide-react";
+import { DynIcon } from "@/lib/icons";
 
 export const metadata: Metadata = {
   title: "Garansi Healthila — Buah Segar & Parcel Aman Sampai",
@@ -12,32 +14,32 @@ export const metadata: Metadata = {
 
 const PROMISES = [
   {
-    icon: "🍎",
+    icon: ShieldCheck,
     title: "Garansi buah segar",
     text: "Kalau ada buah yang kurang layak saat diterima, kirim foto lewat WhatsApp maksimal 1×24 jam. Kami ganti di pengiriman berikutnya atau carikan solusi lain yang Kakak setujui — tanpa ribet retur barang.",
   },
   {
-    icon: "🔍",
+    icon: Search,
     title: "Disortir sebelum dikirim",
     text: "Setiap pesanan dicek dan disortir tim kami di hari pengiriman — bukan diambil asal dari gudang.",
   },
   {
-    icon: "📸",
+    icon: Camera,
     title: "Foto parcel sebelum berangkat",
     text: "Untuk parcel & hampers, Kakak menerima foto hasil rangkaian via WhatsApp sebelum dikirim, plus konfirmasi saat sudah sampai.",
   },
   {
-    icon: "💌",
+    icon: Mail,
     title: "Kartu ucapan gratis",
     text: "Setiap parcel bisa disertai kartu ucapan Healthila tanpa biaya. Desain kartu custom juga tersedia.",
   },
   {
-    icon: "🚚",
+    icon: Truck,
     title: `Free ongkir s.d. ${rupiah(FREE_SHIPPING.max)}`,
     text: `Untuk ${FREE_SHIPPING.orders} pembelian pertama lewat website, ongkir ditanggung Healthila sampai ${rupiah(FREE_SHIPPING.max)}.`,
   },
   {
-    icon: "🕐",
+    icon: Clock,
     title: "Pilih jam antar",
     text: "Pilih pengantaran pagi, siang, atau sore saat checkout. Same-day untuk pesanan sebelum batas jam di halaman keranjang.",
   },
@@ -52,7 +54,7 @@ export default function GaransiPage() {
       <div className="grid gap-4 sm:grid-cols-2">
         {PROMISES.map((p) => (
           <div key={p.title} className="rounded-2xl bg-white p-5 ring-1 ring-leaf-100">
-            <span className="text-3xl">{p.icon}</span>
+            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700"><DynIcon icon={p.icon} className="h-6 w-6" strokeWidth={1.8} /></span>
             <h3 className="mt-2 text-lg font-bold text-ink">{p.title}</h3>
             <p className="mt-1! mb-0! text-sm">{p.text}</p>
           </div>

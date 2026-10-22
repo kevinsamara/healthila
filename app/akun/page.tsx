@@ -7,6 +7,7 @@ import { logout } from "../masuk/actions";
 import { getProfile } from "@/lib/profile";
 import { manageReminders, manageSubscriptions } from "./actions";
 import { RemindersPanel, SubscriptionsPanel } from "./RetentionPanels";
+import { Cake, Camera, CircleCheck } from "lucide-react";
 
 export const metadata: Metadata = { title: "Akun Saya", robots: { index: false } };
 
@@ -24,7 +25,7 @@ export default async function AkunPage() {
           </h1>
           <p className="mt-1 text-muted">WhatsApp {account.phone}</p>
           <p className="mt-1 text-sm text-muted">
-            🎂{" "}
+            <Cake className="mr-1 inline h-4 w-4 align-[-3px]" />
             {profile?.birth_date
               ? new Date(profile.birth_date + "T00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
               : "Tanggal lahir belum diisi"}{" "}
@@ -73,12 +74,14 @@ export default async function AkunPage() {
                   <div className="mt-3 flex flex-wrap gap-2 text-xs">
                     {o.previews?.map((id, i) => (
                       <a key={id} href={`${CRM_URL}/foto-parcel/${id}`} target="_blank" rel="noopener noreferrer" className="rounded-full bg-lime-100 px-3 py-1 font-semibold text-leaf-900 hover:bg-lime-200">
-                        📸 Foto sebelum kirim{o.previews!.length > 1 ? ` ${i + 1}` : ""}
+                        <Camera className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+                        Foto sebelum kirim{o.previews!.length > 1 ? ` ${i + 1}` : ""}
                       </a>
                     ))}
                     {o.proofs?.map((id, i) => (
                       <a key={id} href={`${CRM_URL}/bukti/${id}`} target="_blank" rel="noopener noreferrer" className="rounded-full bg-leaf-50 px-3 py-1 font-semibold text-leaf-700 hover:bg-leaf-100">
-                        ✅ Bukti sampai{o.proofs!.length > 1 ? ` ${i + 1}` : ""}
+                        <CircleCheck className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
+                        Bukti sampai{o.proofs!.length > 1 ? ` ${i + 1}` : ""}
                       </a>
                     ))}
                   </div>

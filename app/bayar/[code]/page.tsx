@@ -6,6 +6,7 @@ import { getQrisPayment } from "@/lib/payment";
 import { qrisWithAmount, qrSvg } from "@/lib/qris";
 import { waLink } from "@/lib/site";
 import { Countdown, CopyAmount, ProofUpload } from "./PaymentClient";
+import { CircleCheck } from "lucide-react";
 
 export const metadata: Metadata = { title: "Pembayaran QRIS", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -35,7 +36,7 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
   if (pay.status === "verified") {
     return (
       <Shell>
-        <p className="text-center text-5xl">✅</p>
+        <CircleCheck className="mx-auto h-14 w-14 text-leaf-700" strokeWidth={1.6} />
         <h1 className="mt-3 text-center text-2xl font-extrabold text-leaf-900">Pembayaran diterima</h1>
         <p className="mt-2 text-center text-muted">
           {pay.code} sudah lunas. Pantau status pengiriman di{" "}

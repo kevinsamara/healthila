@@ -45,7 +45,7 @@ export function ParcelPhotoVisual({
             // eslint-disable-next-line @next/next/no-img-element
             <img src={s.f.art} alt="" className="h-full w-full object-contain drop-shadow" />
           ) : (
-            <span className="text-[min(7vw,2.5rem)] leading-none">{s.f.emoji}</span>
+            <span className="h-4/5 w-4/5 rounded-full bg-gradient-to-br from-coral-500 to-sun-400 ring-2 ring-white" />
           )}
         </span>
       ))}

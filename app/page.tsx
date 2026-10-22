@@ -9,6 +9,8 @@ import { ProductCard } from "@/components/ProductCard";
 import { getArticles } from "@/lib/articles";
 import { getProducts, type Product } from "@/lib/catalog";
 import { waLink, type SectionKey } from "@/lib/site";
+import { Citrus, CupSoda, ShoppingBasket } from "lucide-react";
+import { DynIcon } from "@/lib/icons";
 
 export const revalidate = 300;
 
@@ -30,7 +32,7 @@ export default async function Home() {
       text: "Lokal & impor, disortir setiap pagi.",
       gradient: "from-sun-400 via-[#ff8a3d] to-coral-500",
       photo: photoOf(["buah"]),
-      emoji: "🍊",
+      icon: Citrus,
       cta: "Lihat Buah",
     },
     {
@@ -39,7 +41,7 @@ export default async function Home() {
       text: "Cold-pressed tanpa gula tambahan, dibuat fresh setiap hari.",
       gradient: "from-leaf-900 via-leaf-700 to-[#5fcf8f]",
       photo: photoOf(["jus", "dessert"]),
-      emoji: "🧃",
+      icon: CupSoda,
       cta: "Lihat Jus",
     },
     {
@@ -48,7 +50,7 @@ export default async function Home() {
       text: "Dirangkai elegan, hadiah terbaik untuk orang tersayang.",
       gradient: "from-plum-700 via-[#b8245e] to-coral-500",
       photo: photoOf(["parcel"]),
-      emoji: "🧺",
+      icon: ShoppingBasket,
       cta: "Lihat Hampers",
     },
   ];
@@ -70,7 +72,9 @@ export default async function Home() {
                 {c.photo ? (
                   <Image src={c.photo} alt="" fill sizes="176px" className="object-cover" />
                 ) : (
-                  <span className="flex h-full items-center justify-center text-7xl">{c.emoji}</span>
+                  <span className="flex h-full items-center justify-center">
+                    <DynIcon icon={c.icon} className="h-16 w-16 text-white" strokeWidth={1.4} />
+                  </span>
                 )}
               </div>
               <h2 className="relative text-4xl font-extrabold">{c.title}</h2>

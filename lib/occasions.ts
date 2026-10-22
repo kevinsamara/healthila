@@ -3,17 +3,19 @@
  * stored on products.web_occasions in Healthila OS (healthila-crm 0106) —
  * keep in sync with healthila-crm lib/web-occasions.ts.
  */
-export type Occasion = { key: string; label: string; emoji: string };
+import { Bird, Briefcase, Cake, Flower2, Gem, LampWallUp, type LucideIcon, Moon, TreePine } from "lucide-react";
+
+export type Occasion = { key: string; label: string; icon: LucideIcon };
 
 export const OCCASIONS: Occasion[] = [
-  { key: "ulang-tahun", label: "Ulang Tahun", emoji: "🎂" },
-  { key: "jenguk", label: "Jenguk / Get Well", emoji: "💐" },
-  { key: "lamaran", label: "Lamaran & Pernikahan", emoji: "💍" },
-  { key: "duka", label: "Duka Cita", emoji: "🕊️" },
-  { key: "kantor", label: "Kantor & Klien", emoji: "💼" },
-  { key: "lebaran", label: "Lebaran", emoji: "🌙" },
-  { key: "natal", label: "Natal", emoji: "🎄" },
-  { key: "imlek", label: "Imlek", emoji: "🧧" },
+  { key: "ulang-tahun", label: "Ulang Tahun", icon: Cake },
+  { key: "jenguk", label: "Jenguk / Get Well", icon: Flower2 },
+  { key: "lamaran", label: "Lamaran & Pernikahan", icon: Gem },
+  { key: "duka", label: "Duka Cita", icon: Bird },
+  { key: "kantor", label: "Kantor & Klien", icon: Briefcase },
+  { key: "lebaran", label: "Lebaran", icon: Moon },
+  { key: "natal", label: "Natal", icon: TreePine },
+  { key: "imlek", label: "Imlek", icon: LampWallUp },
 ];
 
 export const occasionLabel = (key: string) => OCCASIONS.find((o) => o.key === key)?.label ?? key;

@@ -7,6 +7,7 @@ import { ParcelFaq, ParcelHero, ParcelPromises, ParcelSteps } from "@/components
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { getProducts } from "@/lib/catalog";
 import { waLink } from "@/lib/site";
+import { ShoppingBasket } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Parcel Buah & Hampers Malang",
@@ -38,7 +39,7 @@ export default async function ParcelPage({ searchParams }: PageProps<"/parcel">)
         gridTitle: "Koleksi parcel",
         extra: (
           <div className="mt-16 flex flex-col items-center gap-6 rounded-3xl bg-plum-700 p-8 text-center text-white sm:flex-row sm:p-10 sm:text-left">
-            <span className="text-6xl">🧺</span>
+            <ShoppingBasket className="h-16 w-16 shrink-0 text-sun-400" strokeWidth={1.4} />
             <div className="flex-1">
               <h2 className="text-3xl font-extrabold">Belum ada yang pas?</h2>
               <p className="mt-2 text-white/85">
@@ -50,7 +51,8 @@ export default async function ParcelPage({ searchParams }: PageProps<"/parcel">)
                 href="/parcel/custom"
                 className="flex h-12 items-center justify-center rounded-full bg-sun-400 px-6 font-bold text-leaf-900 hover:bg-sun-300"
               >
-                🧺 Rancang Parcel Online
+                <ShoppingBasket className="mr-2 h-5 w-5" />
+                Rancang Parcel Online
               </Link>
               <a
                 href={waLink("Halo Healthila, saya mau pesan parcel custom")}

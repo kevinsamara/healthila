@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/profile";
 import { BirthDateForm } from "./BirthDateForm";
+import { Cake } from "lucide-react";
 
 export const metadata: Metadata = { title: "Tanggal Lahir", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export default async function TanggalLahirPage({ searchParams }: PageProps<"/pro
   return (
     <div className="mx-auto max-w-md px-4 py-14">
       <div className="rounded-3xl bg-white p-8 ring-1 ring-leaf-100">
-        <p className="text-5xl">🎂</p>
+        <Cake className="h-12 w-12 text-plum-700" strokeWidth={1.5} />
         <h1 className="mt-3 text-3xl font-extrabold text-ink">Kapan ulang tahun Kakak?</h1>
         <p className="mt-2 text-muted">
           Di hari ulang tahun Kakak, kami kirim <b className="text-ink">voucher spesial</b> lewat WhatsApp. Tanggal lahir hanya dipakai untuk itu.

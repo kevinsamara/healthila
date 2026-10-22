@@ -8,6 +8,7 @@ import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { getProducts } from "@/lib/catalog";
 import { occasionPage, OCCASION_PAGES } from "@/lib/occasion-pages";
 import { waLink } from "@/lib/site";
+import { ShoppingBasket } from "lucide-react";
 
 export const revalidate = 3600;
 export const dynamicParams = false;
@@ -45,7 +46,8 @@ export default async function OccasionLanding({ params }: PageProps<"/hampers/[m
           <p className="mx-auto mt-4 max-w-2xl text-lg text-white/90">{page.intro}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
             <Link href="/parcel/custom" className="flex h-12 items-center rounded-full bg-sun-400 px-7 font-bold text-leaf-900 hover:bg-sun-300">
-              🧺 Rancang Parcel
+              <ShoppingBasket className="mr-2 h-5 w-5" />
+              Rancang Parcel
             </Link>
             <a
               href={waLink(`Halo Healthila, saya mau pesan ${page.h1.toLowerCase()}`)}

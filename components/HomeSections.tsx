@@ -3,6 +3,8 @@ import { getGoogleReviews } from "@/lib/google-reviews";
 import { site } from "@/lib/site";
 import { getTestimonials } from "@/lib/testimonials";
 import { TestimonialSlider, type SlideItem } from "./TestimonialSlider";
+import { Gift, Medal, Smartphone, Star, Truck } from "lucide-react";
+import { DynIcon } from "@/lib/icons";
 
 export function SectionTitle({ title, subtitle, light }: { title: string; subtitle?: string; light?: boolean }) {
   return (
@@ -31,10 +33,10 @@ export function BgCircles({ tone = "white" }: { tone?: "white" | "dark" }) {
 // Opaque warm pastels: they read as distinct tiles on the #00b1ff section
 // (the old 25% yellow mixed with the blue into grey).
 const features = [
-  { icon: "🏅", title: "Quality Above All", text: "Setiap buah melewati quality check ketat sebelum sampai ke tangan Kakak.", bg: "bg-[#fff4cc]", chip: "bg-[#ffd23f]" },
-  { icon: "🎁", title: "Premium Packaging", text: "Dikemas rapi dan elegan, siap jadi hadiah istimewa.", bg: "bg-[#ffe6d5]", chip: "bg-[#ff9a52]" },
-  { icon: "📱", title: "Effortless Order", text: "Pesan lewat website, konfirmasi cepat via WhatsApp. Simpel dan anti ribet.", bg: "bg-[#ddf8e6]", chip: "bg-[#5fd38d]" },
-  { icon: "🚚", title: "Same-Day Delivery", text: "Dikirim fresh setiap hari untuk Kota Malang & sekitarnya.", bg: "bg-[#fde4ef]", chip: "bg-[#f47fb1]" },
+  { icon: Medal, title: "Quality Above All", text: "Setiap buah melewati quality check ketat sebelum sampai ke tangan Kakak.", bg: "bg-[#fff4cc]", chip: "bg-[#ffd23f]" },
+  { icon: Gift, title: "Premium Packaging", text: "Dikemas rapi dan elegan, siap jadi hadiah istimewa.", bg: "bg-[#ffe6d5]", chip: "bg-[#ff9a52]" },
+  { icon: Smartphone, title: "Effortless Order", text: "Pesan lewat website, konfirmasi cepat via WhatsApp. Simpel dan anti ribet.", bg: "bg-[#ddf8e6]", chip: "bg-[#5fd38d]" },
+  { icon: Truck, title: "Same-Day Delivery", text: "Dikirim fresh setiap hari untuk Kota Malang & sekitarnya.", bg: "bg-[#fde4ef]", chip: "bg-[#f47fb1]" },
 ];
 
 export function WhyHealthila() {
@@ -46,7 +48,7 @@ export function WhyHealthila() {
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => (
             <div key={f.title} className={`rounded-3xl p-7 shadow-xl shadow-black/10 ${f.bg}`}>
-              <span className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl ${f.chip}`}>{f.icon}</span>
+              <span className={`flex h-14 w-14 items-center justify-center rounded-2xl text-white ${f.chip}`}><DynIcon icon={f.icon} className="h-7 w-7" strokeWidth={1.8} /></span>
               <h3 className="mt-4 font-display text-2xl font-bold text-ink">{f.title}</h3>
               <p className="mt-2 leading-relaxed text-ink/80">{f.text}</p>
             </div>
@@ -92,6 +94,10 @@ const toneCls = {
   leaf: { card: "bg-[#e6f9ee]", quote: "text-leaf-500/30", name: "text-leaf-700" },
 };
 
+// Reviews are shown without emoji (the site uses icons only); text stays intact in the CRM.
+const EMOJI = /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{200D}]/gu;
+const clean = (t: string) => t.replace(EMOJI, "").replace(/[ \t]{2,}/g, " ").replace(/\s+([,.!?])/g, "$1").trim();
+
 export async function Testimonials() {
   const [google, curated] = await Promise.all([getGoogleReviews(), getTestimonials()]);
   const tones = Object.keys(toneCls) as (keyof typeof toneCls)[];
@@ -103,7 +109,7 @@ export async function Testimonials() {
   for (const r of google?.reviews ?? []) {
     if (r.rating !== 5 || seen.has(key(r.author, r.text))) continue;
     seen.add(key(r.author, r.text));
-    pool.push({ quote: r.text, name: r.author, sub: r.when, rating: 5, href: r.authorUri, google: true });
+    pool.push({ quote: clean(r.text), name: clean(r.author), sub: r.when, rating: 5, href: r.authorUri, google: true });
   }
   for (const t of curated) {
     if (t.rating !== 5 || seen.has(key(t.name, t.quote))) continue;
@@ -112,8 +118,8 @@ export async function Testimonials() {
       ? new Date(t.review_date + "T00:00").toLocaleDateString("id-ID", { month: "long", year: "numeric" })
       : null;
     pool.push({
-      quote: t.quote,
-      name: t.name,
+      quote: clean(t.quote),
+      name: clean(t.name),
       sub: [t.city, when].filter(Boolean).join(" · "),
       rating: 5,
       href: t.link,
@@ -137,7 +143,7 @@ export async function Testimonials() {
           >
             <GoogleG />
             <span className="font-display text-2xl font-bold text-ink">{google.rating.toFixed(1)}</span>
-            <span className="text-sun-400">★★★★★</span>
+            <span className="flex text-sun-400">{[0, 1, 2, 3, 4].map((i) => <Star key={i} className="h-4 w-4 fill-current" />)}</span>
             <span className="text-sm text-muted">{google.count} ulasan Google</span>
           </a>
         )}

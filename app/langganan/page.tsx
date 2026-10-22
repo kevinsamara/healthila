@@ -3,6 +3,8 @@ import { getAccount } from "@/lib/session";
 import { getDeliverySlots } from "@/lib/slots";
 import { getSubscriptionPlans } from "@/lib/subscriptions";
 import { SubscribeWizard } from "./SubscribeWizard";
+import { CalendarDays, CirclePause, Grape, type LucideIcon } from "lucide-react";
+import { DynIcon } from "@/lib/icons";
 
 export const metadata: Metadata = {
   title: "Langganan Buah & Jus Cold-Pressed Malang",
@@ -12,10 +14,10 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-const PERKS = [
-  ["🗓️", "Rutin tanpa repot", "Tiap minggu, 2 minggu sekali, atau beberapa hari seminggu untuk kantor & sekolah."],
-  ["🍇", "Dipilihkan yang terbaik", "Isi menyesuaikan musim dan preferensi Kakak — tidak bosan."],
-  ["⏸️", "Fleksibel", "Jeda saat liburan, lanjutkan atau berhenti kapan saja dari halaman Akun."],
+const PERKS: [LucideIcon, string, string][] = [
+  [CalendarDays, "Rutin tanpa repot", "Tiap minggu, 2 minggu sekali, atau beberapa hari seminggu untuk kantor & sekolah."],
+  [Grape, "Dipilihkan yang terbaik", "Isi menyesuaikan musim dan preferensi Kakak — tidak bosan."],
+  [CirclePause, "Fleksibel", "Jeda saat liburan, lanjutkan atau berhenti kapan saja dari halaman Akun."],
 ];
 
 export default async function LanggananPage() {
@@ -42,7 +44,7 @@ export default async function LanggananPage() {
         <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
           {PERKS.map(([icon, title, text]) => (
             <div key={title} className="flex gap-3 rounded-2xl bg-white p-4 ring-1 ring-leaf-100">
-              <span className="text-2xl">{icon}</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700"><DynIcon icon={icon} className="h-5 w-5" strokeWidth={1.8} /></span>
               <div>
                 <p className="font-bold text-ink">{title}</p>
                 <p className="mt-0.5 text-sm text-muted">{text}</p>

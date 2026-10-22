@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ParcelBuilder, type FruitGroup } from "@/components/parcel/ParcelBuilder";
 import { getProducts } from "@/lib/catalog";
-import { productEmoji } from "@/lib/emoji";
 import { fruitArt } from "@/lib/fruit-art";
 import { getFruitArt, getParcelContainers } from "@/lib/parcel-visuals";
 
@@ -25,7 +24,7 @@ export default async function ParcelCustomPage() {
     .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "id"))
     .map(([name, items]) => ({
       name,
-      emoji: productEmoji(name),
+      emoji: "",
       // Uploaded real PNG first, then the 3D illustration.
       art: art.byGroup.get(name.toLowerCase()) ?? fruitArt(name),
       items: items.sort((a, b) => a.name.localeCompare(b.name, "id")).map((i) => ({ ...i, art: art.byProduct.get(i.id) ?? null })),
