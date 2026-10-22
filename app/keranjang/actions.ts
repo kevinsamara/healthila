@@ -4,6 +4,8 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { after } from "next/server";
 import { z } from "zod";
 import { notifyNewWebOrder, type PlacedOrder } from "@/lib/notify";
+import { fetchOngkir, type OngkirEstimate } from "@/lib/ongkir";
+import { rupiah } from "@/lib/format";
 import { getAccount, sessionToken } from "@/lib/session";
 import { webRpc, WebRpcError, webSecret } from "@/lib/web-rpc";
 
@@ -51,13 +53,18 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
     return { ok: false, error: "Sistem pesanan belum siap.", fallback: true };
   }
 
+  // Re-estimated here (never trusted from the browser) and recorded for admin.
+  const ongkir = await fetchOngkir(input.address);
+  const ongkirLine = ongkir.state === "calculated" ? `🚚 Estimasi ongkir web: ${rupiah(ongkir.fee)}${ongkir.label ? ` (${ongkir.label})` : ""}` : null;
+  const notes = [ongkirLine, input.notes].filter(Boolean).join("\n").slice(0, 500) || null;
+
   try {
     const res = await webRpc<Partial<PlacedOrder> & { code: string; created: boolean }>("web_place_order", {
       p_phone_e164: phone.number,
       p_name: input.name,
       p_address: input.address,
       p_delivery_date: input.date,
-      p_notes: input.notes,
+      p_notes: notes,
       p_lines: input.lines.map((l) => ({
         product_id: l.productId,
         packaging_id: l.packagingId,
@@ -83,6 +90,11 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       error: e instanceof WebRpcError && e.friendly ? e.message : "Pesanan gagal disimpan. Silakan coba lagi.",
     };
   }
+}
+
+/** Ongkir estimate for the cart (admin confirms the final amount). */
+export async function estimateShipping(address: string): Promise<OngkirEstimate> {
+  return fetchOngkir(String(address ?? "").slice(0, 500));
 }
 
 /** Signed-in buyer's phone, name and saved addresses for prefilling checkout. */

@@ -8,7 +8,7 @@ import { qtyLabel, rupiah } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { jakartaNow, sameDayCutoff, slotOpen, slotTime, type DeliverySlot } from "@/lib/delivery";
 import { FREE_SHIPPING, waLink } from "@/lib/site";
-import { getCheckoutProfile, placeOrder } from "./actions";
+import { estimateShipping, getCheckoutProfile, placeOrder } from "./actions";
 
 type Form = { name: string; phone: string; address: string; date: string; notes: string; slot: number | null };
 type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string; freeShippingMax: number | null };
@@ -26,6 +26,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
   // One idempotency key per checkout attempt, reused on retry so a double tap never makes two orders.
   const orderKey = useRef<string | null>(null);
   const total = cartTotal(items);
+  const ongkir = useOngkir(form.address);
 
   // Returning buyers: prefill name, phone and address saved on this device.
   useEffect(() => {
@@ -213,11 +214,14 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
           <textarea value={form.notes} onChange={set("notes")} rows={2} placeholder="Mis. pilih yang matang, kartu ucapan…" className={input} />
         </Field>
 
-        <div className="mt-6 flex justify-between border-t border-leaf-100 pt-4">
-          <span className="text-muted">Subtotal</span>
-          <span className="text-xl font-extrabold text-leaf-900">{rupiah(total)}</span>
+        <div className="mt-6 space-y-1.5 border-t border-leaf-100 pt-4 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted">Subtotal</span>
+            <span className="font-semibold text-ink">{rupiah(total)}</span>
+          </div>
+          <OngkirLines ongkir={ongkir} subtotal={total} freeLeft={profile?.freeShippingLeft} />
         </div>
-        <p className="mt-1 text-xs text-muted">Ongkir & pembayaran dikonfirmasi admin via WhatsApp.</p>
+        <p className="mt-1 text-xs text-muted">Ongkir final & pembayaran dikonfirmasi admin via WhatsApp.</p>
         <FreeShippingNote left={profile?.freeShippingLeft} />
 
         {error && (
@@ -236,6 +240,71 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
         </button>
       </form>
     </div>
+  );
+}
+
+type OngkirState = { loading: boolean; fee: number | null; label: string | null; pending: boolean };
+
+/** Debounced ongkir estimate for the typed address (Healthila OS tariff). */
+function useOngkir(address: string): OngkirState {
+  const [state, setState] = useState<OngkirState>({ loading: false, fee: null, label: null, pending: false });
+  useEffect(() => {
+    const a = address.trim();
+    if (a.length < 15) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reset when the address is cleared
+      setState({ loading: false, fee: null, label: null, pending: false });
+      return;
+    }
+    let live = true;
+    setState((s) => ({ ...s, loading: true }));
+    const id = setTimeout(async () => {
+      const r = await estimateShipping(a).catch(() => null);
+      if (!live) return;
+      if (r && r.state === "calculated") setState({ loading: false, fee: r.fee, label: r.label, pending: false });
+      else setState({ loading: false, fee: null, label: null, pending: true });
+    }, 900);
+    return () => {
+      live = false;
+      clearTimeout(id);
+    };
+  }, [address]);
+  return state;
+}
+
+function OngkirLines({ ongkir, subtotal, freeLeft }: { ongkir: OngkirState; subtotal: number; freeLeft: number | null | undefined }) {
+  if (ongkir.loading)
+    return (
+      <div className="flex justify-between text-muted">
+        <span>Ongkir</span>
+        <span>menghitung…</span>
+      </div>
+    );
+  if (ongkir.fee == null)
+    return (
+      <div className="flex justify-between text-muted">
+        <span>Ongkir</span>
+        <span>{ongkir.pending ? "dikonfirmasi admin" : "isi alamat dulu"}</span>
+      </div>
+    );
+  // Known FREEONGKIR eligibility only for signed-in buyers.
+  const discount = freeLeft && freeLeft > 0 ? Math.min(ongkir.fee, FREE_SHIPPING.max) : 0;
+  return (
+    <>
+      <div className="flex justify-between">
+        <span className="text-muted">Estimasi ongkir{ongkir.label ? ` · ${ongkir.label}` : ""}</span>
+        <span className="font-semibold text-ink">{rupiah(ongkir.fee)}</span>
+      </div>
+      {discount > 0 && (
+        <div className="flex justify-between text-leaf-700">
+          <span>FREEONGKIR</span>
+          <span className="font-semibold">−{rupiah(discount)}</span>
+        </div>
+      )}
+      <div className="flex justify-between border-t border-dashed border-leaf-100 pt-1.5">
+        <span className="font-semibold text-ink">Estimasi total</span>
+        <span className="text-xl font-extrabold text-leaf-900">{rupiah(subtotal + ongkir.fee - discount)}</span>
+      </div>
+    </>
   );
 }
 
