@@ -30,7 +30,11 @@ export type GoogleReviews = {
   /** Structured opening hours for schema.org (day 0 = Sunday). */
   periods: { open: { day: number; hour: number; minute: number }; close?: { day: number; hour: number; minute: number } }[];
   openNow: boolean | null;
+  /** Listing photos — served via /api/place-photo; author credit must be shown. */
+  photos: GooglePhoto[];
 };
+
+export type GooglePhoto = { name: string; width: number; height: number; author: string | null; authorUri: string | null };
 
 const API = "https://places.googleapis.com/v1";
 // An hour, so a fix to the key/API setting shows up the same day.
@@ -105,7 +109,7 @@ export async function loadGoogleReviews(
       headers: {
         "X-Goog-Api-Key": key,
         "X-Goog-FieldMask":
-          "rating,userRatingCount,googleMapsUri,reviews,formattedAddress,nationalPhoneNumber,regularOpeningHours,currentOpeningHours.openNow",
+          "rating,userRatingCount,googleMapsUri,reviews,formattedAddress,nationalPhoneNumber,regularOpeningHours,currentOpeningHours.openNow,photos",
       },
       ...opts,
     });
@@ -125,6 +129,7 @@ export async function loadGoogleReviews(
       nationalPhoneNumber?: string;
       regularOpeningHours?: { weekdayDescriptions?: string[]; periods?: GoogleReviews["periods"] };
       currentOpeningHours?: { openNow?: boolean };
+      photos?: { name?: string; widthPx?: number; heightPx?: number; authorAttributions?: { displayName?: string; uri?: string }[] }[];
       reviews?: {
         rating?: number;
         relativePublishTimeDescription?: string;
@@ -187,6 +192,16 @@ export async function loadGoogleReviews(
         hours: p.regularOpeningHours?.weekdayDescriptions ?? [],
         periods: p.regularOpeningHours?.periods ?? [],
         openNow: p.currentOpeningHours?.openNow ?? null,
+        photos: (p.photos ?? [])
+          .filter((ph) => ph.name)
+          .slice(0, 10)
+          .map((ph) => ({
+            name: ph.name!,
+            width: ph.widthPx ?? 0,
+            height: ph.heightPx ?? 0,
+            author: ph.authorAttributions?.[0]?.displayName ?? null,
+            authorUri: ph.authorAttributions?.[0]?.uri ?? null,
+          })),
       },
     };
   } catch (e) {
