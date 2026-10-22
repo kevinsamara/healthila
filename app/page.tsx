@@ -133,13 +133,26 @@ function pick(base: Product[], priority: Product[], n: number) {
   return out;
 }
 
-/** Hero slides: one per main category, each with photos from that category. */
+/** Hero slides: Parcel first (main focus), then Buah and Jus & Dessert, each with its own photos. */
 function heroSlides(available: Product[]): HeroSlide[] {
   const photos = (keys: SectionKey[]): HeroPhoto[] =>
     available
       .filter((p) => keys.includes(p.section) && p.photo_url)
       .map((p) => ({ id: p.id, slug: p.slug, name: p.name, photo: p.photo_url! }));
   const slides: HeroSlide[] = [
+    {
+      key: "parcel",
+      bg: "bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500",
+      badge: "Parcel & hampers buah",
+      badgeClass: "bg-sun-400 text-plum-700",
+      heading: "Parcel buah & hampers Malang untuk setiap momen.",
+      text: "Ulang tahun, jenguk, lamaran, hari raya — dirangkai elegan, bisa custom isi dan budget.",
+      textClass: "text-white/90",
+      cta: { href: "/parcel", label: "Lihat Parcel", className: "bg-sun-400 text-leaf-900 hover:bg-sun-300" },
+      secondary: { href: "/parcel/custom", label: "Rancang Parcel" },
+      whatsapp: waLink("Halo Healthila, saya mau tanya parcel"),
+      photos: photos(["parcel"]),
+    },
     {
       key: "buah",
       bg: "bg-leaf-700",
@@ -164,21 +177,8 @@ function heroSlides(available: Product[]): HeroSlide[] {
       whatsapp: waLink("Halo Healthila, saya mau pesan jus / dessert"),
       photos: photos(["jus", "dessert"]),
     },
-    {
-      key: "parcel",
-      bg: "bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500",
-      badge: "Parcel & hampers buah",
-      badgeClass: "bg-sun-400 text-plum-700",
-      heading: "Parcel buah & hampers untuk setiap momen.",
-      text: "Ulang tahun, jenguk, lamaran, hari raya — dirangkai elegan, bisa custom isi dan budget.",
-      textClass: "text-white/90",
-      cta: { href: "/parcel", label: "Lihat Parcel", className: "bg-sun-400 text-leaf-900 hover:bg-sun-300" },
-      secondary: { href: "/parcel/custom", label: "Rancang Parcel" },
-      whatsapp: waLink("Halo Healthila, saya mau tanya parcel"),
-      photos: photos(["parcel"]),
-    },
   ];
-  // Keep the buah slide (it carries the h1); drop others without photos.
+  // Parcel leads (it carries the h1); drop other slides without photos.
   return slides.filter((sl, i) => i === 0 || sl.photos.length >= 2);
 }
 
