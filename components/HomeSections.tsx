@@ -69,7 +69,8 @@ export function HowToOrder() {
 
 const toneCls = {
   coral: { card: "bg-[#fff1f3]", quote: "text-coral-500/25", name: "text-coral-500" },
-  sky: { card: "bg-sky-50", quote: "text-sky-400/30", name: "text-sky-600" },
+  // Brand blue #00b1ff — sky-50 was nearly invisible on the section background.
+  sky: { card: "bg-[#00b1ff]/15", quote: "text-[#00b1ff]/45", name: "text-[#0089c7]" },
   leaf: { card: "bg-leaf-50", quote: "text-leaf-500/25", name: "text-leaf-700" },
 };
 
