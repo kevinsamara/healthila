@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { submitParcelRequest } from "@/app/parcel/custom/actions";
 import { getCheckoutProfile } from "@/app/keranjang/actions";
+import { trackEvent } from "@/lib/analytics";
 import { rupiah } from "@/lib/format";
 import { CARD_STYLES, RIBBON_EXTRA, RIBBON_FREE, type ParcelContainer } from "@/lib/parcel-options";
 import { waLink } from "@/lib/site";
@@ -131,7 +132,10 @@ export function ParcelBuilder({ containers, fruits }: { containers: ContainerOpt
         date: contact.date || null,
         notes: contact.notes,
       });
-      if (res.ok) setDoneCode(res.code);
+      if (res.ok) {
+        trackEvent("generate_lead", { lead_type: "konsultasi_parcel", currency: "IDR", value: minPrice });
+        setDoneCode(res.code);
+      }
       else setError(res.error);
     });
   }

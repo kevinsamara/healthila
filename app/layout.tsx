@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { StoreJsonLd } from "@/components/JsonLd";
+import { Analytics } from "@/components/Analytics";
 import { site } from "@/lib/site";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Footer />
         <WhatsAppFab />
         <StoreJsonLd />
+        <Analytics />
       </body>
     </html>
   );

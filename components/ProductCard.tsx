@@ -57,7 +57,14 @@ export function ProductCard({ product }: { product: Product }) {
               {was != null && <span className="text-xs text-muted line-through">{rupiah(was)}</span>}
             </p>
           ) : (
-            <p className="font-semibold text-plum-700">Harga by request</p>
+            product.from_price ? (
+              <p className="text-lg font-extrabold text-leaf-700">
+                <span className="text-xs font-semibold text-muted">mulai </span>
+                {rupiah(product.from_price)}
+              </p>
+            ) : (
+              <p className="font-semibold text-plum-700">Harga by request</p>
+            )
           )}
           <div className="mt-3">
             <QuickAdd product={product} />

@@ -20,6 +20,7 @@ export function Footer() {
             { href: "/parcel", label: "Parcel & Hampers" },
             { href: "/lainnya", label: "Lainnya" },
             { href: "/katalog", label: "Semua Produk" },
+            { href: "/korporat", label: "Pesanan Korporat" },
           ]}
         />
         <FooterCol
@@ -27,6 +28,7 @@ export function Footer() {
           links={[
             { href: "/tentang", label: "Tentang Kami" },
             { href: "/artikel", label: "Artikel" },
+            { href: "/garansi", label: "Garansi" },
             { href: "/faq", label: "FAQ" },
             { href: "/syarat-ketentuan", label: "Syarat & Ketentuan" },
             { href: "/kebijakan-privasi", label: "Kebijakan Privasi" },

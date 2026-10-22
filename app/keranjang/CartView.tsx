@@ -5,18 +5,20 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cartTotal, clearCart, setQty, useCart, type CartItem } from "@/lib/cart";
 import { qtyLabel, rupiah } from "@/lib/format";
+import { trackEvent } from "@/lib/analytics";
+import { jakartaNow, sameDayCutoff, slotOpen, slotTime, type DeliverySlot } from "@/lib/delivery";
 import { FREE_SHIPPING, waLink } from "@/lib/site";
 import { getCheckoutProfile, placeOrder } from "./actions";
 
-type Form = { name: string; phone: string; address: string; date: string; notes: string };
+type Form = { name: string; phone: string; address: string; date: string; notes: string; slot: number | null };
 type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string; freeShippingMax: number | null };
 type Profile = NonNullable<Awaited<ReturnType<typeof getCheckoutProfile>>>;
 
 const BUYER_KEY = "healthila_buyer";
 
-export function CartView() {
+export function CartView({ slots }: { slots: DeliverySlot[] }) {
   const items = useCart();
-  const [form, setForm] = useState<Form>({ name: "", phone: "", address: "", date: "", notes: "" });
+  const [form, setForm] = useState<Form>({ name: "", phone: "", address: "", date: "", notes: "", slot: null });
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -77,6 +79,7 @@ export function CartView() {
         phone: form.phone,
         address: form.address,
         date: form.date || null,
+        slot: form.slot,
         notes: orderNotes(snapshot, form.notes),
         key: orderKey.current!,
         lines: snapshot.map((i) => ({
@@ -101,6 +104,12 @@ export function CartView() {
         // not critical
       }
       orderKey.current = null;
+      trackEvent("purchase", {
+        transaction_id: res.code,
+        currency: "IDR",
+        value: Math.round(cartTotal(snapshot)),
+        items: snapshot.map((i) => ({ item_id: i.productId, item_name: i.name, price: i.price, quantity: i.qty })),
+      });
       setDone({
         code: res.code,
         customerStatus: res.customerStatus,
@@ -196,9 +205,10 @@ export function CartView() {
         <Field label="Alamat pengiriman *">
           <textarea value={form.address} onChange={set("address")} rows={3} autoComplete="street-address" className={input} />
         </Field>
-        <Field label="Tanggal kirim">
+        <Field label="Tanggal kirim" hint={form.date ? undefined : "Kosong = dikirim besok"}>
           <input type="date" value={form.date} onChange={set("date")} min={today()} className={input} />
         </Field>
+        <SlotPicker slots={slots} date={form.date} value={form.slot} onChange={(slot) => setForm((f) => ({ ...f, slot }))} />
         <Field label="Catatan">
           <textarea value={form.notes} onChange={set("notes")} rows={2} placeholder="Mis. pilih yang matang, kartu ucapan…" className={input} />
         </Field>
@@ -293,8 +303,72 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 function today() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return jakartaNow().date;
+}
+
+/** Courier run choice; runs already closed for the chosen day are disabled. */
+function SlotPicker({
+  slots,
+  date,
+  value,
+  onChange,
+}: {
+  slots: DeliverySlot[];
+  date: string;
+  value: number | null;
+  onChange: (slot: number | null) => void;
+}) {
+  const [now, setNow] = useState<ReturnType<typeof jakartaNow> | null>(null);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clock is browser-only (page is cached)
+    setNow(jakartaNow());
+    const id = setInterval(() => setNow(jakartaNow()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  // A run that closed while the buyer was filling the form is dropped.
+  useEffect(() => {
+    const chosen = slots.find((s) => s.n === value);
+    if (now && chosen && !slotOpen(chosen, date, now)) onChange(null);
+  }, [now, date, value, slots, onChange]);
+
+  const enabled = slots.filter((s) => s.enabled);
+  if (!enabled.length) return null;
+  const cutoff = now ? sameDayCutoff(enabled, now) : null;
+  return (
+    <div className="mt-4">
+      <p className="text-sm font-medium text-ink">Jam antar</p>
+      <div className="mt-1.5 grid grid-cols-3 gap-2">
+        {enabled.map((s) => {
+          const open = now ? slotOpen(s, date, now) : true;
+          const on = value === s.n;
+          return (
+            <button
+              key={s.n}
+              type="button"
+              disabled={!open}
+              onClick={() => onChange(on ? null : s.n)}
+              className={`rounded-xl px-2 py-2 text-center text-xs ring-1 transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                on ? "bg-leaf-700 font-semibold text-white ring-leaf-700" : "text-ink ring-leaf-100 hover:ring-leaf-300"
+              }`}
+            >
+              <span className="block text-sm font-bold">{s.label}</span>
+              berangkat ±{slotTime(s.at)}
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-1.5 text-xs text-muted">
+        {cutoff ? (
+          <>
+            ⏰ Pesan sebelum <b className="text-ink">{cutoff}</b> WIB bisa diantar hari ini.
+          </>
+        ) : (
+          "Pengantaran hari ini sudah tutup — pesanan dikirim besok atau di tanggal pilihan Kakak."
+        )}{" "}
+        Jam antar dikonfirmasi admin.
+      </p>
+    </div>
+  );
 }
 
 function buildMessage(items: CartItem[], total: number, f: Form, code: string | null, freeShippingMax: number | null = null) {
@@ -318,6 +392,7 @@ function buildMessage(items: CartItem[], total: number, f: Form, code: string | 
     f.date
       ? `Tanggal kirim: ${new Date(f.date + "T00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`
       : null,
+    f.slot ? `Jam antar: ${f.slot === 1 ? "Pagi" : f.slot === 2 ? "Siang" : "Sore"}` : null,
     f.notes.trim() ? `Catatan: ${f.notes.trim()}` : null,
     "",
     "Mohon info ongkir & cara pembayarannya. Terima kasih!",

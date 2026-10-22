@@ -65,7 +65,16 @@ export function AddToCart({ product }: { product: Product }) {
     <div className="mt-6">
       {product.price_note && <p className="text-sm font-semibold text-plum-700">{product.price_note}</p>}
       <p className="mt-1 text-4xl font-extrabold text-leaf-700">
-        {opt.price != null ? rupiah(opt.price) : "Harga by request"}
+        {opt.price != null ? (
+          rupiah(opt.price)
+        ) : product.from_price ? (
+          <>
+            <span className="text-base font-semibold text-muted">mulai </span>
+            {rupiah(product.from_price)}
+          </>
+        ) : (
+          "Harga by request"
+        )}
         {unitWord && opt.price != null && <span className="text-base font-medium text-muted"> / {unitWord}</span>}
         {opt.was != null && <span className="ml-3 text-lg font-medium text-muted line-through">{rupiah(opt.was)}</span>}
       </p>

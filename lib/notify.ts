@@ -17,6 +17,7 @@ export type PlacedOrder = {
   subtotal: number;
   free_shipping_max: number | null;
   web_order_number: number | null;
+  slot: string | null;
   name: string;
   phone: string;
   address: string;
@@ -62,7 +63,7 @@ function formatMessage(o: PlacedOrder) {
     `👤 ${o.name}`,
     `📱 ${o.phone}`,
     `📍 ${o.address}`,
-    `📅 Kirim ${date}`,
+    `📅 Kirim ${date}${o.slot ? ` · 🕐 ${o.slot}` : ""}`,
     "",
     ...(o.items ?? []).map((i) => `• ${i.name} — ${amount(i.quantity, i.unit)} = ${rupiah(i.total)}`),
     "",

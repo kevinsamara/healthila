@@ -99,7 +99,7 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
 
             <ul className="mt-8 grid gap-3 sm:grid-cols-3">
               {[
-                ["🏅", "Quality check", "Disortir sebelum dikirim"],
+                ["🏅", "Garansi segar", "Klaim cukup kirim foto"],
                 ["🚚", "Same-day", "Malang & sekitarnya"],
                 ["🎁", "Free ongkir s.d. 10rb", "2 pembelian pertama via website"],
               ].map(([icon, title, text]) => (
@@ -110,6 +110,9 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
                 </li>
               ))}
             </ul>
+            <Link href="/garansi" className="mt-2 inline-block text-xs font-semibold text-leaf-700 hover:underline">
+              Lihat Garansi Healthila →
+            </Link>
 
             {product.description && (
               <div className="mt-8 rounded-3xl bg-white p-6 ring-1 ring-black/5">

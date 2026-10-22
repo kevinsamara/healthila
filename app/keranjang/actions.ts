@@ -27,6 +27,7 @@ const Input = z.object({
   address: z.string().trim().min(5, "Alamat wajib diisi").max(500),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   notes: z.string().max(500).nullable(),
+  slot: z.number().int().min(1).max(3).nullable(),
   lines: z.array(Line).min(1).max(50),
   key: z.string().uuid(),
 });
@@ -65,6 +66,7 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       })),
       p_key: input.key,
       p_session_token: await sessionToken(),
+      p_slot: input.slot,
     });
     // Only brand-new orders are announced; an idempotent retry returns created=false.
     if (res.created) after(() => notifyNewWebOrder(res as PlacedOrder));

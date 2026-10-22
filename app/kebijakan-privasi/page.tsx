@@ -32,7 +32,11 @@ export default function PrivacyPage() {
         dan penyedia layanan teknis kami (Supabase, Vercel, penyedia gateway WhatsApp).
       </p>
       <h2>4. Cookies</h2>
-      <p>Kami hanya memakai penyimpanan teknis yang diperlukan agar website berfungsi, tanpa cookies iklan pihak ketiga.</p>
+      <p>
+        Selain penyimpanan teknis yang diperlukan agar website berfungsi, kami dapat memakai Google Analytics dan Meta Pixel
+        untuk mengukur kunjungan dan efektivitas iklan (mis. jumlah pesanan dari sebuah iklan). Layanan ini memakai cookies
+        dan tidak menerima nama, nomor WhatsApp, atau alamat Anda dari kami.
+      </p>
       <h2>5. Hak Anda</h2>
       <p>
         Anda dapat meminta akses, koreksi, atau penghapusan data Anda dengan menghubungi admin@healthila.id atau WhatsApp

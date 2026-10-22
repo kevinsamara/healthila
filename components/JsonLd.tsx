@@ -60,6 +60,7 @@ export function ProductJsonLd({ product }: { product: Product }) {
   const prices = [
     product.promo_price ?? product.price,
     ...product.packagings.map((k) => k.promo_price ?? k.price),
+    product.from_price,
   ].filter((n): n is number => n != null && n > 0);
   const url = `${site.url}/produk/${product.slug}`;
   return (

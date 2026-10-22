@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { trackEvent } from "./analytics";
 
 /**
  * Cart lives in localStorage until checkout. Prices here are only for display;
@@ -71,6 +72,11 @@ export function useCart() {
 }
 
 export function addItem(item: Omit<CartItem, "key" | "qty">, qty = 1) {
+  trackEvent("add_to_cart", {
+    currency: "IDR",
+    value: Math.round(item.price * qty),
+    items: [{ item_id: item.productId, item_name: item.name, price: item.price, quantity: qty }],
+  });
   // Unit is part of the key so a per-kg line never merges with a per-pack one.
   const key = `${item.productId}:${item.packagingId ?? "base"}:${item.unitLabel ?? ""}`;
   const items = read();

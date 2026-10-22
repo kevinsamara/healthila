@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
+import { PARCEL_CONTAINERS } from "./parcel-options";
 import type { SectionKey } from "./site";
 
 /**
@@ -45,6 +46,10 @@ export type Product = {
   /** Set when the site sells per pack while the CRM sells per kg: kg in one pack. */
   base_per_unit: number | null;
   base_unit: string | null;
+  /** Gift occasions (lib/occasions keys), set in Healthila OS. */
+  occasions: string[];
+  /** Parcels priced per order: the matching container's "mulai dari" price. */
+  from_price: number | null;
 };
 
 function db() {
@@ -60,6 +65,8 @@ function normalize(row: Record<string, unknown>): Product {
     price: num(row.price),
     promo_price: num(row.promo_price),
     badges: (row.badges as string[] | null) ?? [],
+    occasions: (row.occasions as string[] | null) ?? [],
+    from_price: null,
     in_stock: row.in_stock !== false,
     base_per_unit: null,
     base_unit: null,
@@ -116,17 +123,26 @@ function toPack(p: Product, grams: number | null): Product {
 export const getProducts = unstable_cache(loadProducts, ["web-products"], { revalidate: 300, tags: ["catalog"] });
 
 async function loadProducts(): Promise<Product[]> {
-  const { data, error } = await db()
-    .from("web_products")
-    .select("*")
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true });
+  const [{ data, error }, containers] = await Promise.all([
+    db().from("web_products").select("*").order("sort_order", { ascending: true }).order("name", { ascending: true }),
+    db().from("web_parcel_containers_public").select("key, start_price"),
+  ]);
   if (error) {
     console.error("[catalog] getProducts", error.message);
     return [];
   }
+  const startByKey = new Map<string, number>(
+    ((containers.data ?? []) as { key: string; start_price: number }[]).map((c) => [c.key, Number(c.start_price)]),
+  );
+  const products = (data ?? []).map(normalize);
+  for (const p of products) {
+    if (p.section !== "parcel") continue;
+    // Parcel products have no CRM price; use the container they're built on.
+    const prices = PARCEL_CONTAINERS.filter((c) => c.crmMatch?.test(p.name)).map((c) => startByKey.get(c.key) ?? c.start);
+    p.from_price = prices.length ? Math.min(...prices) : null;
+  }
   // Sold-out items stay listed (product pages remain indexed) but sink to the end.
-  return (data ?? []).map(normalize).sort((a, b) => Number(b.in_stock) - Number(a.in_stock));
+  return products.sort((a, b) => Number(b.in_stock) - Number(a.in_stock));
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
