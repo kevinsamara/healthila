@@ -4,11 +4,11 @@ import { site } from "@/lib/site";
 import { getTestimonials } from "@/lib/testimonials";
 import { TestimonialSlider, type SlideItem } from "./TestimonialSlider";
 
-export function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+export function SectionTitle({ title, subtitle, light }: { title: string; subtitle?: string; light?: boolean }) {
   return (
     <div className="text-center">
-      <h2 className="text-4xl font-extrabold text-ink sm:text-5xl">{title}</h2>
-      {subtitle && <p className="mt-3 text-muted italic">{subtitle}</p>}
+      <h2 className={`text-4xl font-extrabold sm:text-5xl ${light ? "text-white" : "text-ink"}`}>{title}</h2>
+      {subtitle && <p className={`mt-3 italic ${light ? "text-white/90" : "text-muted"}`}>{subtitle}</p>}
     </div>
   );
 }
@@ -22,9 +22,9 @@ const features = [
 
 export function WhyHealthila() {
   return (
-    <section className="bg-[#f6f8fb]">
+    <section className="bg-[#00b1ff]">
       <div className="mx-auto max-w-7xl px-4 py-20">
-        <SectionTitle title="Kenapa Healthila?" />
+        <SectionTitle title="Kenapa Healthila?" light />
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => (
             <div key={f.title} className={`rounded-3xl p-7 ${f.bg}`}>
@@ -105,9 +105,9 @@ export async function Testimonials() {
   const mapsHref = google?.mapsUri ?? site.googleMaps;
 
   return (
-    <section className="bg-[#f6f8fb]">
+    <section className="bg-[#f37900]">
       <div className="mx-auto max-w-7xl px-4 py-20">
-        <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" />
+        <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" light />
         {google && (
           <a
             href={mapsHref}
@@ -122,10 +122,10 @@ export async function Testimonials() {
           </a>
         )}
         <div className="mt-10">
-          <TestimonialSlider items={items} />
+          <TestimonialSlider items={items} onDark />
         </div>
         <p className="mt-8 text-center">
-          <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="font-semibold text-leaf-700 hover:underline">
+          <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:underline">
             Lihat semua ulasan di Google Maps →
           </a>
         </p>

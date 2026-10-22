@@ -20,7 +20,7 @@ const toneCls = {
 };
 
 /** Swipeable testimonial carousel: 1 card on phones, 2 on tablet, 3 on desktop. Auto-advances. */
-export function TestimonialSlider({ items: initial }: { items: SlideItem[] }) {
+export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem[]; /** On a coloured section: white dots. */ onDark?: boolean }) {
   // The page is cached, so shuffle in the browser: a new order on every refresh.
   const [items, setItems] = useState(initial);
   useEffect(() => {
@@ -129,7 +129,9 @@ export function TestimonialSlider({ items: initial }: { items: SlideItem[] }) {
                 type="button"
                 aria-label={`Halaman ${i + 1}`}
                 onClick={() => go(i)}
-                className={`h-2 rounded-full transition-all ${i === page ? "w-6 bg-leaf-700" : "w-2 bg-black/15"}`}
+                className={`h-2 rounded-full transition-all ${
+                  i === page ? (onDark ? "w-6 bg-white" : "w-6 bg-leaf-700") : onDark ? "w-2 bg-white/45" : "w-2 bg-black/15"
+                }`}
               />
             ))}
           </div>
