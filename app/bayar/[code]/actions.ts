@@ -1,7 +1,7 @@
 "use server";
 
 import { after } from "next/server";
-import { sendWhatsApp } from "@/lib/fonnte";
+import { sendToStaffGroup } from "@/lib/notify";
 import { rupiah } from "@/lib/format";
 import { getQrisPayment } from "@/lib/payment";
 import { webSecret } from "@/lib/web-rpc";
@@ -39,10 +39,7 @@ export async function uploadPaymentProof(code: string, key: string | null, form:
   }
 
   after(async () => {
-    const target = process.env.SORTIR_GROUP_ID;
-    if (!target) return;
-    await sendWhatsApp(
-      target,
+    await sendToStaffGroup(
       [
         "💳 *BUKTI BAYAR QRIS MASUK*",
         `*${code}* — ${rupiah(pay.amount)} (kode unik ${pay.unique_code})`,

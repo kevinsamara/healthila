@@ -3,7 +3,7 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { after } from "next/server";
 import { z } from "zod";
-import { sendWhatsApp } from "@/lib/fonnte";
+import { sendToStaffGroup } from "@/lib/notify";
 import { rupiah } from "@/lib/format";
 import { webRpc, WebRpcError } from "@/lib/web-rpc";
 
@@ -72,6 +72,6 @@ async function notifyStaff(code: string, phone: string, d: CorporateInput) {
   ]
     .filter((l): l is string => l !== null)
     .join("\n");
-  const r = await sendWhatsApp(target, msg);
+  const r = await sendToStaffGroup(msg);
   if (!r.ok) console.error("[notify] corporate", code, r.detail);
 }

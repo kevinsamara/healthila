@@ -29,13 +29,32 @@ export type PlacedOrder = {
   items: { name: string; quantity: number; unit: string | null; total: number }[] | null;
 };
 
+/**
+ * Marker the Healthila OS WhatsApp importer skips (lib/import/ingest.ts
+ * looksLikeRecap, same as its own sortir recaps). Without it the importer
+ * turned this notification into a second, garbled order.
+ */
+export function noImportTag(date = new Date()) {
+  const d = date.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+  return `[HLTHOS-WEB-${d}]`;
+}
+
+/** Post to the staff/sortir group (SORTIR_GROUP_ID), always tagged. */
+export async function sendToStaffGroup(message: string) {
+  const target = process.env.SORTIR_GROUP_ID;
+  if (!target) return { ok: false as const, detail: "SORTIR_GROUP_ID not set" };
+  return sendWhatsApp(target, `${message}
+
+${noImportTag()}`);
+}
+
 export async function notifyNewWebOrder(o: PlacedOrder) {
   const target = process.env.SORTIR_GROUP_ID;
   if (!target) {
     console.warn("[notify] SORTIR_GROUP_ID not set — skipping new-order notification");
     return;
   }
-  const res = await sendWhatsApp(target, formatMessage(o));
+  const res = await sendToStaffGroup(formatMessage(o));
   if (!res.ok) console.error("[notify] new order", o.code, res.detail);
 }
 

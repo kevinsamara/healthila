@@ -3,7 +3,7 @@
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { after } from "next/server";
 import { z } from "zod";
-import { sendWhatsApp } from "@/lib/fonnte";
+import { sendToStaffGroup } from "@/lib/notify";
 import { rupiah } from "@/lib/format";
 import { sessionToken } from "@/lib/session";
 import { webRpc, WebRpcError } from "@/lib/web-rpc";
@@ -97,6 +97,6 @@ async function notifyStaff(res: { code: string; customer: boolean; verified: boo
   ]
     .filter((l): l is string => l !== null)
     .join("\n");
-  const sent = await sendWhatsApp(target, msg);
+  const sent = await sendToStaffGroup(msg);
   if (!sent.ok) console.error("[notify] parcel request", res.code, sent.detail);
 }
