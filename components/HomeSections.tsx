@@ -14,10 +14,10 @@ export function SectionTitle({ title, subtitle }: { title: string; subtitle?: st
 }
 
 const features = [
-  { icon: "🏅", title: "Quality Above All", text: "Setiap buah melewati quality check ketat sebelum sampai ke tangan Kakak.", bg: "bg-sky-50" },
-  { icon: "🎁", title: "Premium Packaging", text: "Dikemas rapi dan elegan, siap jadi hadiah istimewa.", bg: "bg-sun-300/25" },
-  { icon: "📱", title: "Effortless Order", text: "Pesan lewat website, konfirmasi cepat via WhatsApp. Simpel dan anti ribet.", bg: "bg-leaf-50" },
-  { icon: "🚚", title: "Same-Day Delivery", text: "Dikirim fresh setiap hari untuk Kota Malang & sekitarnya.", bg: "bg-plum-50" },
+  { icon: "🏅", title: "Quality Above All", text: "Setiap buah melewati quality check ketat sebelum sampai ke tangan Kakak." },
+  { icon: "🎁", title: "Premium Packaging", text: "Dikemas rapi dan elegan, siap jadi hadiah istimewa." },
+  { icon: "📱", title: "Effortless Order", text: "Pesan lewat website, konfirmasi cepat via WhatsApp. Simpel dan anti ribet." },
+  { icon: "🚚", title: "Same-Day Delivery", text: "Dikirim fresh setiap hari untuk Kota Malang & sekitarnya." },
 ];
 
 export function WhyHealthila() {
@@ -27,10 +27,10 @@ export function WhyHealthila() {
         <SectionTitle title="Kenapa Healthila?" />
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => (
-            <div key={f.title} className={`rounded-3xl p-7 ${f.bg}`}>
-              <span className="text-4xl">{f.icon}</span>
-              <h3 className="mt-4 font-display text-2xl font-bold text-ink">{f.title}</h3>
-              <p className="mt-2 leading-relaxed text-ink/80">{f.text}</p>
+            <div key={f.title} className="rounded-3xl bg-[#f37900] p-7 text-white shadow-lg shadow-[#f37900]/20">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 text-3xl">{f.icon}</span>
+              <h3 className="mt-4 font-display text-2xl font-bold">{f.title}</h3>
+              <p className="mt-2 leading-relaxed text-white/90">{f.text}</p>
             </div>
           ))}
         </div>
