@@ -13,22 +13,40 @@ export function SectionTitle({ title, subtitle, light }: { title: string; subtit
   );
 }
 
+/**
+ * Faded decorative circles, same language as the home hero. Parent needs
+ * `relative overflow-hidden`.
+ */
+export function BgCircles({ tone = "white" }: { tone?: "white" | "dark" }) {
+  const c = tone === "white" ? "bg-white/10" : "bg-black/5";
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      <div className={`absolute -top-32 -left-24 h-96 w-96 rounded-full ${c}`} />
+      <div className={`absolute -right-20 -bottom-40 h-[28rem] w-[28rem] rounded-full ${c}`} />
+      <div className={`absolute top-1/3 right-1/4 h-40 w-40 rounded-full ${c}`} />
+    </div>
+  );
+}
+
+// Opaque warm pastels: they read as distinct tiles on the #00b1ff section
+// (the old 25% yellow mixed with the blue into grey).
 const features = [
-  { icon: "🏅", title: "Quality Above All", text: "Setiap buah melewati quality check ketat sebelum sampai ke tangan Kakak.", bg: "bg-sky-50" },
-  { icon: "🎁", title: "Premium Packaging", text: "Dikemas rapi dan elegan, siap jadi hadiah istimewa.", bg: "bg-sun-300/25" },
-  { icon: "📱", title: "Effortless Order", text: "Pesan lewat website, konfirmasi cepat via WhatsApp. Simpel dan anti ribet.", bg: "bg-leaf-50" },
-  { icon: "🚚", title: "Same-Day Delivery", text: "Dikirim fresh setiap hari untuk Kota Malang & sekitarnya.", bg: "bg-plum-50" },
+  { icon: "🏅", title: "Quality Above All", text: "Setiap buah melewati quality check ketat sebelum sampai ke tangan Kakak.", bg: "bg-[#fff4cc]", chip: "bg-[#ffd23f]" },
+  { icon: "🎁", title: "Premium Packaging", text: "Dikemas rapi dan elegan, siap jadi hadiah istimewa.", bg: "bg-[#ffe6d5]", chip: "bg-[#ff9a52]" },
+  { icon: "📱", title: "Effortless Order", text: "Pesan lewat website, konfirmasi cepat via WhatsApp. Simpel dan anti ribet.", bg: "bg-[#ddf8e6]", chip: "bg-[#5fd38d]" },
+  { icon: "🚚", title: "Same-Day Delivery", text: "Dikirim fresh setiap hari untuk Kota Malang & sekitarnya.", bg: "bg-[#fde4ef]", chip: "bg-[#f47fb1]" },
 ];
 
 export function WhyHealthila() {
   return (
-    <section className="bg-[#00b1ff]">
-      <div className="mx-auto max-w-7xl px-4 py-20">
+    <section className="relative overflow-hidden bg-[#00b1ff]">
+      <BgCircles />
+      <div className="relative mx-auto max-w-7xl px-4 py-20">
         <SectionTitle title="Kenapa Healthila?" light />
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {features.map((f) => (
-            <div key={f.title} className={`rounded-3xl p-7 ${f.bg}`}>
-              <span className="text-4xl">{f.icon}</span>
+            <div key={f.title} className={`rounded-3xl p-7 shadow-xl shadow-black/10 ${f.bg}`}>
+              <span className={`flex h-14 w-14 items-center justify-center rounded-2xl text-3xl ${f.chip}`}>{f.icon}</span>
               <h3 className="mt-4 font-display text-2xl font-bold text-ink">{f.title}</h3>
               <p className="mt-2 leading-relaxed text-ink/80">{f.text}</p>
             </div>
@@ -67,10 +85,11 @@ export function HowToOrder() {
   );
 }
 
+// Opaque cool/neutral pastels so the cards stand out on the #f37900 section.
 const toneCls = {
-  coral: { card: "bg-[#fff1f3]", quote: "text-coral-500/25", name: "text-coral-500" },
-  sky: { card: "bg-sky-50", quote: "text-sky-400/30", name: "text-sky-600" },
-  leaf: { card: "bg-leaf-50", quote: "text-leaf-500/25", name: "text-leaf-700" },
+  coral: { card: "bg-[#fff8ef]", quote: "text-plum-500/20", name: "text-plum-700" },
+  sky: { card: "bg-[#e3f6ff]", quote: "text-[#00b1ff]/35", name: "text-[#0079b0]" },
+  leaf: { card: "bg-[#e6f9ee]", quote: "text-leaf-500/30", name: "text-leaf-700" },
 };
 
 export async function Testimonials() {
@@ -105,8 +124,9 @@ export async function Testimonials() {
   const mapsHref = google?.mapsUri ?? site.googleMaps;
 
   return (
-    <section className="bg-[#f37900]">
-      <div className="mx-auto max-w-7xl px-4 py-20">
+    <section className="relative overflow-hidden bg-[#f37900]">
+      <BgCircles />
+      <div className="relative mx-auto max-w-7xl px-4 py-20">
         <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" light />
         {google && (
           <a
@@ -147,8 +167,9 @@ function GoogleG({ small }: { small?: boolean }) {
 
 export function CtaBand() {
   return (
-    <section className="bg-sun-400">
-      <div className="mx-auto max-w-4xl px-4 py-20 text-center">
+    <section className="relative overflow-hidden bg-sun-400">
+      <BgCircles />
+      <div className="relative mx-auto max-w-4xl px-4 py-20 text-center">
         <h2 className="text-5xl font-extrabold text-ink sm:text-6xl">Siap hidup lebih sehat?</h2>
         <p className="mt-4 text-lg text-ink/80 italic">Pesan sekarang, buah segar dikirim langsung ke rumah Kakak.</p>
         <Link

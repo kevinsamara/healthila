@@ -13,10 +13,11 @@ export type SlideItem = {
   google: boolean;
 };
 
+// Opaque cool/neutral pastels so the cards stand out on the #f37900 section.
 const toneCls = {
-  coral: { card: "bg-[#fff1f3]", quote: "text-coral-500/25", name: "text-coral-500" },
-  sky: { card: "bg-sky-50", quote: "text-sky-400/30", name: "text-sky-600" },
-  leaf: { card: "bg-leaf-50", quote: "text-leaf-500/25", name: "text-leaf-700" },
+  coral: { card: "bg-[#fff8ef]", quote: "text-plum-500/20", name: "text-plum-700" },
+  sky: { card: "bg-[#e3f6ff]", quote: "text-[#00b1ff]/35", name: "text-[#0079b0]" },
+  leaf: { card: "bg-[#e6f9ee]", quote: "text-leaf-500/30", name: "text-leaf-700" },
 };
 
 /** Swipeable testimonial carousel: 1 card on phones, 2 on tablet, 3 on desktop. Auto-advances. */
@@ -83,13 +84,13 @@ export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem
       <div
         ref={track}
         onScroll={onScroll}
-        className="-mx-2 flex snap-x snap-mandatory overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="-mx-2 flex snap-x snap-mandatory overflow-x-auto pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((t) => {
           const c = toneCls[t.tone];
           return (
             <div key={t.key} className="w-full shrink-0 snap-start px-2 md:w-1/2 lg:w-1/3">
-              <figure className={`relative flex h-full flex-col overflow-hidden rounded-3xl p-7 ${c.card}`}>
+              <figure className={`relative flex h-full flex-col overflow-hidden rounded-3xl p-7 shadow-xl shadow-black/10 ${c.card}`}>
                 <span className={`absolute top-1 right-5 font-display text-[8rem] leading-none font-extrabold ${c.quote}`} aria-hidden>
                   “
                 </span>
