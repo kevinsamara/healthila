@@ -16,6 +16,14 @@ export type AccountOrder = {
   payment_status: string;
   total: number;
   items: string | null;
+  // Tracking (healthila-crm 0108); optional so an older RPC still renders.
+  subtotal?: number | null;
+  shipping_cost?: number | null;
+  dispatched?: boolean;
+  delivered_at?: string | null;
+  slot?: number | null;
+  previews?: string[];
+  proofs?: string[];
 };
 
 export type Account = {

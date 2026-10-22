@@ -349,7 +349,10 @@ function OrderPlaced({ done }: { done: Done }) {
       >
         Kirim ke WhatsApp
       </a>
-      <p className="mt-6 text-sm">
+      <p className="mt-6 flex justify-center gap-4 text-sm">
+        <Link href="/akun" className="font-semibold text-leaf-700 hover:underline">
+          Lacak pesanan
+        </Link>
         <Link href="/katalog" className="text-leaf-700 hover:underline">
           Kembali belanja
         </Link>

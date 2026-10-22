@@ -49,6 +49,21 @@ export default async function AkunPage() {
                   {o.delivery_date ? ` · Kirim ${fmtDate(o.delivery_date)}` : ""}
                 </p>
                 {o.items && <p className="mt-2 line-clamp-2 text-sm text-ink">{o.items}</p>}
+                {o.status !== "cancelled" && <Timeline order={o} />}
+                {((o.previews?.length ?? 0) > 0 || (o.proofs?.length ?? 0) > 0) && (
+                  <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                    {o.previews?.map((id, i) => (
+                      <a key={id} href={`${CRM_URL}/foto-parcel/${id}`} target="_blank" rel="noopener noreferrer" className="rounded-full bg-lime-100 px-3 py-1 font-semibold text-leaf-900 hover:bg-lime-200">
+                        📸 Foto sebelum kirim{o.previews!.length > 1 ? ` ${i + 1}` : ""}
+                      </a>
+                    ))}
+                    {o.proofs?.map((id, i) => (
+                      <a key={id} href={`${CRM_URL}/bukti/${id}`} target="_blank" rel="noopener noreferrer" className="rounded-full bg-leaf-50 px-3 py-1 font-semibold text-leaf-700 hover:bg-leaf-100">
+                        ✅ Bukti sampai{o.proofs!.length > 1 ? ` ${i + 1}` : ""}
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <div className="mt-3 flex items-center justify-between text-sm">
                   <span className={o.payment_status === "paid" ? "font-semibold text-leaf-700" : "text-muted"}>
                     {o.payment_status === "paid" ? "Lunas" : "Menunggu pembayaran"}
@@ -93,6 +108,26 @@ function StatusBadge({ order }: { order: AccountOrder }) {
       ? ["Menunggu konfirmasi", "bg-plum-50 text-plum-700"]
       : STATUS[order.status] ?? [order.status, "bg-leaf-50 text-ink"];
   return <span className={`rounded-full px-3 py-1 text-xs font-bold ${cls}`}>{label}</span>;
+}
+
+// Public proof pages (/bukti, /foto-parcel) are served by Healthila OS.
+const CRM_URL = (process.env.CRM_URL || "https://crm.healthila.id").replace(/\/$/, "");
+
+const STEPS = ["Pesanan masuk", "Dikonfirmasi", "Dikirim", "Sampai"] as const;
+
+/** Order progress from the CRM fields: confirmed → dispatched → delivered. */
+function Timeline({ order }: { order: AccountOrder }) {
+  const step = order.delivered_at ? 3 : order.dispatched || order.status === "shipped" ? 2 : order.confirmed ? 1 : 0;
+  return (
+    <ol className="mt-4 grid grid-cols-4 gap-1">
+      {STEPS.map((label, i) => (
+        <li key={label} className="text-center">
+          <div className={`h-1.5 rounded-full ${i <= step ? "bg-leaf-700" : "bg-leaf-100"}`} />
+          <p className={`mt-1.5 text-[11px] leading-tight ${i <= step ? "font-semibold text-leaf-900" : "text-muted"}`}>{label}</p>
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 function fmtDate(d: string) {
