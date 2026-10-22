@@ -44,3 +44,6 @@ export function waLink(text?: string) {
   const base = `https://wa.me/${site.whatsapp}`;
   return text ? `${base}?text=${encodeURIComponent(text)}` : base;
 }
+
+/** FREEONGKIR: a phone's first 2 website orders, ongkir covered up to Rp10.000 (healthila-crm 0105). */
+export const FREE_SHIPPING = { orders: 2, max: 10_000 } as const;

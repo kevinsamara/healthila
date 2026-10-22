@@ -15,6 +15,8 @@ export type PlacedOrder = {
   prev_orders: number;
   verified: boolean;
   subtotal: number;
+  free_shipping_max: number | null;
+  web_order_number: number | null;
   name: string;
   phone: string;
   address: string;
@@ -65,6 +67,9 @@ function formatMessage(o: PlacedOrder) {
     ...(o.items ?? []).map((i) => `• ${i.name} — ${amount(i.quantity, i.unit)} = ${rupiah(i.total)}`),
     "",
     `*Subtotal: ${rupiah(o.subtotal)}* (belum ongkir)`,
+    o.free_shipping_max
+      ? `🚚 *FREEONGKIR* (pembelian website ke-${o.web_order_number}) — ongkir ditanggung s.d. ${rupiah(o.free_shipping_max)}`
+      : null,
     o.notes ? `\n📝 ${o.notes}` : null,
   ]
     .filter((l): l is string => l !== null)

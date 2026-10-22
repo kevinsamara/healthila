@@ -33,7 +33,7 @@ const Input = z.object({
 
 export type PlaceOrderInput = z.infer<typeof Input>;
 export type PlaceOrderResult =
-  | { ok: true; code: string; customerStatus: "new" | "existing" | null }
+  | { ok: true; code: string; customerStatus: "new" | "existing" | null; freeShippingMax: number | null; webOrderNumber: number | null }
   | { ok: false; error: string; fallback?: boolean };
 
 export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult> {
@@ -68,7 +68,13 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
     });
     // Only brand-new orders are announced; an idempotent retry returns created=false.
     if (res.created) after(() => notifyNewWebOrder(res as PlacedOrder));
-    return { ok: true, code: res.code, customerStatus: res.customer_status ?? null };
+    return {
+      ok: true,
+      code: res.code,
+      customerStatus: res.customer_status ?? null,
+      freeShippingMax: res.free_shipping_max ?? null,
+      webOrderNumber: res.web_order_number ?? null,
+    };
   } catch (e) {
     return {
       ok: false,
@@ -81,7 +87,10 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
 export async function getCheckoutProfile() {
   const account = await getAccount();
   if (!account) return null;
+  // FREEONGKIR orders left for this phone; null when unknown.
+  const freeShippingLeft = await webRpc<number | null>("web_free_shipping_left", { p_session_token: await sessionToken() }).catch(() => null);
   return {
+    freeShippingLeft,
     phone: account.phone,
     name: account.name,
     addresses: account.addresses.map((a) => ({ id: a.id, recipient: a.recipient, address: a.address })),

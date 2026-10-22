@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cartTotal, clearCart, setQty, useCart, type CartItem } from "@/lib/cart";
 import { qtyLabel, rupiah } from "@/lib/format";
-import { waLink } from "@/lib/site";
+import { FREE_SHIPPING, waLink } from "@/lib/site";
 import { getCheckoutProfile, placeOrder } from "./actions";
 
 type Form = { name: string; phone: string; address: string; date: string; notes: string };
-type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string };
+type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string; freeShippingMax: number | null };
 type Profile = NonNullable<Awaited<ReturnType<typeof getCheckoutProfile>>>;
 
 const BUYER_KEY = "healthila_buyer";
@@ -101,7 +101,12 @@ export function CartView() {
         // not critical
       }
       orderKey.current = null;
-      setDone({ code: res.code, customerStatus: res.customerStatus, wa: waLink(buildMessage(snapshot, cartTotal(snapshot), form, res.code)) });
+      setDone({
+        code: res.code,
+        customerStatus: res.customerStatus,
+        freeShippingMax: res.freeShippingMax,
+        wa: waLink(buildMessage(snapshot, cartTotal(snapshot), form, res.code, res.freeShippingMax)),
+      });
       clearCart();
     });
   }
@@ -203,6 +208,7 @@ export function CartView() {
           <span className="text-xl font-extrabold text-leaf-900">{rupiah(total)}</span>
         </div>
         <p className="mt-1 text-xs text-muted">Ongkir & pembayaran dikonfirmasi admin via WhatsApp.</p>
+        <FreeShippingNote left={profile?.freeShippingLeft} />
 
         {error && (
           <p className="mt-4 rounded-xl bg-plum-50 px-3 py-2 text-sm font-medium text-plum-700" role="alert">
@@ -223,6 +229,25 @@ export function CartView() {
   );
 }
 
+/** FREEONGKIR hint; personalised for signed-in buyers (left = remaining promo orders). */
+function FreeShippingNote({ left }: { left: number | null | undefined }) {
+  if (left === 0) return null;
+  return (
+    <p className="mt-3 rounded-xl bg-lime-100 px-3 py-2 text-xs font-medium text-leaf-900">
+      🚚{" "}
+      {left != null ? (
+        <>
+          Pesanan ini dapat <b>FREE ONGKIR s.d. {rupiah(FREE_SHIPPING.max)}</b> — sisa {left}× lagi untuk nomor Kakak.
+        </>
+      ) : (
+        <>
+          <b>FREE ONGKIR s.d. {rupiah(FREE_SHIPPING.max)}</b> untuk {FREE_SHIPPING.orders} pembelian pertama via website (per nomor WhatsApp).
+        </>
+      )}
+    </p>
+  );
+}
+
 function OrderPlaced({ done }: { done: Done }) {
   return (
     <div className="mx-auto mt-10 max-w-lg rounded-3xl bg-white p-8 text-center ring-1 ring-leaf-100">
@@ -232,6 +257,11 @@ function OrderPlaced({ done }: { done: Done }) {
         {done.customerStatus === "existing" ? "Terima kasih sudah belanja lagi! " : "Terima kasih! "}
         Satu langkah lagi: kirim pesanan ini ke WhatsApp admin supaya ongkir & pembayaran bisa dikonfirmasi.
       </p>
+      {done.freeShippingMax ? (
+        <p className="mt-4 rounded-2xl bg-lime-100 px-4 py-2.5 text-sm font-semibold text-leaf-900">
+          🚚 Pesanan ini dapat FREE ONGKIR s.d. {rupiah(done.freeShippingMax)}
+        </p>
+      ) : null}
       <a
         href={done.wa}
         target="_blank"
@@ -267,7 +297,7 @@ function today() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-function buildMessage(items: CartItem[], total: number, f: Form, code: string | null) {
+function buildMessage(items: CartItem[], total: number, f: Form, code: string | null, freeShippingMax: number | null = null) {
   const lines = items.map(
     (i) =>
       `• ${i.name}${i.variant ? ` (${i.variant})` : ""} — ${qtyLabel(i.qty, i.unitLabel)}${
@@ -280,6 +310,7 @@ function buildMessage(items: CartItem[], total: number, f: Form, code: string | 
     ...lines,
     "",
     `Subtotal: ${rupiah(total)}`,
+    freeShippingMax ? `🚚 Promo FREE ONGKIR s.d. ${rupiah(freeShippingMax)} (pembelian pertama via website)` : null,
     "",
     `Nama: ${f.name.trim()}`,
     code ? null : `No. WhatsApp: ${f.phone.trim()}`,

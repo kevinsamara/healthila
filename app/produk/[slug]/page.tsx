@@ -86,7 +86,7 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
               {[
                 ["🏅", "Quality check", "Disortir sebelum dikirim"],
                 ["🚚", "Same-day", "Malang & sekitarnya"],
-                ["💬", "Konfirmasi cepat", "Ongkir via WhatsApp"],
+                ["🎁", "Free ongkir s.d. 10rb", "2 pembelian pertama via website"],
               ].map(([icon, title, text]) => (
                 <li key={title} className="rounded-2xl bg-white p-4 ring-1 ring-black/5">
                   <span className="text-2xl">{icon}</span>
