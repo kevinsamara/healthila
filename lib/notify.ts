@@ -18,6 +18,9 @@ export type PlacedOrder = {
   free_shipping_max: number | null;
   web_order_number: number | null;
   slot: string | null;
+  payment: string | null;
+  pay_amount: number | null;
+  pay_expires_at: string | null;
   name: string;
   phone: string;
   address: string;
@@ -55,7 +58,9 @@ function formatMessage(o: PlacedOrder) {
 
   return [
     "🌐 *PESANAN WEBSITE BARU*",
-    "⚠️ _BELUM DIKONFIRMASI — tunggu admin konfirmasi ongkir & pembayaran sebelum disiapkan_",
+    o.payment === "qris"
+      ? `💳 _Pembeli memilih BAYAR QRIS ${rupiah(Number(o.pay_amount))} — tunggu bukti bayar & verifikasi (batas ${new Date(o.pay_expires_at ?? "").toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" })} WIB)_`
+      : "⚠️ _BELUM DIKONFIRMASI — tunggu admin konfirmasi ongkir & pembayaran sebelum disiapkan_",
     "",
     `*${o.code}*`,
     `${customer}${o.verified ? " · ✅ nomor terverifikasi" : ""}`,
@@ -67,7 +72,7 @@ function formatMessage(o: PlacedOrder) {
     "",
     ...(o.items ?? []).map((i) => `• ${i.name} — ${amount(i.quantity, i.unit)} = ${rupiah(i.total)}`),
     "",
-    `*Subtotal: ${rupiah(o.subtotal)}* (belum ongkir)`,
+    o.payment === "qris" ? `*Total bayar: ${rupiah(Number(o.pay_amount))}* (sudah termasuk ongkir)` : `*Subtotal: ${rupiah(o.subtotal)}* (belum ongkir)`,
     o.free_shipping_max
       ? `🚚 *FREEONGKIR* (pembelian website ke-${o.web_order_number}) — ongkir ditanggung s.d. ${rupiah(o.free_shipping_max)}`
       : null,

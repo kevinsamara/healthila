@@ -30,13 +30,22 @@ const Input = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   notes: z.string().max(500).nullable(),
   slot: z.number().int().min(1).max(3).nullable(),
+  payment: z.enum(["qris"]).nullable(),
   lines: z.array(Line).min(1).max(50),
   key: z.string().uuid(),
 });
 
 export type PlaceOrderInput = z.infer<typeof Input>;
 export type PlaceOrderResult =
-  | { ok: true; code: string; customerStatus: "new" | "existing" | null; freeShippingMax: number | null; webOrderNumber: number | null }
+  | {
+      ok: true;
+      code: string;
+      customerStatus: "new" | "existing" | null;
+      freeShippingMax: number | null;
+      webOrderNumber: number | null;
+      /** Pay now with QRIS at /bayar/<code>?k=<key>. */
+      qris: boolean;
+    }
   | { ok: false; error: string; fallback?: boolean };
 
 export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult> {
@@ -57,6 +66,8 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
   const ongkir = await fetchOngkir(input.address);
   const ongkirLine = ongkir.state === "calculated" ? `🚚 Estimasi ongkir web: ${rupiah(ongkir.fee)}${ongkir.label ? ` (${ongkir.label})` : ""}` : null;
   const notes = [ongkirLine, input.notes].filter(Boolean).join("\n").slice(0, 500) || null;
+  if (input.payment === "qris" && ongkir.state !== "calculated")
+    return { ok: false, error: "Ongkir untuk alamat ini belum bisa dihitung otomatis. Pilih “Konfirmasi via WhatsApp”." };
 
   try {
     const res = await webRpc<Partial<PlacedOrder> & { code: string; created: boolean }>("web_place_order", {
@@ -74,6 +85,8 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       p_key: input.key,
       p_session_token: await sessionToken(),
       p_slot: input.slot,
+      p_payment: input.payment,
+      p_shipping_cost: input.payment === "qris" && ongkir.state === "calculated" ? ongkir.fee : null,
     });
     // Only brand-new orders are announced; an idempotent retry returns created=false.
     if (res.created) after(() => notifyNewWebOrder(res as PlacedOrder));
@@ -83,6 +96,7 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       customerStatus: res.customer_status ?? null,
       freeShippingMax: res.free_shipping_max ?? null,
       webOrderNumber: res.web_order_number ?? null,
+      qris: input.payment === "qris",
     };
   } catch (e) {
     return {

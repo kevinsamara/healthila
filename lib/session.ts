@@ -22,6 +22,7 @@ export type AccountOrder = {
   dispatched?: boolean;
   delivered_at?: string | null;
   slot?: number | null;
+  pay_status?: "awaiting" | "submitted" | "verified" | "expired" | "rejected" | "cancelled" | null;
   previews?: string[];
   proofs?: string[];
 };

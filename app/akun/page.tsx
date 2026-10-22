@@ -65,9 +65,19 @@ export default async function AkunPage() {
                   </div>
                 )}
                 <div className="mt-3 flex items-center justify-between text-sm">
-                  <span className={o.payment_status === "paid" ? "font-semibold text-leaf-700" : "text-muted"}>
-                    {o.payment_status === "paid" ? "Lunas" : "Menunggu pembayaran"}
-                  </span>
+                  {o.payment_status !== "paid" && o.pay_status === "awaiting" ? (
+                    <Link href={`/bayar/${o.code}`} className="rounded-full bg-sun-400 px-4 py-1.5 font-bold text-leaf-900 hover:bg-sun-300">
+                      Bayar QRIS
+                    </Link>
+                  ) : (
+                    <span className={o.payment_status === "paid" ? "font-semibold text-leaf-700" : "text-muted"}>
+                      {o.payment_status === "paid"
+                        ? "Lunas"
+                        : o.pay_status === "submitted"
+                          ? "Bukti bayar sedang dicek"
+                          : "Menunggu pembayaran"}
+                    </span>
+                  )}
                   <span className="font-bold text-ink">{rupiah(Number(o.total))}</span>
                 </div>
               </li>

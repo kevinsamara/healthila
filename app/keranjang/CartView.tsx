@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cartTotal, clearCart, setQty, useCart, type CartItem } from "@/lib/cart";
 import { qtyLabel, rupiah } from "@/lib/format";
@@ -27,6 +28,10 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
   const orderKey = useRef<string | null>(null);
   const total = cartTotal(items);
   const ongkir = useOngkir(form.address);
+  const router = useRouter();
+  const [payChoice, setPayChoice] = useState<"qris" | "wa">("qris");
+  // QRIS needs a known ongkir; otherwise admin confirms the total on WhatsApp.
+  const payQris = payChoice === "qris" && ongkir.fee != null && !ongkir.loading;
 
   // Returning buyers: prefill name, phone and address saved on this device.
   useEffect(() => {
@@ -81,6 +86,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
         address: form.address,
         date: form.date || null,
         slot: form.slot,
+        payment: payQris ? "qris" : null,
         notes: orderNotes(snapshot, form.notes),
         key: orderKey.current!,
         lines: snapshot.map((i) => ({
@@ -104,6 +110,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
       } catch {
         // not critical
       }
+      const key = orderKey.current;
       orderKey.current = null;
       trackEvent("purchase", {
         transaction_id: res.code,
@@ -111,6 +118,11 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
         value: Math.round(cartTotal(snapshot)),
         items: snapshot.map((i) => ({ item_id: i.productId, item_name: i.name, price: i.price, quantity: i.qty })),
       });
+      if (res.qris && key) {
+        clearCart();
+        router.push(`/bayar/${res.code}?k=${encodeURIComponent(key)}`);
+        return;
+      }
       setDone({
         code: res.code,
         customerStatus: res.customerStatus,
@@ -221,7 +233,32 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
           </div>
           <OngkirLines ongkir={ongkir} subtotal={total} freeLeft={profile?.freeShippingLeft} />
         </div>
-        <p className="mt-1 text-xs text-muted">Ongkir final & pembayaran dikonfirmasi admin via WhatsApp.</p>
+        {ongkir.fee != null && !ongkir.loading ? (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm font-medium text-ink">Pembayaran</p>
+            {(
+              [
+                ["qris", "Bayar sekarang via QRIS", "Semua bank & e-wallet. Pesanan langsung diproses setelah pembayaran dicek."],
+                ["wa", "Konfirmasi via WhatsApp", "Admin konfirmasi total & cara bayar lewat chat."],
+              ] as const
+            ).map(([k, title, text]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setPayChoice(k)}
+                className={`block w-full rounded-xl px-3 py-2.5 text-left ring-1 ${payChoice === k ? "bg-leaf-50 ring-leaf-500" : "ring-leaf-100 hover:ring-leaf-200"}`}
+              >
+                <span className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  <span className={`h-3.5 w-3.5 rounded-full border-2 ${payChoice === k ? "border-leaf-700 bg-leaf-700" : "border-leaf-300"}`} />
+                  {title}
+                </span>
+                <span className="mt-0.5 block pl-5.5 text-xs text-muted">{text}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-1 text-xs text-muted">Ongkir final & pembayaran dikonfirmasi admin via WhatsApp.</p>
+        )}
         <FreeShippingNote left={profile?.freeShippingLeft} />
 
         {error && (
@@ -233,7 +270,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
           disabled={pending}
           className="mt-5 h-12 w-full rounded-full bg-leaf-700 font-bold text-white hover:bg-leaf-900 disabled:opacity-60"
         >
-          {pending ? "Menyimpan pesanan…" : "Buat Pesanan"}
+          {pending ? "Menyimpan pesanan…" : payQris ? "Buat Pesanan & Bayar QRIS" : "Buat Pesanan"}
         </button>
         <button type="button" onClick={clearCart} className="mt-3 w-full text-sm text-muted hover:text-plum-700">
           Kosongkan keranjang
