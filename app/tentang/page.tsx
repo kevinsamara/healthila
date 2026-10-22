@@ -3,8 +3,8 @@ import Link from "next/link";
 import { ContentPage } from "@/components/ContentPage";
 
 export const metadata: Metadata = {
-  title: "Tentang Kami",
-  description: "Healthila — fruitful heart, eating smart. Toko buah segar, jus, dessert, dan parcel buah.",
+  title: "Tentang Healthila — Toko Buah Malang",
+  description: "Healthila — fruitful heart, eating smart. Toko buah segar, parcel buah, jus & dessert di Malang yang menyortir setiap buah sebelum dikirim.",
 };
 
 export default function AboutPage() {

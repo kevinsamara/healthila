@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArticleCard } from "@/components/ArticleCard";
@@ -10,6 +11,9 @@ import { getProducts, type Product } from "@/lib/catalog";
 import { waLink, type SectionKey } from "@/lib/site";
 
 export const revalidate = 300;
+
+// Root needs an explicit canonical: the layout's "./" resolves to "/index" here.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
   const [all, articles] = await Promise.all([getProducts(), getArticles()]);

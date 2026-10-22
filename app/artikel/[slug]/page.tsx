@@ -16,7 +16,7 @@ export async function generateMetadata({
   const a = await getArticle((await params).slug);
   return a
     ? { title: a.title, description: a.excerpt, openGraph: { type: "article" } }
-    : { title: "Artikel tidak ditemukan" };
+    : { title: "Artikel tidak ditemukan", alternates: { canonical: null } };
 }
 
 export default async function ArticlePage({

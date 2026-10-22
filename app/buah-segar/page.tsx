@@ -3,7 +3,7 @@ import { CategoryPage, categoryParams } from "@/components/CategoryPage";
 
 export const metadata: Metadata = {
   title: "Buah Segar Malang — Toko Buah Online & Delivery",
-  description: "Toko buah online di Malang: apel, anggur, jeruk, pear, melon & buah impor pilihan, disortir tiap pagi. Delivery buah se-Malang, free ongkir s.d. 10rb untuk 2 pesanan pertama.",
+  description: "Toko buah online di Malang: apel, anggur, jeruk, pear, melon & buah impor pilihan, disortir tiap pagi. Delivery buah se-Malang, free ongkir s.d. 10rb.",
 };
 
 export default async function BuahSegarPage({ searchParams }: PageProps<"/buah-segar">) {

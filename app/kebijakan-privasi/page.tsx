@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { ContentPage } from "@/components/ContentPage";
 
-export const metadata: Metadata = { title: "Kebijakan Privasi" };
+export const metadata: Metadata = {
+  title: "Kebijakan Privasi",
+  description: "Kebijakan privasi Healthila: data apa yang kami simpan saat Kakak memesan atau login dengan nomor WhatsApp, dan bagaimana kami menjaganya.",
+};
 
 export default function PrivacyPage() {
   return (

@@ -11,6 +11,11 @@ import { AddToCart } from "./AddToCart";
 
 export const revalidate = 300;
 
+// Pre-render every product (ISR) instead of rendering on each visit.
+export async function generateStaticParams() {
+  return (await getProducts()).map((p) => ({ slug: p.slug }));
+}
+
 const SECTION_PAGE: Record<Product["section"], string> = {
   buah: "/buah-segar",
   jus: "/jus-dessert",
@@ -19,15 +24,20 @@ const SECTION_PAGE: Record<Product["section"], string> = {
   parcel: "/parcel",
 };
 
+/** Product copy + local context, one line, ≤160 chars (short CRM blurbs got thin snippets). */
+function productDescription(name: string, desc: string | null) {
+  const own = (desc ?? "").replace(/\s+/g, " ").trim().replace(/[.!]?$/, ".");
+  const local = `Beli ${name} di Healthila, toko buah Malang — disortir sebelum dikirim, delivery se-Malang.`;
+  const text = own.length > 1 ? `${own} ${local}` : local;
+  return text.length <= 160 ? text : text.slice(0, 157).replace(/\s+\S*$/, "") + "…";
+}
+
 export async function generateMetadata({ params }: PageProps<"/produk/[slug]">): Promise<Metadata> {
   const product = await getProductBySlug((await params).slug);
-  if (!product) return { title: "Produk tidak ditemukan" };
+  if (!product) return { title: "Produk tidak ditemukan", alternates: { canonical: null } };
   return {
     title: `Jual ${product.name} di Malang`,
-    description: (
-      product.description?.trim() ||
-      `Beli ${product.name} di Healthila, toko buah online Malang. Disortir sebelum dikirim, delivery same-day se-Malang.`
-    ).slice(0, 160),
+    description: productDescription(product.name, product.description),
     openGraph: product.photo_url ? { images: [product.photo_url] } : undefined,
   };
 }

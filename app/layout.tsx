@@ -45,7 +45,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "id_ID",
     siteName: site.name,
-    images: ["/healthila-logo.png"],
+    url: "./",
   },
 };
 

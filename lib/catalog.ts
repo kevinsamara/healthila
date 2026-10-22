@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
 import type { SectionKey } from "./site";
 
 /**
@@ -107,7 +108,14 @@ function toPack(p: Product, grams: number | null): Product {
   };
 }
 
-export async function getProducts(): Promise<Product[]> {
+/**
+ * Whole catalog, cached for 5 minutes across requests. Category pages render
+ * per request (filters in the URL), so without this every visit re-queried
+ * Supabase and pages took 1–2 s.
+ */
+export const getProducts = unstable_cache(loadProducts, ["web-products"], { revalidate: 300, tags: ["catalog"] });
+
+async function loadProducts(): Promise<Product[]> {
   const { data, error } = await db()
     .from("web_products")
     .select("*")
@@ -122,10 +130,5 @@ export async function getProducts(): Promise<Product[]> {
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const { data, error } = await db().from("web_products").select("*").eq("slug", slug).maybeSingle();
-  if (error) {
-    console.error("[catalog] getProductBySlug", error.message);
-    return null;
-  }
-  return data ? normalize(data) : null;
+  return (await getProducts()).find((p) => p.slug === slug) ?? null;
 }

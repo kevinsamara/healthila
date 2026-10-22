@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { ContentPage } from "@/components/ContentPage";
 import { site } from "@/lib/site";
 
-export const metadata: Metadata = { title: "Syarat & Ketentuan" };
+export const metadata: Metadata = {
+  title: "Syarat & Ketentuan",
+  description: "Syarat & ketentuan belanja di Healthila Malang: pemesanan online, konfirmasi via WhatsApp, pembayaran, pengiriman, dan retur buah.",
+};
 
 export default function TermsPage() {
   return (
