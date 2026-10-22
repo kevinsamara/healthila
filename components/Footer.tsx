@@ -20,6 +20,7 @@ export function Footer() {
             { href: "/parcel", label: "Parcel & Hampers" },
             { href: "/lainnya", label: "Lainnya" },
             { href: "/katalog", label: "Semua Produk" },
+            { href: "/langganan", label: "Langganan Buah" },
             { href: "/korporat", label: "Pesanan Korporat" },
           ]}
         />

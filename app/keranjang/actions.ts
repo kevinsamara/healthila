@@ -31,6 +31,7 @@ const Input = z.object({
   notes: z.string().max(500).nullable(),
   slot: z.number().int().min(1).max(3).nullable(),
   payment: z.enum(["qris"]).nullable(),
+  voucher: z.string().trim().max(40).nullable(),
   lines: z.array(Line).min(1).max(50),
   key: z.string().uuid(),
 });
@@ -87,6 +88,7 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       p_slot: input.slot,
       p_payment: input.payment,
       p_shipping_cost: input.payment === "qris" && ongkir.state === "calculated" ? ongkir.fee : null,
+      p_voucher: input.voucher || null,
     });
     // Only brand-new orders are announced; an idempotent retry returns created=false.
     if (res.created) after(() => notifyNewWebOrder(res as PlacedOrder));
@@ -103,6 +105,26 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       ok: false,
       error: e instanceof WebRpcError && e.friendly ? e.message : "Pesanan gagal disimpan. Silakan coba lagi.",
     };
+  }
+}
+
+/** Voucher preview for the cart; web_place_order re-checks on submit (healthila-crm 0112). */
+export async function checkVoucher(
+  code: string,
+  subtotal: number,
+): Promise<{ ok: true; code: string; discount: number } | { ok: false; error: string }> {
+  const c = String(code ?? "").trim().slice(0, 40);
+  if (!c) return { ok: false, error: "Masukkan kode voucher." };
+  try {
+    const r = await webRpc<{ ok: boolean; code?: string; discount?: number; error?: string }>("web_voucher_check", {
+      p_code: c,
+      p_subtotal: Math.max(0, Math.round(Number(subtotal) || 0)),
+      p_session_token: await sessionToken(),
+    });
+    if (!r.ok) return { ok: false, error: (r.error ?? "Kode voucher tidak valid").replace(/^./, (x) => x.toUpperCase()) };
+    return { ok: true, code: r.code!, discount: Number(r.discount) };
+  } catch {
+    return { ok: false, error: "Voucher belum bisa dicek, coba lagi." };
   }
 }
 

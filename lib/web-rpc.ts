@@ -21,7 +21,7 @@ export function webSecret(): string | null {
   return process.env.WEB_ORDER_SECRET || null;
 }
 
-const FRIENDLY = /habis|tidak valid|wajib|terlalu banyak|tidak tersedia|belum tersedia|kode|sesi|sibuk|sudah lewat/i;
+const FRIENDLY = /habis|tidak valid|wajib|terlalu banyak|tidak tersedia|belum tersedia|kode|sesi|sibuk|sudah lewat|voucher|minimal|tidak ditemukan|sudah berhenti|belum bisa dihitung/i;
 
 export async function webRpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   const secret = webSecret();

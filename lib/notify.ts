@@ -19,6 +19,8 @@ export type PlacedOrder = {
   web_order_number: number | null;
   slot: string | null;
   payment: string | null;
+  voucher: string | null;
+  voucher_discount: number | null;
   pay_amount: number | null;
   pay_expires_at: string | null;
   name: string;
@@ -92,6 +94,7 @@ function formatMessage(o: PlacedOrder) {
     ...(o.items ?? []).map((i) => `• ${i.name} — ${amount(i.quantity, i.unit)} = ${rupiah(i.total)}`),
     "",
     o.payment === "qris" ? `*Total bayar: ${rupiah(Number(o.pay_amount))}* (sudah termasuk ongkir)` : `*Subtotal: ${rupiah(o.subtotal)}* (belum ongkir)`,
+    o.voucher ? `🎟️ Voucher *${o.voucher}* −${rupiah(Number(o.voucher_discount))}` : null,
     o.free_shipping_max
       ? `🚚 *FREEONGKIR* (pembelian website ke-${o.web_order_number}) — ongkir ditanggung s.d. ${rupiah(o.free_shipping_max)}`
       : null,

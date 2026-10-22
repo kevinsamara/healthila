@@ -9,7 +9,7 @@ import { qtyLabel, rupiah } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { jakartaNow, sameDayCutoff, slotOpen, slotTime, type DeliverySlot } from "@/lib/delivery";
 import { FREE_SHIPPING, waLink } from "@/lib/site";
-import { estimateShipping, getCheckoutProfile, placeOrder } from "./actions";
+import { checkVoucher, estimateShipping, getCheckoutProfile, placeOrder } from "./actions";
 
 type Form = { name: string; phone: string; address: string; date: string; notes: string; slot: number | null };
 type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string; freeShippingMax: number | null };
@@ -30,6 +30,9 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
   const ongkir = useOngkir(form.address);
   const router = useRouter();
   const [payChoice, setPayChoice] = useState<"qris" | "wa">("qris");
+  const [voucher, setVoucher] = useState<{ code: string; discount: number; subtotal: number } | null>(null);
+  // A voucher priced on another cart total is re-checked by the server anyway; drop it here.
+  const appliedVoucher = voucher && voucher.subtotal === total ? voucher : null;
   // QRIS needs a known ongkir; otherwise admin confirms the total on WhatsApp.
   const payQris = payChoice === "qris" && ongkir.fee != null && !ongkir.loading;
 
@@ -87,6 +90,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
         date: form.date || null,
         slot: form.slot,
         payment: payQris ? "qris" : null,
+        voucher: appliedVoucher?.code ?? null,
         notes: orderNotes(snapshot, form.notes),
         key: orderKey.current!,
         lines: snapshot.map((i) => ({
@@ -231,8 +235,19 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
             <span className="text-muted">Subtotal</span>
             <span className="font-semibold text-ink">{rupiah(total)}</span>
           </div>
-          <OngkirLines ongkir={ongkir} subtotal={total} freeLeft={profile?.freeShippingLeft} />
+          {appliedVoucher && (
+            <div className="flex justify-between text-leaf-700">
+              <span>Voucher {appliedVoucher.code}</span>
+              <span className="font-semibold">−{rupiah(appliedVoucher.discount)}</span>
+            </div>
+          )}
+          <OngkirLines ongkir={ongkir} subtotal={total - (appliedVoucher?.discount ?? 0)} freeLeft={profile?.freeShippingLeft} />
         </div>
+        <VoucherField
+          subtotal={total}
+          applied={appliedVoucher}
+          onApply={(v) => setVoucher(v ? { ...v, subtotal: total } : null)}
+        />
         {ongkir.fee != null && !ongkir.loading ? (
           <div className="mt-4 space-y-2">
             <p className="text-sm font-medium text-ink">Pembayaran</p>
@@ -276,6 +291,59 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
           Kosongkan keranjang
         </button>
       </form>
+    </div>
+  );
+}
+
+function VoucherField({
+  subtotal,
+  applied,
+  onApply,
+}: {
+  subtotal: number;
+  applied: { code: string; discount: number } | null;
+  onApply: (v: { code: string; discount: number } | null) => void;
+}) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  if (applied)
+    return (
+      <p className="mt-3 flex items-center justify-between rounded-xl bg-lime-100 px-3 py-2 text-xs font-medium text-leaf-900">
+        🎟️ Voucher {applied.code} terpakai
+        <button type="button" onClick={() => onApply(null)} className="text-plum-700 underline">
+          hapus
+        </button>
+      </p>
+    );
+  return (
+    <div className="mt-3">
+      <div className="flex gap-2">
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="Kode voucher"
+          className="h-10 min-w-0 flex-1 rounded-xl border border-leaf-100 bg-white px-3 text-sm uppercase outline-none focus:border-leaf-500"
+        />
+        <button
+          type="button"
+          disabled={!code.trim() || pending}
+          onClick={() =>
+            start(async () => {
+              setError(null);
+              const r = await checkVoucher(code, subtotal);
+              if (r.ok) {
+                onApply({ code: r.code, discount: r.discount });
+                setCode("");
+              } else setError(r.error);
+            })
+          }
+          className="h-10 rounded-xl border border-leaf-700 px-4 text-sm font-semibold text-leaf-700 hover:bg-leaf-50 disabled:opacity-50"
+        >
+          {pending ? "…" : "Pakai"}
+        </button>
+      </div>
+      {error && <p className="mt-1 text-xs text-plum-700">{error}</p>}
     </div>
   );
 }
@@ -386,6 +454,17 @@ function OrderPlaced({ done }: { done: Done }) {
       >
         Kirim ke WhatsApp
       </a>
+      <div className="mt-6 rounded-2xl bg-leaf-50 p-4 text-left text-sm">
+        <p className="font-semibold text-ink">Biar tidak lupa momen berikutnya 🎂</p>
+        <p className="mt-1 text-muted">Simpan tanggal ulang tahun atau anniversary — kami ingatkan via WhatsApp 3 hari sebelumnya.</p>
+        <Link href="/akun#pengingat" className="mt-2 inline-block font-semibold text-leaf-700 underline">
+          Atur pengingat
+        </Link>
+        <span className="mx-2 text-muted">·</span>
+        <Link href="/langganan" className="font-semibold text-leaf-700 underline">
+          Langganan buah mingguan
+        </Link>
+      </div>
       <p className="mt-6 flex justify-center gap-4 text-sm">
         <Link href="/akun" className="font-semibold text-leaf-700 hover:underline">
           Lacak pesanan

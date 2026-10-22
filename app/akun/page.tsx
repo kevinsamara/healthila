@@ -4,12 +4,15 @@ import { redirect } from "next/navigation";
 import { getAccount, type AccountOrder } from "@/lib/session";
 import { rupiah } from "@/lib/format";
 import { logout } from "../masuk/actions";
+import { manageReminders, manageSubscriptions } from "./actions";
+import { RemindersPanel, SubscriptionsPanel } from "./RetentionPanels";
 
 export const metadata: Metadata = { title: "Akun Saya", robots: { index: false } };
 
 export default async function AkunPage() {
   const account = await getAccount();
   if (!account) redirect("/masuk?next=/akun");
+  const [reminders, subscriptions] = await Promise.all([manageReminders("list"), manageSubscriptions("list")]);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -91,6 +94,9 @@ export default async function AkunPage() {
           </ul>
         )}
       </section>
+
+      <SubscriptionsPanel initial={subscriptions.ok ? subscriptions.data : []} />
+      <RemindersPanel initial={reminders.ok ? reminders.data : []} />
 
       {account.addresses.length > 0 && (
         <section className="mt-10">
