@@ -49,7 +49,13 @@ export default async function AkunPage() {
                   {o.delivery_date ? ` · Kirim ${fmtDate(o.delivery_date)}` : ""}
                 </p>
                 {o.items && <p className="mt-2 line-clamp-2 text-sm text-ink">{o.items}</p>}
-                {o.status !== "cancelled" && <Timeline order={o} />}
+                {o.status !== "cancelled" ? (
+                  <Timeline order={o} />
+                ) : (
+                  <p className="mt-3 rounded-xl bg-plum-50 px-3 py-2 text-xs text-plum-700">
+                    Pesanan ini dibatalkan. Admin kami akan menghubungi Kakak lewat WhatsApp untuk penjelasan & solusinya.
+                  </p>
+                )}
                 {((o.previews?.length ?? 0) > 0 || (o.proofs?.length ?? 0) > 0) && (
                   <div className="mt-3 flex flex-wrap gap-2 text-xs">
                     {o.previews?.map((id, i) => (
