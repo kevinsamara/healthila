@@ -60,7 +60,7 @@ export default async function Home() {
               fruitful heart, eating smart
             </p>
             <h1 className="mt-5 text-5xl leading-[1.05] font-extrabold sm:text-7xl">
-              Buah segar pilihan, langsung ke rumah Kakak.
+              Buah segar pilihan, diantar ke rumah Kakak di Malang.
             </h1>
             <p className="mt-5 max-w-md text-lg text-leaf-100">
               Buah lokal & impor, jus cold-pressed, dessert, dan parcel buah. Pesan online, konfirmasi cepat via WhatsApp.
@@ -142,6 +142,7 @@ export default async function Home() {
         </div>
       </section>
 
+      <LocalSeo />
       <CtaBand />
     </>
   );
@@ -169,4 +170,37 @@ function HeroCollage({ products }: { products: Product[] }) {
   }
   // Every in-stock product with a photo is a candidate; the carousel picks 12 at random.
   return <HeroCarousel pool={products.map((p) => ({ id: p.id, slug: p.slug, name: p.name, photo: p.photo_url! }))} />;
+}
+
+/** Plain-language copy for "toko buah malang", "parcel malang" & co. searches. */
+function LocalSeo() {
+  return (
+    <section className="mx-auto max-w-5xl px-4 py-14">
+      <h2 className="text-3xl font-extrabold text-ink sm:text-4xl">Toko Buah Online di Malang</h2>
+      <div className="mt-5 grid gap-6 text-[15px] leading-relaxed text-muted md:grid-cols-2">
+        <div className="space-y-3">
+          <p>
+            Healthila adalah <strong className="text-ink">toko buah di Malang</strong> yang menyediakan buah segar lokal dan impor — apel,
+            anggur, jeruk, pear, melon, kiwi, hingga buah musiman. Setiap buah disortir sebelum dikirim, jadi Kakak bisa{" "}
+            <strong className="text-ink">beli buah online di Malang</strong> tanpa khawatir kualitas.
+          </p>
+          <p>
+            Kami melayani <strong className="text-ink">delivery buah se-Malang</strong>: Kota Malang, Kota Batu, dan sebagian Kabupaten
+            Malang, bisa <em>same-day</em>. Pesan lewat website, konfirmasi ongkir dan pembayaran lewat WhatsApp.
+          </p>
+        </div>
+        <div className="space-y-3">
+          <p>
+            Butuh hadiah? <Link href="/parcel" className="font-semibold text-leaf-700 underline">Parcel buah dan hampers Malang</Link> dari
+            Healthila dirangkai untuk ulang tahun, jenguk orang sakit, lamaran, syukuran, Lebaran, Natal, dan Imlek. Mau isi dan budget
+            sendiri? Coba <Link href="/parcel/custom" className="font-semibold text-leaf-700 underline">rancang parcel custom</Link>.
+          </p>
+          <p>
+            Ada juga <Link href="/jus-dessert" className="font-semibold text-leaf-700 underline">jus buah cold-pressed dan dessert</Link>{" "}
+            yang dibuat fresh setiap hari. Pesanan pertama via website dapat <strong className="text-ink">free ongkir s.d. Rp10.000</strong>.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
 }

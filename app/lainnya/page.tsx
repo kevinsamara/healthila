@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { CategoryPage, categoryParams } from "@/components/CategoryPage";
 
 export const metadata: Metadata = {
-  title: "Lainnya",
+  title: "Camilan Sehat & Lainnya",
   description: "Camilan sehat dan produk pendamping lainnya dari Healthila.",
 };
 

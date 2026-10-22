@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, ProductCard } from "@/components/ProductCard";
 import { ProductGallery } from "@/components/ProductGallery";
+import { ProductJsonLd } from "@/components/JsonLd";
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { getProductBySlug, getProducts, type Product } from "@/lib/catalog";
 import { sectionLabel, waLink } from "@/lib/site";
@@ -22,8 +23,11 @@ export async function generateMetadata({ params }: PageProps<"/produk/[slug]">):
   const product = await getProductBySlug((await params).slug);
   if (!product) return { title: "Produk tidak ditemukan" };
   return {
-    title: product.name,
-    description: product.description?.slice(0, 160) ?? `${product.name} dari Healthila.`,
+    title: `Jual ${product.name} di Malang`,
+    description: (
+      product.description?.trim() ||
+      `Beli ${product.name} di Healthila, toko buah online Malang. Disortir sebelum dikirim, delivery same-day se-Malang.`
+    ).slice(0, 160),
     openGraph: product.photo_url ? { images: [product.photo_url] } : undefined,
   };
 }
@@ -42,6 +46,7 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
 
   return (
     <>
+      <ProductJsonLd product={product} />
       <div className="mx-auto max-w-7xl px-4 py-8">
         <nav className="flex flex-wrap gap-1 text-sm text-muted">
           <Link href="/" className="hover:text-leaf-700">

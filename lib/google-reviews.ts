@@ -27,6 +27,8 @@ export type GoogleReviews = {
   phone: string | null;
   /** e.g. ["Senin: 07.00–20.00", …] in Indonesian, Monday first. */
   hours: string[];
+  /** Structured opening hours for schema.org (day 0 = Sunday). */
+  periods: { open: { day: number; hour: number; minute: number }; close?: { day: number; hour: number; minute: number } }[];
   openNow: boolean | null;
 };
 
@@ -121,7 +123,7 @@ export async function loadGoogleReviews(
       googleMapsUri?: string;
       formattedAddress?: string;
       nationalPhoneNumber?: string;
-      regularOpeningHours?: { weekdayDescriptions?: string[] };
+      regularOpeningHours?: { weekdayDescriptions?: string[]; periods?: GoogleReviews["periods"] };
       currentOpeningHours?: { openNow?: boolean };
       reviews?: {
         rating?: number;
@@ -183,6 +185,7 @@ export async function loadGoogleReviews(
         address: p.formattedAddress ?? null,
         phone: p.nationalPhoneNumber ?? null,
         hours: p.regularOpeningHours?.weekdayDescriptions ?? [],
+        periods: p.regularOpeningHours?.periods ?? [],
         openNow: p.currentOpeningHours?.openNow ?? null,
       },
     };

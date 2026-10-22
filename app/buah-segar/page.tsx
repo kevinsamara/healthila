@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { CategoryPage, categoryParams } from "@/components/CategoryPage";
 
 export const metadata: Metadata = {
-  title: "Buah Segar",
-  description: "Buah segar lokal & impor pilihan dari Healthila — apel, anggur, jeruk, pear, melon, dan buah musiman.",
+  title: "Buah Segar Malang — Toko Buah Online & Delivery",
+  description: "Toko buah online di Malang: apel, anggur, jeruk, pear, melon & buah impor pilihan, disortir tiap pagi. Delivery buah se-Malang, free ongkir s.d. 10rb untuk 2 pesanan pertama.",
 };
 
 export default async function BuahSegarPage({ searchParams }: PageProps<"/buah-segar">) {

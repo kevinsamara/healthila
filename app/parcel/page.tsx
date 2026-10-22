@@ -5,8 +5,8 @@ import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Parcel & Hampers Buah",
-  description: "Parcel dan hampers buah premium dari Healthila — dirangkai elegan untuk ulang tahun, get well soon, Lebaran, dan momen spesial.",
+  title: "Parcel Buah & Hampers Malang",
+  description: "Parcel buah & hampers di Malang — dirangkai elegan untuk ulang tahun, get well soon, lamaran, Lebaran, Natal & Imlek. Bisa custom, kirim same-day se-Malang.",
 };
 
 export default async function ParcelPage({ searchParams }: PageProps<"/parcel">) {

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { CategoryPage, categoryParams } from "@/components/CategoryPage";
 
 export const metadata: Metadata = {
-  title: "Jus & Dessert",
-  description: "Jus cold-pressed tanpa gula tambahan dan dessert berbahan buah dari Healthila.",
+  title: "Jus Buah & Dessert Malang",
+  description: "Jus buah cold-pressed tanpa gula tambahan dan dessert buah di Malang. Dibuat fresh setiap hari, bisa delivery se-Malang.",
 };
 
 export default async function JusDessertPage({ searchParams }: PageProps<"/jus-dessert">) {

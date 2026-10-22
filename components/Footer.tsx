@@ -9,7 +9,7 @@ export function Footer() {
           <p className="text-xl font-extrabold text-white">Healthila</p>
           <p className="mt-1 text-sm text-lime-300">{site.tagline}</p>
           <p className="mt-4 text-sm leading-relaxed text-leaf-200">
-            Buah segar pilihan, jus, dessert, dan parcel buah. Pesan online, konfirmasi lewat WhatsApp.
+            Toko buah & parcel buah di Malang. Buah segar, hampers, jus & dessert — delivery se-Malang, konfirmasi lewat WhatsApp.
           </p>
         </div>
         <FooterCol

@@ -6,7 +6,7 @@ import { fruitArt } from "@/lib/fruit-art";
 import { getFruitArt, getParcelContainers } from "@/lib/parcel-visuals";
 
 export const metadata: Metadata = {
-  title: "Rancang Parcel Custom",
+  title: "Custom Parcel Buah & Hampers Malang",
   description: "Konsultasi parcel buah online: pilih bentuk, acara, budget, buah favorit, dan kartu ucapan — tim Healthila rangkaikan untuk Kakak.",
 };
 

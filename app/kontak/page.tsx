@@ -4,8 +4,8 @@ import { getGoogleReviews } from "@/lib/google-reviews";
 import { site, waLink } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Kontak",
-  description: "Hubungi Healthila via WhatsApp, Instagram, atau kunjungi toko kami di Malang.",
+  title: "Lokasi Toko Buah Healthila Malang",
+  description: "Alamat, jam buka & peta toko buah Healthila di Malang. Pesan via WhatsApp atau datang langsung.",
 };
 
 export const revalidate = 3600;

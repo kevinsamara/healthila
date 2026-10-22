@@ -6,8 +6,8 @@ import { FilterSidebar } from "./FilterSidebar";
 import { applyFilters, facet, groupOf, isPromo, parseFilters, sortProducts, toQuery } from "./filters";
 
 export const metadata: Metadata = {
-  title: "Katalog",
-  description: "Katalog lengkap buah segar, jus, dessert, dan parcel buah Healthila.",
+  title: "Katalog Buah, Parcel & Jus — Toko Buah Malang",
+  description: "Katalog lengkap buah segar, parcel buah, hampers, jus & dessert Healthila Malang. Harga terbaru, pesan online dan diantar ke rumah.",
 };
 
 export default async function KatalogPage({ searchParams }: PageProps<"/katalog">) {

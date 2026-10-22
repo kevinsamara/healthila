@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
+import { StoreJsonLd } from "@/components/JsonLd";
 import { site } from "@/lib/site";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -20,10 +21,26 @@ const barlow = Barlow_Condensed({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: "Healthila — Buah Segar, Jus & Parcel Buah",
-    template: "%s · Healthila",
+    default: "Toko Buah Malang — Buah Segar, Parcel Buah & Hampers | Healthila",
+    template: "%s | Healthila",
   },
   description: site.description,
+  keywords: [
+    "toko buah malang",
+    "buah malang",
+    "buah online malang",
+    "delivery buah malang",
+    "parcel buah malang",
+    "parcel malang",
+    "hampers malang",
+    "hampers buah malang",
+    "jus buah malang",
+    "buah impor malang",
+  ],
+  // "./" resolves to each page's own path, so every page is its own canonical.
+  alternates: { canonical: "./" },
+  // Google Search Console ownership (HTML-tag method), set on Vercel.
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
   openGraph: {
     type: "website",
     locale: "id_ID",
@@ -40,6 +57,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="flex-1">{children}</main>
         <Footer />
         <WhatsAppFab />
+        <StoreJsonLd />
       </body>
     </html>
   );
