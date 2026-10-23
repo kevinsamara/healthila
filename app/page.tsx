@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { AboutHealthila } from "@/components/AboutHealthila";
 import { ArticleCard } from "@/components/ArticleCard";
+import { BulkSection } from "@/components/BulkSection";
 import { HeroCarousel, type HeroPhoto, type HeroSlide } from "@/components/HeroCarousel";
 import { CtaBand, HowToOrder, SectionTitle, Testimonials, WhyHealthila } from "@/components/HomeSections";
 import { ProductCard } from "@/components/ProductCard";
@@ -87,9 +88,11 @@ export default async function Home() {
         </div>
       </section>
 
+      <BulkSection />
+
       {/* Featured */}
       {featured.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-20">
+        <section className="mx-auto max-w-7xl px-4 pt-16 pb-20">
           <SectionTitle title="Produk Unggulan" subtitle="Pilihan terbaik yang siap dikirim hari ini" />
           <div className="mt-12 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
             {featured.map((p) => (

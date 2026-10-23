@@ -5,9 +5,25 @@ import { trackEvent } from "@/lib/analytics";
 import { submitCorporate } from "./actions";
 
 const NEEDS = ["Hampers hari raya (klien/relasi)", "Apresiasi karyawan", "Buah untuk rapat / acara", "Langganan buah kantor", "Lainnya"];
+const EVENT_NEEDS = [
+  "Buah potong / fruit platter",
+  "Fruit cake / fruit tower",
+  "Parcel / hampers (jumlah banyak)",
+  "Jus / cold-pressed juice",
+  "Campuran / belum tahu",
+];
 
-export function CorporateForm() {
-  const [f, setF] = useState({ company: "", name: "", phone: "", email: "", needs: NEEDS[0], quantity: "", budget: "", date: "", notes: "" });
+/** Quote request; `variant="event"` (/acara) asks about the event and follows the tile the buyer picked. */
+export function CorporateForm({ variant = "corporate", needs }: { variant?: "corporate" | "event"; needs?: string }) {
+  const event = variant === "event";
+  const options = event ? EVENT_NEEDS : NEEDS;
+  const [f, setF] = useState({ company: "", name: "", phone: "", email: "", needs: needs ?? options[0], quantity: "", budget: "", date: "", notes: "" });
+  // Follow the tile chosen above without losing what was typed.
+  const [lastNeeds, setLastNeeds] = useState(needs);
+  if (needs !== lastNeeds) {
+    setLastNeeds(needs);
+    if (needs) setF((x) => ({ ...x, needs }));
+  }
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -31,7 +47,7 @@ export function CorporateForm() {
         notes: f.notes,
       });
       if (!res.ok) return setError(res.error);
-      trackEvent("generate_lead", { lead_type: "korporat" });
+      trackEvent("generate_lead", { lead_type: event ? "acara" : "korporat", need: f.needs });
       setDone(res.code);
     });
   }
@@ -48,10 +64,16 @@ export function CorporateForm() {
   const input = "mt-1 w-full rounded-xl border border-leaf-100 bg-white px-3 py-2.5 text-sm outline-none focus:border-leaf-500";
   return (
     <form onSubmit={submit} className="rounded-3xl bg-white p-6 ring-1 ring-leaf-100">
-      <h2 className="text-xl font-extrabold text-ink">Minta penawaran</h2>
+      <h2 className="text-xl font-extrabold text-ink">{event ? "Minta penawaran acara" : "Minta penawaran"}</h2>
       <label className="mt-4 block text-sm font-medium text-ink">
-        Perusahaan / instansi *
-        <input value={f.company} onChange={set("company")} className={input} autoComplete="organization" />
+        {event ? "Nama acara / perusahaan *" : "Perusahaan / instansi *"}
+        <input
+          value={f.company}
+          onChange={set("company")}
+          className={input}
+          autoComplete="organization"
+          placeholder={event ? "Mis. Seminar PT Maju, Arisan RT 05, Ultah Nadia" : undefined}
+        />
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="mt-3 block text-sm font-medium text-ink">
@@ -70,28 +92,28 @@ export function CorporateForm() {
       <label className="mt-3 block text-sm font-medium text-ink">
         Kebutuhan *
         <select value={f.needs} onChange={set("needs")} className={input}>
-          {NEEDS.map((n) => (
+          {[...new Set([...options, f.needs])].map((n) => (
             <option key={n}>{n}</option>
           ))}
         </select>
       </label>
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="mt-3 block text-sm font-medium text-ink">
-          Jumlah paket
+          {event ? "Jumlah porsi / pax" : "Jumlah paket"}
           <input value={f.quantity} onChange={set("quantity")} className={input} inputMode="numeric" placeholder="50" />
         </label>
         <label className="mt-3 block text-sm font-medium text-ink">
-          Budget/paket
+          {event ? "Budget/porsi" : "Budget/paket"}
           <input value={f.budget} onChange={set("budget")} className={input} inputMode="numeric" placeholder="250000" />
         </label>
         <label className="mt-3 block text-sm font-medium text-ink">
-          Dibutuhkan
+          {event ? "Tanggal acara" : "Dibutuhkan"}
           <input value={f.date} onChange={set("date")} className={input} type="date" />
         </label>
       </div>
       <label className="mt-3 block text-sm font-medium text-ink">
         Catatan
-        <textarea value={f.notes} onChange={set("notes")} rows={3} className={input} placeholder="Mis. kirim ke 20 alamat berbeda, pakai logo perusahaan di kartu…" />
+        <textarea value={f.notes} onChange={set("notes")} rows={3} className={input} placeholder={event ? "Mis. acara jam 10 pagi di Hotel X, 80 tamu, mau mini cup + jus…" : "Mis. kirim ke 20 alamat berbeda, pakai logo perusahaan di kartu…"} />
       </label>
       {error && <p className="mt-3 rounded-xl bg-plum-50 px-3 py-2 text-sm font-medium text-plum-700">{error}</p>}
       <button disabled={pending} className="mt-5 h-12 w-full rounded-full bg-leaf-700 font-bold text-white hover:bg-leaf-900 disabled:opacity-60">
