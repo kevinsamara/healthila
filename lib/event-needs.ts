@@ -67,7 +67,7 @@ export const EVENT_NEEDS: EventNeed[] = [
   },
 ];
 
-const PLATTER = /platter|fruit plate|piring|buah potong|fruit cup|mini cup/i;
+const PLATTER = /platter|fruit plate|piring|buah potong|fruit cup|mini cup|tampah|tempeh|nampan|suguhan/i;
 const CAKE = /fruit cake|fruit tower|tower|\bcake\b/i;
 
 /** Catalog products for each need (in-stock first, then catalog order). */
