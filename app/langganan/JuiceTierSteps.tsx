@@ -13,6 +13,7 @@ import {
   type Frequency,
   formatIDR,
   isoWeekday,
+  durationLabel,
   packageLabel,
   quoteSubscription,
   tierRate,
@@ -124,24 +125,19 @@ export function JuiceTierSteps({
 
   // Delivery frequency → concrete dates; "N× seminggu" starts on the first chosen weekday.
   const perWeek = FREQUENCIES.find((f) => f.key === t.freq)?.perWeek;
-  const weekdays = perWeek ? (t.weekdays.length === perWeek ? t.weekdays : DEFAULT_WEEKDAYS[perWeek]) : [];
-  const datesFor = (f: Frequency) => (t.days ? deliveryDatesFor(f, startDate, t.days, { weekdays: f === t.freq ? weekdays : undefined, custom: t.custom }) : []);
-  const dates = t.freq ? datesFor(t.freq) : [];
+  const weekdays = perWeek ? (t.weekdays.length ? t.weekdays : DEFAULT_WEEKDAYS[perWeek]) : [];
+  const dates = t.freq && t.days ? deliveryDatesFor(t.freq, startDate, t.days, { weekdays, custom: t.custom }) : [];
   const firstDate = dates[0] ?? startDate;
-  const maxGap = (ds: string[]) =>
-    Math.max(0, ...ds.map((d, i) => (Date.parse((ds[i + 1] ?? addDays(ds[0], t.days ?? 0)) + "T00:00Z") - Date.parse(d + "T00:00Z")) / 86_400_000));
-  const freqOptions = FREQUENCIES.filter((f) => (t.days ?? 0) >= f.minDays).map((f) => ({
-    ...f,
-    ok: f.key === "custom" || !plan.shelf_life_days || maxGap(datesFor(f.key)) <= plan.shelf_life_days,
-  }));
-  const freqOk = !!t.freq && freqOptions.some((f) => f.key === t.freq && f.ok);
+  const freqOptions = FREQUENCIES.filter((f) => (t.days ?? 0) >= f.minDays);
+  const freqOk = !!t.freq && freqOptions.some((f) => f.key === t.freq) && dates.length > 0 && (!perWeek || weekdays.length === perWeek);
 
-  const total = (t.people ?? 0) * (t.perDay ?? 0) * (t.days ?? 0);
+  // Total = people × bottles per person per delivery × deliveries.
+  const perShipment = (t.people ?? 0) * (t.perDay ?? 0);
+  const total = perShipment * dates.length;
   const quote = quoteSubscription({
     people: t.people ?? 0,
-    bottlesPerDay: t.perDay ?? 0,
+    bottlesPerDelivery: t.perDay ?? 0,
     days: t.days ?? 0,
-    everyDays: 1,
     deliveryDates: dates,
     category: t.category ?? "",
     picks: t.picks,
@@ -149,7 +145,6 @@ export function JuiceTierSteps({
     tiers,
     shippingPerDelivery: ongkir.fee,
     startDate: firstDate,
-    shelfLifeDays: plan.shelf_life_days,
   });
   const selected = quote.selectedBottles;
   const nextTier = (tiers ?? []).filter((x) => x.min > total).sort((a, b) => a.min - b.min)[0];
@@ -176,7 +171,7 @@ export function JuiceTierSteps({
         kind: plan.kind,
         audience,
         people: t.people!,
-        bottles_per_day: t.perDay!,
+        bottles_per_delivery: t.perDay!,
         duration_days: t.days!,
         frequency: t.freq!,
         dates,
@@ -237,10 +232,10 @@ export function JuiceTierSteps({
           n={4}
           title="Atur paket botol"
           done={configDone}
-          summary={configDone ? `${packageLabel(t.people, t.perDay!)} · ${t.perDay} botol/orang/hari · ${t.days} hari · ${total} botol · ${freqLabel(t.freq)}` : null}
+          summary={configDone ? `${packageLabel(t.people, t.perDay!)} · ${durationLabel(t.days!)} · ${freqLabel(t.freq)} · ${total} botol` : null}
           onEdit={() => setT({ configDone: false, picksDone: false })}
         >
-          <p className="text-sm font-medium text-ink">Botol per orang per hari</p>
+          <p className="text-sm font-medium text-ink">Botol per orang setiap kiriman</p>
           <div className="mt-1.5 flex flex-wrap gap-2">
             {[1, 2, 3].map((n) => (
               <button key={n} type="button" onClick={() => setT({ perDay: n, picksDone: false })} className={chip(t.perDay === n)}>
@@ -252,7 +247,7 @@ export function JuiceTierSteps({
           <div className="mt-1.5 flex flex-wrap gap-2">
             {plan.durations.map((n) => (
               <button key={n} type="button" onClick={() => setT({ days: n, custom: [], picksDone: false })} className={chip(t.days === n)}>
-                {n} hari
+                {durationLabel(n)}
               </button>
             ))}
           </div>
@@ -263,10 +258,8 @@ export function JuiceTierSteps({
                 <button
                   key={f.key}
                   type="button"
-                  disabled={!f.ok}
-                  title={!f.ok ? `Jarak antar kiriman melebihi umur simpan ${plan.shelf_life_days} hari` : undefined}
                   onClick={() => setT({ freq: f.key, weekdays: f.perWeek ? DEFAULT_WEEKDAYS[f.perWeek] : [], custom: f.key === "custom" ? dates : [] })}
-                  className={`${chip(t.freq === f.key)} disabled:opacity-40`}
+                  className={chip(t.freq === f.key)}
                 >
                   {f.label}
                 </button>
@@ -275,7 +268,58 @@ export function JuiceTierSteps({
           ) : (
             <p className="mt-1 text-xs text-muted">Pilih durasi dulu.</p>
           )}
-          {t.freq && <p className="mt-1 text-xs text-muted">Tanggal & hari kirim bisa diatur di langkah terakhir.</p>}
+          {t.freq && t.days && (
+            <>
+          <label className="mt-3 block text-sm font-medium text-ink">
+            Mulai tanggal
+            <input
+              type="date"
+              value={startDate}
+              min={minStart}
+              max={addDays(today, 60)}
+              onChange={(e) => e.target.value && setT({ start: e.target.value, custom: t.freq === "custom" ? [] : t.custom })}
+              className={input}
+            />
+          </label>
+          {perWeek && (
+            <>
+              <p className="mt-3 text-sm font-medium text-ink">Hari kirim (pilih {perWeek})</p>
+              <div className="mt-1.5 flex flex-wrap gap-2">
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+                  const on = weekdays.includes(n);
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        const next = on ? weekdays.filter((x) => x !== n) : [...weekdays, n].slice(-perWeek);
+                        if (next.length) setT({ weekdays: next.sort((x, y) => x - y) });
+                      }}
+                      className={`rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ${on ? "bg-leaf-700 text-white ring-leaf-700" : "bg-white text-ink ring-leaf-100"}`}
+                    >
+                      {WD[n]}
+                    </button>
+                  );
+                })}
+              </div>
+              {weekdays.length !== perWeek && <p className="mt-1 text-xs text-plum-700">Pilih {perWeek} hari.</p>}
+            </>
+          )}
+          <Calendar
+            from={firstDate}
+            days={t.days!}
+            selected={dates}
+            onToggle={(d) => {
+              if (d === firstDate) return;
+              const next = dates.includes(d) ? dates.filter((x) => x !== d) : [...dates, d];
+              setT({ freq: "custom", custom: next, start: firstDate });
+            }}
+          />
+          <p className="mt-1 text-xs text-muted">
+            Ketuk tanggal untuk menambah atau menghapus kiriman. Setiap kiriman berisi {t.people} orang × {t.perDay ?? "…"} botol.
+          </p>
+            </>
+          )}
           <p className="mt-4 text-sm font-medium text-ink">Kategori jus</p>
           <div className="mt-1.5 grid gap-3 sm:grid-cols-2">
             {categories.map((c) => (
@@ -289,10 +333,11 @@ export function JuiceTierSteps({
             ))}
           </div>
 
-          {t.perDay && t.days && (
+          {t.perDay && t.days && dates.length > 0 && (
             <div className="mt-4 rounded-2xl bg-leaf-50 p-4 text-sm">
               <p className="text-ink">
-                <b>{packageLabel(t.people, t.perDay)}</b> — {t.people} orang × {t.perDay} botol × {t.days} hari = <b>{total} botol</b>
+                <b>{packageLabel(t.people, t.perDay)}</b> — {t.people} orang × {t.perDay} botol × {dates.length} kiriman ({freqLabel(t.freq).toLowerCase()},{" "}
+                {durationLabel(t.days)}) = <b>{total} botol</b>
               </p>
               <p className="mt-1 text-xs text-muted">
                 Diskon langganan sesuai total botol:{" "}
@@ -401,63 +446,14 @@ export function JuiceTierSteps({
       {/* 6. Jadwal, alamat & ringkasan */}
       {step >= 6 && picksDone && (
         <Step n={6} title="Jadwal & pengiriman" done={false} summary={null}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-sm font-medium text-ink">
-              Frekuensi: <b>{freqLabel(t.freq)}</b> · {dates.length}× kirim
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-leaf-50 px-4 py-3 text-sm">
+            <p className="text-ink">
+              <b>{freqLabel(t.freq)}</b> · {dates.length}× kirim · mulai {longDate(firstDate)}
             </p>
             <button type="button" onClick={() => setT({ configDone: false })} className="text-xs text-muted underline">
-              ganti frekuensi
+              ubah jadwal
             </button>
           </div>
-          <label className="mt-3 block text-sm font-medium text-ink">
-            Mulai tanggal
-            <input
-              type="date"
-              value={startDate}
-              min={minStart}
-              max={addDays(today, 60)}
-              onChange={(e) => e.target.value && setT({ start: e.target.value, custom: t.freq === "custom" ? [] : t.custom })}
-              className={input}
-            />
-          </label>
-          {perWeek && (
-            <>
-              <p className="mt-3 text-sm font-medium text-ink">Hari kirim (pilih {perWeek})</p>
-              <div className="mt-1.5 flex flex-wrap gap-2">
-                {[1, 2, 3, 4, 5, 6, 7].map((n) => {
-                  const on = weekdays.includes(n);
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => {
-                        const next = on ? weekdays.filter((x) => x !== n) : [...weekdays, n].slice(-perWeek);
-                        if (next.length) setT({ weekdays: next.sort() });
-                      }}
-                      className={`rounded-full px-3 py-1.5 text-sm font-semibold ring-1 ${on ? "bg-leaf-700 text-white ring-leaf-700" : "bg-white text-ink ring-leaf-100"}`}
-                    >
-                      {WD[n]}
-                    </button>
-                  );
-                })}
-              </div>
-              {weekdays.length !== perWeek && <p className="mt-1 text-xs text-plum-700">Pilih {perWeek} hari.</p>}
-            </>
-          )}
-          <Calendar
-            from={firstDate}
-            days={t.days!}
-            selected={dates}
-            onToggle={(d) => {
-              if (d === firstDate) return;
-              const next = dates.includes(d) ? dates.filter((x) => x !== d) : [...dates, d];
-              setT({ freq: "custom", custom: next, start: firstDate });
-            }}
-          />
-          <p className="mt-1 text-xs text-muted">
-            Ketuk tanggal untuk menambah/menghapus kiriman. Tiap kiriman berisi jus untuk hari-hari sampai kiriman berikutnya.
-            {plan.shelf_life_days ? ` Jarak antar kiriman maks. ${plan.shelf_life_days} hari (umur simpan jus).` : ""}
-          </p>
           {slots.length > 0 && (
             <label className="mt-3 block text-sm font-medium text-ink">
               Jam antar
@@ -574,8 +570,8 @@ function Summary({
       <div className="space-y-1">
         {row("Paket", packageLabel(t.people!, t.perDay!))}
         {row("Jumlah orang", `${t.people} orang`)}
-        {row("Botol per orang per hari", `${t.perDay} botol`)}
-        {row("Durasi", `${t.days} hari`)}
+        {row("Botol per orang per kiriman", `${t.perDay} botol`)}
+        {row("Durasi", durationLabel(t.days!))}
         {row("Total botol", `${total} botol`)}
       </div>
       <div className="space-y-1 border-t border-leaf-100 pt-3">
@@ -603,7 +599,7 @@ function Summary({
           {quote.shipments.map((s, i) => (
             <li key={s.date} className="flex justify-between gap-3">
               <span className="inline-flex items-center gap-1.5">
-                <Truck className="h-3.5 w-3.5" /> {i + 1}. {longDate(s.date)} · {s.bottles} botol ({s.days} hari)
+                <Truck className="h-3.5 w-3.5" /> {i + 1}. {longDate(s.date)} · {s.bottles} botol
               </span>
               <span>{s.items.map((it) => `${it.qty} ${name(it.id)}`).join(", ")}</span>
             </li>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { rupiah } from "@/lib/format";
+import { durationLabel } from "@/lib/subscription-pricing";
 import { manageReminders, manageSubscriptions, type Reminder, type Subscription } from "./actions";
 import { Cake } from "lucide-react";
 
@@ -180,12 +181,12 @@ function ScheduledSubscription({ s, pending, onCancel }: { s: Subscription; pend
     <li className="rounded-2xl bg-white p-4 text-sm ring-1 ring-leaf-100">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <b className="text-ink">
-          {s.title ?? "Langganan Jus"} · {q.total_bottles} botol · {q.duration_days} hari
+          {s.title ?? "Langganan Jus"} · {q.total_bottles} botol · {durationLabel(q.duration_days)}
         </b>
         <span className="rounded-full bg-lime-100 px-3 py-0.5 text-xs font-bold text-leaf-900">Aktif</span>
       </div>
       <p className="mt-1 text-muted">
-        {q.people} orang × {q.bottles_per_day} botol/hari · {q.deliveries}× kirim{s.slot ? ` ${SLOTS[s.slot].toLowerCase()}` : ""} · {s.code}
+        {q.people} orang × {q.bottles_per_day} botol/kiriman · {q.deliveries}× kirim{s.slot ? ` ${SLOTS[s.slot].toLowerCase()}` : ""} · {s.code}
       </p>
       {s.items && <p className="mt-1 text-xs text-muted">{s.items.map((i) => `${i.qty}× ${i.name.replace(/^Cold-pressed Juice - Healthila \((.*)\)$/, "$1")}`).join(" · ")}</p>}
       <ul className="mt-2 space-y-0.5 text-xs">

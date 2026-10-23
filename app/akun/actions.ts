@@ -79,7 +79,7 @@ export async function createJuiceSubscription(p: {
   kind: string;
   audience: string | null;
   people: number;
-  bottles_per_day: number;
+  bottles_per_delivery: number;
   duration_days: number;
   frequency: string;
   dates: string[];
