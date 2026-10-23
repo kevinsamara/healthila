@@ -57,7 +57,8 @@ export default function AboutPage() {
             <span className="text-lime-200">Tukang pilih buah paling rewel di Malang.</span>
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/90">
-            Kami bukan sekadar jualan buah. Kami yang mencium, menekan pelan, dan menimbang buah satu per satu — supaya Kakak tinggal menikmati
+            Kami bukan sekadar jualan buah. Setiap kiriman kami kurasi: sampelnya kami cicipi, buahnya kami raba perlahan supaya tidak ada
+            yang memar atau busuk, tingkat manisnya kami cek dengan brix meter, lalu kami timbang satu per satu — supaya Kakak tinggal menikmati
             manisnya. <em>Fruitful heart, eating smart.</em>
           </p>
           <span className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold ring-1 ring-white/25">
