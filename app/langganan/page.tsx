@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getAccount } from "@/lib/session";
 import { getDeliverySlots } from "@/lib/slots";
-import { getSubscriptionPlans } from "@/lib/subscriptions";
+import { getSubscriptionItems, getSubscriptionPlans } from "@/lib/subscriptions";
 import { SubscribeWizard } from "./SubscribeWizard";
 import { CalendarDays, CirclePause, Grape, type LucideIcon } from "lucide-react";
 import { DynIcon } from "@/lib/icons";
@@ -21,7 +21,7 @@ const PERKS: [LucideIcon, string, string][] = [
 ];
 
 export default async function LanggananPage() {
-  const [account, slots, plans] = await Promise.all([getAccount(), getDeliverySlots(), getSubscriptionPlans()]);
+  const [account, slots, plans, items] = await Promise.all([getAccount(), getDeliverySlots(), getSubscriptionPlans(), getSubscriptionItems()]);
   return (
     <>
       <section className="bg-gradient-to-br from-leaf-900 via-leaf-700 to-[#5fcf8f] text-white">
@@ -36,6 +36,7 @@ export default async function LanggananPage() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 lg:grid-cols-[1fr_340px]">
         <SubscribeWizard
           plans={plans}
+          items={items}
           slots={slots.filter((s) => s.enabled)}
           loggedIn={!!account}
           name={account?.name ?? ""}

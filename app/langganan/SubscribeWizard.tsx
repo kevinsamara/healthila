@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { Apple, Building2, Check, CupSoda, House, type LucideIcon, Salad, School, Sparkles } from "lucide-react";
+import { Apple, Building2, Check, CupSoda, House, type LucideIcon, Minus, Plus, Salad, School, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { DynIcon } from "@/lib/icons";
 import type { DeliverySlot } from "@/lib/delivery";
 import { rupiah } from "@/lib/format";
-import type { SubscriptionPlan } from "@/lib/subscriptions";
+import type { SubscriptionItem, SubscriptionPlan } from "@/lib/subscriptions";
 import { manageSubscriptions } from "../akun/actions";
 import { DAYS } from "../akun/RetentionPanels";
 
@@ -37,6 +37,9 @@ type Draft = {
   audience: string | null;
   pax: number | null;
   option: number | null;
+  /** Catalog plans: item id → quantity per delivery. */
+  picks: Record<string, number>;
+  picksDone: boolean;
   interval: "1" | "2";
   weekdays: number[];
   slot: string;
@@ -53,12 +56,14 @@ function recommend(plan: SubscriptionPlan, pax: number) {
 
 export function SubscribeWizard({
   plans,
+  items,
   slots,
   loggedIn,
   name,
   addresses,
 }: {
   plans: SubscriptionPlan[];
+  items: SubscriptionItem[];
   slots: DeliverySlot[];
   loggedIn: boolean;
   name: string;
@@ -70,6 +75,8 @@ export function SubscribeWizard({
     audience: null,
     pax: null,
     option: null,
+    picks: {},
+    picksDone: false,
     interval: "1",
     weekdays: [6],
     slot: slots[0] ? String(slots[0].n) : "",
@@ -96,9 +103,18 @@ export function SubscribeWizard({
   }, [loggedIn]);
 
   const plan = plans.find((p) => p.kind === d.kind) ?? null;
-  const rec = plan && d.pax ? recommend(plan, d.pax) : null;
-  const price = plan && d.option ? (plan.pricing === "budget" ? d.option : d.option * (plan.unit_price ?? 0)) : 0;
-  const step = !d.kind ? 1 : !d.audience ? 2 : !d.pax ? 3 : !d.option ? 4 : 5;
+  const catalog = plan?.pricing === "catalog";
+  const planItems = items.filter((i) => i.plan_kind === d.kind);
+  const picked = planItems.filter((i) => (d.picks[i.id] ?? 0) > 0);
+  const units = picked.reduce((n, i) => n + d.picks[i.id], 0);
+  const catalogTotal = picked.reduce((n, i) => n + d.picks[i.id] * i.sub_price, 0);
+  const catalogNormal = picked.reduce((n, i) => n + d.picks[i.id] * (i.normal_price ?? i.sub_price), 0);
+  const rec = plan && d.pax && !catalog ? recommend(plan, d.pax) : null;
+  const price = catalog ? catalogTotal : plan && d.option ? (plan.pricing === "budget" ? d.option : d.option * (plan.unit_price ?? 0)) : 0;
+  const packageDone = catalog ? d.picksDone && units > 0 : !!d.option;
+  const step = !d.kind ? 1 : !d.audience ? 2 : !d.pax ? 3 : !packageDone ? 4 : 5;
+  const setQty = (id: string, q: number) =>
+    setD((cur) => ({ ...cur, picks: { ...cur.picks, [id]: Math.max(0, Math.min(99, q)) } }));
   const set = (patch: Partial<Draft>) => setD((cur) => ({ ...cur, ...patch }));
 
   function toggleDay(n: number) {
@@ -109,14 +125,18 @@ export function SubscribeWizard({
   }
 
   function submit() {
-    if (!plan || !d.option) return;
+    if (!plan || !packageDone) return;
     setError(null);
     start(async () => {
       const r = await manageSubscriptions("create", {
         kind: plan.kind,
         audience: d.audience,
         pax: d.pax,
-        ...(plan.pricing === "budget" ? { budget_idr: d.option } : { quantity: d.option }),
+        ...(catalog
+          ? { items: picked.map((i) => ({ item_id: i.id, qty: d.picks[i.id] })) }
+          : plan.pricing === "budget"
+            ? { budget_idr: d.option }
+            : { quantity: d.option }),
         interval_weeks: d.interval,
         weekdays: d.weekdays,
         slot: d.slot,
@@ -145,14 +165,14 @@ export function SubscribeWizard({
   return (
     <div className="space-y-4">
       {/* 1. Jenis */}
-      <Step n={1} title="Mau langganan apa?" done={!!plan} summary={plan ? `${KIND_UI[plan.kind].letter}. ${plan.title}` : null} onEdit={() => set({ kind: null, option: null })}>
+      <Step n={1} title="Mau langganan apa?" done={!!plan} summary={plan ? `${KIND_UI[plan.kind].letter}. ${plan.title}` : null} onEdit={() => set({ kind: null, option: null, picks: {}, picksDone: false })}>
         <div className="grid gap-3 sm:grid-cols-3">
           {plans.map((p) => (
             <button
               key={p.kind}
               type="button"
               disabled={!p.available}
-              onClick={() => set({ kind: p.kind, option: null, weekdays: d.weekdays.slice(0, p.multi_day ? 7 : 1) })}
+              onClick={() => set({ kind: p.kind, option: null, picks: {}, picksDone: false, weekdays: d.weekdays.slice(0, p.multi_day ? 7 : 1) })}
               className={`${card(d.kind === p.kind)} disabled:cursor-not-allowed disabled:opacity-55`}
             >
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700">
@@ -167,7 +187,9 @@ export function SubscribeWizard({
                   ? "Segera hadir"
                   : p.pricing === "budget"
                     ? `mulai ${rupiah(Math.min(...p.options))}/kiriman`
-                    : `${rupiah(p.unit_price ?? 0)}/${p.unit_label}`}
+                    : p.pricing === "catalog"
+                      ? `mulai ${rupiah(Math.min(...items.filter((i) => i.plan_kind === p.kind).map((i) => i.sub_price)))}/${p.unit_label}`
+                      : `${rupiah(p.unit_price ?? 0)}/${p.unit_label}`}
               </span>
             </button>
           ))}
@@ -199,7 +221,7 @@ export function SubscribeWizard({
 
       {/* 3. Pax */}
       {step >= 3 && (
-        <Step n={3} title="Untuk berapa orang (pax)?" done={!!d.pax} summary={d.pax ? `${d.pax} pax` : null} onEdit={() => set({ pax: null, option: null })}>
+        <Step n={3} title="Untuk berapa orang (pax)?" done={!!d.pax} summary={d.pax ? `${d.pax} pax` : null} onEdit={() => set({ pax: null, option: null, picksDone: false })}>
           <div className="flex flex-wrap gap-2">
             {PAX.map((p) => (
               <button
@@ -233,7 +255,80 @@ export function SubscribeWizard({
       )}
 
       {/* 4. Paket */}
-      {step >= 4 && plan && (
+      {step >= 4 && plan && catalog && (
+        <Step
+          n={4}
+          title={`Pilih ${plan.unit_label === "botol" ? "jus" : "produk"} per kiriman`}
+          done={packageDone}
+          summary={packageDone ? `${units} ${plan.unit_label} · ${rupiah(catalogTotal)}` : null}
+          onEdit={() => set({ picksDone: false })}
+        >
+          <p className="mb-3 text-sm text-muted">
+            Harga langganan sudah lebih hemat dari harga satuan. Saran untuk {d.pax} pax: ±{d.pax} {plan.unit_label} per kiriman.
+          </p>
+          <ul className="divide-y divide-leaf-100 rounded-2xl ring-1 ring-leaf-100">
+            {planItems.map((i) => {
+              const q = d.picks[i.id] ?? 0;
+              return (
+                <li key={i.id} className="flex items-center gap-3 p-3">
+                  <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-leaf-50">
+                    {i.photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- catalog photo (Supabase storage)
+                      <img src={i.photo} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <CupSoda className="m-auto mt-3.5 h-7 w-7 text-leaf-700" />
+                    )}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-ink">{i.variant ?? i.name}</span>
+                    {i.variant && <span className="block truncate text-xs text-muted">{i.name}</span>}
+                    <span className="text-sm">
+                      <b className="text-leaf-700">{rupiah(i.sub_price)}</b>
+                      {i.normal_price && i.normal_price > i.sub_price && <span className="ml-1.5 text-xs text-muted line-through">{rupiah(i.normal_price)}</span>}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setQty(i.id, q - 1)}
+                      disabled={q === 0}
+                      aria-label="Kurangi"
+                      className="flex h-8 w-8 items-center justify-center rounded-full ring-1 ring-leaf-200 disabled:opacity-30"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="w-7 text-center font-bold text-ink">{q}</span>
+                    <button
+                      type="button"
+                      onClick={() => setQty(i.id, q + 1)}
+                      aria-label="Tambah"
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-leaf-700 text-white"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-leaf-50 px-4 py-3">
+            <span className="text-sm text-ink">
+              {units} {plan.unit_label} · <b>{rupiah(catalogTotal)}</b>/kiriman
+              {catalogNormal > catalogTotal && <span className="ml-2 text-xs font-semibold text-leaf-700">hemat {rupiah(catalogNormal - catalogTotal)}</span>}
+            </span>
+            <button
+              type="button"
+              disabled={units === 0}
+              onClick={() => set({ picksDone: true })}
+              className="h-10 rounded-full bg-leaf-700 px-5 text-sm font-bold text-white disabled:opacity-50"
+            >
+              Lanjut
+            </button>
+          </div>
+        </Step>
+      )}
+
+      {step >= 4 && plan && !catalog && (
         <Step
           n={4}
           title={plan.pricing === "budget" ? "Pilih budget per kiriman" : `Berapa ${plan.unit_label} per kiriman?`}

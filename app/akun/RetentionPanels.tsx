@@ -118,7 +118,7 @@ export function SubscriptionsPanel({ initial }: { initial: Subscription[] }) {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <b className="text-ink">
                   {s.title ?? "Langganan"}
-                  {s.quantity ? ` ${s.quantity} ${s.unit_label ?? ""}` : ""} · {rupiah(s.budget_idr)}/kiriman
+                  {s.quantity && !s.items ? ` ${s.quantity} ${s.unit_label ?? ""}` : ""} · {rupiah(s.budget_idr)}/kiriman
                 </b>
                 <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${s.status === "active" ? "bg-lime-100 text-leaf-900" : "bg-sun-300/40 text-ink"}`}>
                   {s.status === "active" ? "Aktif" : "Dijeda"}
@@ -138,6 +138,7 @@ export function SubscriptionsPanel({ initial }: { initial: Subscription[] }) {
                   </>
                 )}
               </p>
+              {s.items && <p className="mt-1 text-xs text-muted">{s.items.map((i) => `${i.qty}× ${i.name}`).join(" · ")}</p>}
               {s.preferences && <p className="mt-1 text-xs text-muted">Preferensi: {s.preferences}</p>}
               <div className="mt-3 flex gap-2 text-xs">
                 {s.status === "active" ? (

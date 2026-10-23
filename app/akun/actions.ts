@@ -14,6 +14,7 @@ export type Subscription = {
   title: string | null;
   unit_label: string | null;
   quantity: number | null;
+  items: { name: string; qty: number; price: number }[] | null;
   weekdays: number[];
   audience: string | null;
   pax: number | null;
