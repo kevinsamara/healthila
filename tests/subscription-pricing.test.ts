@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_TIERS, type Flavor, formatIDR, packageLabel, quoteSubscription, roundToThousand, tierRate } from "@/lib/subscription-pricing";
+import { DEFAULT_TIERS, deliveryDatesFor, type Flavor, formatIDR, isoWeekday, packageLabel, quoteSubscription, roundToThousand, tierRate } from "@/lib/subscription-pricing";
 
 // Retail prices from the owner's spec (same as the catalog).
 const CP = (id: string, name: string, price: number, available = true): Flavor => ({ id, name, price, category: "cold_pressed", available });
@@ -218,5 +218,55 @@ describe("parity with the database quote (private.sub_tier_quote, migration 0119
     expect(q.shipments.map((s) => s.date)).toEqual(["2026-11-02", "2026-11-05", "2026-11-08"]);
     expect(q.shippingTotal).toBe(36000);
     expect(q.payable).toBe(435000);
+  });
+});
+
+describe("buyer-chosen delivery dates", () => {
+  const juice = { ...base, people: 2, days: 7, everyDays: 1, shippingPerDelivery: 12000, picks: { minty: 7, beet: 7 }, startDate: "2026-10-26" };
+
+  it("2× seminggu (Senin & Kamis) — each delivery covers the days until the next (parity with SQL)", () => {
+    const dates = deliveryDatesFor("2x_week", "2026-10-26", 7, { weekdays: [1, 4] });
+    expect(dates).toEqual(["2026-10-26", "2026-10-29"]);
+    const q = quoteSubscription({ ...juice, deliveryDates: dates });
+    expect(q.errors).toEqual([]);
+    expect(q.shipments.map((s) => [s.days, s.bottles])).toEqual([[3, 6], [4, 8]]);
+    expect(q.shipments.map((s) => s.productTotal)).toEqual([171000, 228000]);
+    expect(q.deliveries).toBe(2);
+    expect(q.shippingTotal).toBe(24000);
+    expect(q.payable).toBe(399000 + 24000);
+  });
+
+  it("pricing does not depend on the schedule", () => {
+    const a = quoteSubscription({ ...juice, deliveryDates: deliveryDatesFor("daily", "2026-10-26", 7) });
+    const b = quoteSubscription({ ...juice, deliveryDates: deliveryDatesFor("once", "2026-10-26", 7) });
+    expect(a.productTotal).toBe(b.productTotal);
+    expect(a.deliveries).toBe(7);
+    expect(b.deliveries).toBe(1);
+    expect(a.shipments.reduce((n, s) => n + s.bottles, 0)).toBe(14);
+  });
+
+  it("N× seminggu starts on the first chosen weekday", () => {
+    // 2026-10-27 is a Tuesday → first Thursday 29th, then Monday 2nd …
+    expect(deliveryDatesFor("2x_week", "2026-10-27", 7, { weekdays: [1, 4] })).toEqual(["2026-10-29", "2026-11-02"]);
+    expect(deliveryDatesFor("3x_week", "2026-10-26", 14).length).toBe(6);
+    expect(deliveryDatesFor("weekly", "2026-10-26", 30)).toEqual(["2026-10-26", "2026-11-02", "2026-11-09", "2026-11-16", "2026-11-23"]);
+    expect(deliveryDatesFor("biweekly", "2026-10-26", 30)).toEqual(["2026-10-26", "2026-11-09", "2026-11-23"]);
+    expect(isoWeekday("2026-10-26")).toBe(1);
+  });
+
+  it("custom dates always include the start and stay inside the period", () => {
+    expect(deliveryDatesFor("custom", "2026-10-26", 7, { custom: ["2026-11-10", "2026-10-28", "2026-10-25"] })).toEqual(["2026-10-26", "2026-10-28"]);
+  });
+
+  it("rejects dates that don't fit the subscription", () => {
+    expect(quoteSubscription({ ...juice, deliveryDates: ["2026-10-27"] }).errors).toContain("Pengiriman pertama harus di tanggal mulai langganan.");
+    expect(quoteSubscription({ ...juice, deliveryDates: ["2026-10-26", "2026-11-02"] }).errors).toContain("Ada tanggal kirim di luar masa langganan.");
+    expect(quoteSubscription({ ...juice, deliveryDates: ["2026-10-26", "2026-10-26"] }).errors).toContain("Tanggal kirim tidak valid.");
+  });
+
+  it("shelf life limits the gap between deliveries", () => {
+    const q = quoteSubscription({ ...juice, shelfLifeDays: 3, deliveryDates: ["2026-10-26", "2026-10-29"] });
+    expect(q.errors.some((e) => e.includes("maksimal untuk 3 hari"))).toBe(true);
+    expect(quoteSubscription({ ...juice, shelfLifeDays: 4, deliveryDates: ["2026-10-26", "2026-10-29"] }).errors).toEqual([]);
   });
 });

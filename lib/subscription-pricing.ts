@@ -41,7 +41,62 @@ export type QuoteInput = {
   startDate: string;
   /** Max days one delivery may cover (product storage); null = not configured. */
   shelfLifeDays?: number | null;
+  /**
+   * Delivery dates chosen by the buyer (YYYY-MM-DD, first = startDate). Each
+   * delivery covers the days until the next one. Without it: every `everyDays`.
+   */
+  deliveryDates?: string[];
 };
+
+/** How often the buyer wants deliveries; turned into dates by deliveryDatesFor(). */
+export type Frequency = "daily" | "4x_week" | "3x_week" | "2x_week" | "weekly" | "biweekly" | "once" | "custom";
+
+export const FREQUENCIES: { key: Frequency; label: string; perWeek?: number; minDays: number }[] = [
+  { key: "daily", label: "Tiap hari", minDays: 1 },
+  { key: "4x_week", label: "4× seminggu", perWeek: 4, minDays: 5 },
+  { key: "3x_week", label: "3× seminggu", perWeek: 3, minDays: 5 },
+  { key: "2x_week", label: "2× seminggu", perWeek: 2, minDays: 5 },
+  { key: "weekly", label: "1× seminggu", minDays: 14 },
+  { key: "biweekly", label: "2 minggu sekali", minDays: 28 },
+  { key: "once", label: "Sekali kirim (semua)", minDays: 1 },
+  { key: "custom", label: "Atur tanggal sendiri", minDays: 1 },
+];
+
+/** Suggested weekdays (ISO 1 = Senin … 7 = Minggu) for the "N× seminggu" options. */
+export const DEFAULT_WEEKDAYS: Record<number, number[]> = { 2: [1, 4], 3: [1, 3, 5], 4: [1, 2, 4, 5] };
+
+/** ISO weekday of a YYYY-MM-DD date (1 = Monday). */
+export const isoWeekday = (date: string) => ((new Date(date + "T00:00:00Z").getUTCDay() + 6) % 7) + 1;
+
+/**
+ * Delivery dates for a frequency. For "N× seminggu" the subscription starts on
+ * the first chosen weekday on/after `from`; `custom` keeps the buyer's dates
+ * (the start date is always included).
+ */
+export function deliveryDatesFor(freq: Frequency, from: string, days: number, opts: { weekdays?: number[]; custom?: string[] } = {}): string[] {
+  const n = Math.max(1, Math.floor(days));
+  const step = (k: number) => Array.from({ length: Math.ceil(n / k) }, (_, i) => addDays(from, i * k));
+  switch (freq) {
+    case "daily":
+      return step(1);
+    case "weekly":
+      return step(7);
+    case "biweekly":
+      return step(14);
+    case "once":
+      return [from];
+    case "custom": {
+      const end = addDays(from, n);
+      return [...new Set([from, ...(opts.custom ?? [])])].filter((d) => d >= from && d < end).sort();
+    }
+    default: {
+      const wd = opts.weekdays?.length ? opts.weekdays : DEFAULT_WEEKDAYS[FREQUENCIES.find((f) => f.key === freq)?.perWeek ?? 2];
+      let start = from;
+      for (let i = 0; i < 7 && !wd.includes(isoWeekday(start)); i++) start = addDays(start, 1);
+      return Array.from({ length: n }, (_, i) => addDays(start, i)).filter((d) => wd.includes(isoWeekday(d)));
+    }
+  }
+}
 
 export type Shipment = {
   date: string;
@@ -86,6 +141,10 @@ export function packageLabel(people: number, bottlesPerDay: number): string {
   return "Daily Personal";
 }
 
+function dayDiff(a: string, b: string) {
+  return Math.round((Date.parse(b + "T00:00:00Z") - Date.parse(a + "T00:00:00Z")) / 86_400_000);
+}
+
 function addDays(date: string, n: number) {
   const d = new Date(date + "T00:00:00Z");
   d.setUTCDate(d.getUTCDate() + n);
@@ -117,8 +176,23 @@ export function quoteSubscription(input: QuoteInput): Quote {
   if (!(people >= 1 && people <= 100)) errors.push("Jumlah orang tidak valid.");
   if (![1, 2, 3].includes(perDay)) errors.push("Botol per orang per hari harus 1, 2, atau 3.");
   if (!(days >= 1 && days <= 60)) errors.push("Durasi tidak valid.");
-  if (input.shelfLifeDays && every > input.shelfLifeDays)
-    errors.push(`Satu pengiriman maksimal untuk ${input.shelfLifeDays} hari (umur simpan produk). Pilih jadwal kirim lebih sering.`);
+  // Delivery dates: chosen by the buyer, or every `every` days.
+  const errorsBefore = errors.length;
+  const end = days >= 1 ? addDays(input.startDate, days) : input.startDate;
+  const dates = input.deliveryDates ? [...input.deliveryDates] : [];
+  if (input.deliveryDates) {
+    const sorted = [...new Set(dates)].sort();
+    if (sorted.length !== dates.length || sorted.some((d, i) => d !== dates[i]) || dates.some((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d)))
+      errors.push("Tanggal kirim tidak valid.");
+    else if (dates[0] !== input.startDate) errors.push("Pengiriman pertama harus di tanggal mulai langganan.");
+    else if (dates[dates.length - 1] >= end) errors.push("Ada tanggal kirim di luar masa langganan.");
+  } else if (days >= 1) {
+    for (let d = 0; d < days; d += every) dates.push(addDays(input.startDate, d));
+  }
+  const cover = (i: number) => dayDiff(dates[i], dates[i + 1] ?? end);
+  if (input.shelfLifeDays && dates.some((_, i) => cover(i) > input.shelfLifeDays!))
+    errors.push(`Satu pengiriman maksimal untuk ${input.shelfLifeDays} hari (umur simpan jus). Tambah tanggal kirim.`);
+  const datesOk = errors.length === errorsBefore;
   const totalBottles = errors.length ? 0 : people * perDay * days;
 
   const byId = new Map(input.flavors.map((f) => [f.id, f]));
@@ -162,16 +236,16 @@ export function quoteSubscription(input: QuoteInput): Quote {
   if (totalBottles > 0 && selectedBottles === totalBottles) {
     const order = interleave(picks);
     let cursor = 0;
-    for (let start = 0; start < days; start += every) {
-      const cover = Math.min(every, days - start);
-      const bottles = people * perDay * cover;
+    for (let i = 0; i < dates.length && datesOk; i++) {
+      const covered = cover(i);
+      const bottles = people * perDay * covered;
       const slice = order.slice(cursor, cursor + bottles);
       cursor += bottles;
       const counts = new Map<string, number>();
       for (const id of slice) counts.set(id, (counts.get(id) ?? 0) + 1);
       const items = [...counts].map(([id, qty]) => ({ id, qty }));
       const normalSubtotal = items.reduce((n, i) => n + i.qty * (byId.get(i.id)?.price ?? 0), 0);
-      shipments.push({ date: addDays(input.startDate, start), days: cover, bottles, items, normalSubtotal, productTotal: 0 });
+      shipments.push({ date: dates[i], days: covered, bottles, items, normalSubtotal, productTotal: 0 });
     }
     // Spread the (rounded) product total over deliveries by value; last takes the remainder.
     let allocated = 0;
@@ -182,7 +256,7 @@ export function quoteSubscription(input: QuoteInput): Quote {
     if (shipments.reduce((n, s) => n + s.bottles, 0) !== totalBottles) errors.push("Jadwal pengiriman tidak cocok dengan jumlah botol.");
   }
 
-  const deliveries = days >= 1 ? Math.ceil(days / every) : 0;
+  const deliveries = dates.length;
   const shippingTotal = input.shippingPerDelivery == null ? null : input.shippingPerDelivery * deliveries;
   return {
     totalBottles,

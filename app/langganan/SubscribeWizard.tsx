@@ -100,7 +100,7 @@ export function SubscribeWizard({
       if (saved && loggedIn) {
         sessionStorage.removeItem(DRAFT_KEY);
         // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore after login
-        setD((cur) => ({ ...saved, tier: saved.tier ?? emptyTier(), name: saved.name || cur.name, address: saved.address || cur.address }));
+        setD((cur) => ({ ...saved, tier: { ...emptyTier(), ...saved.tier }, name: saved.name || cur.name, address: saved.address || cur.address }));
       }
     } catch {
       // storage unavailable
