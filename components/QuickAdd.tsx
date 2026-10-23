@@ -6,12 +6,13 @@ import type { Product } from "@/lib/catalog";
 import { addItem } from "@/lib/cart";
 import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
-import { Check } from "lucide-react";
+import { Check, MessageCircle } from "lucide-react";
 
 /** Card-level add button: one tap for single-option products, otherwise opens the product page. */
 export function QuickAdd({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
-  const base = "flex h-11 w-full items-center justify-center rounded-full text-sm font-bold transition";
+  // min-h + text-center: a label that wraps on narrow cards (or enlarged in-app browser text) stays centred and inside the pill.
+  const base = "flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-3 py-2 text-center text-sm leading-tight font-bold transition";
 
   if (!product.in_stock) {
     return <span className={`${base} cursor-not-allowed bg-black/5 text-muted`}>Stok habis</span>;
@@ -24,14 +25,19 @@ export function QuickAdd({ product }: { product: Product }) {
   if (price == null) {
     // No price in the CRM yet (e.g. parcels quoted per request): ask on WhatsApp.
     return (
-      <a
-        href={waLink(`Halo Healthila, saya mau pesan ${product.name}. Boleh info harganya?`)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`${base} bg-[#25D366] text-white hover:brightness-95`}
-      >
-        Pesan via WhatsApp
-      </a>
+      // Label follows the button's own width (cards are ~126px wide on phones).
+      <div className="@container w-full">
+        <a
+          href={waLink(`Halo Healthila, saya mau pesan ${product.name}. Boleh info harganya?`)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${base} bg-[#25D366] text-white hover:brightness-95`}
+        >
+          <MessageCircle className="hidden h-4 w-4 shrink-0 @[170px]:block" />
+          <span className="@[200px]:hidden">Pesan via WA</span>
+          <span className="hidden @[200px]:inline">Pesan via WhatsApp</span>
+        </a>
+      </div>
     );
   }
 

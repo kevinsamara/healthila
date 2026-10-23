@@ -51,7 +51,7 @@ export function ProductCard({ product }: { product: Product }) {
             <p className="flex flex-wrap items-baseline gap-x-1.5">
               <span className="text-lg font-extrabold text-leaf-700">
                 {fromLabel}
-                {rupiah(price)}
+                <span className="whitespace-nowrap">{rupiah(price)}</span>
               </span>
               {unit && <span className="text-xs text-muted">/ {unit}</span>}
               {was != null && <span className="text-xs text-muted line-through">{rupiah(was)}</span>}
@@ -60,7 +60,7 @@ export function ProductCard({ product }: { product: Product }) {
             product.from_price ? (
               <p className="text-lg font-extrabold text-leaf-700">
                 <span className="text-xs font-semibold text-muted">mulai </span>
-                {rupiah(product.from_price)}
+                <span className="whitespace-nowrap">{rupiah(product.from_price)}</span>
               </p>
             ) : (
               <p className="font-semibold text-plum-700">Harga by request</p>
