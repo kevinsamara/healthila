@@ -13,7 +13,7 @@ export function ProductCard({ product }: { product: Product }) {
   const unit = cardUnit(product);
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-leaf-900/10">
+    <div className="group flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-xl hover:shadow-leaf-900/10">
       <Link href={`/produk/${product.slug}`} className="relative block aspect-square bg-leaf-50">
         <ProductImage product={product} sizes="(min-width: 1280px) 22vw, (min-width: 640px) 30vw, 50vw" />
         {!product.in_stock && (
