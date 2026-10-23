@@ -16,6 +16,7 @@ import {
   durationLabel,
   packageLabel,
   quoteSubscription,
+  roundToThousand,
   tierRate,
 } from "@/lib/subscription-pricing";
 import type { SubscriptionItem, SubscriptionPlan } from "@/lib/subscriptions";
@@ -147,6 +148,10 @@ export function JuiceTierSteps({
     startDate: firstDate,
   });
   const selected = quote.selectedBottles;
+  // Discount the finished package will get — shown on every price while picking.
+  const pkgRate = tierRate(total, tiers);
+  const discounted = roundToThousand(quote.subtotal * (1 - pkgRate));
+  const saved = quote.subtotal - discounted;
   const nextTier = (tiers ?? []).filter((x) => x.min > total).sort((a, b) => a.min - b.min)[0];
 
   const configDone = t.configDone && !!t.people && !!t.perDay && !!t.days && !!t.category && freqOk;
@@ -392,7 +397,15 @@ export function JuiceTierSteps({
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-ink">{f.name}</span>
-                    <span className="text-sm text-leaf-700">{formatIDR(f.price)}</span>
+                    {pkgRate > 0 ? (
+                      <span className="flex flex-wrap items-baseline gap-x-1.5 text-sm">
+                        <b className="text-leaf-700">{formatIDR(Math.round(f.price * (1 - pkgRate)))}</b>
+                        <span className="text-xs text-muted line-through">{formatIDR(f.price)}</span>
+                        <span className="rounded-full bg-sun-300/50 px-1.5 text-[11px] font-bold text-leaf-900">−{pct(pkgRate)}</span>
+                      </span>
+                    ) : (
+                      <span className="text-sm text-leaf-700">{formatIDR(f.price)}</span>
+                    )}
                     {!f.available && <span className="ml-2 rounded-full bg-plum-50 px-2 py-0.5 text-[11px] font-bold text-plum-700">Habis</span>}
                   </span>
                   <span className="flex items-center gap-1">
@@ -425,8 +438,17 @@ export function JuiceTierSteps({
               <span className="text-ink">
                 Terpilih <b>{selected}</b> / {total} botol
               </span>
-              <span className="font-semibold text-ink">{formatIDR(quote.subtotal)}</span>
+              <span className="text-right">
+                {pkgRate > 0 && quote.subtotal > 0 && <span className="mr-2 text-xs text-muted line-through">{formatIDR(quote.subtotal)}</span>}
+                <b className="text-lg text-leaf-900">{formatIDR(discounted)}</b>
+              </span>
             </div>
+            {saved > 0 && (
+              <p className="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="rounded-full bg-sun-300/50 px-2 py-0.5 font-bold text-leaf-900">Kamu hemat {formatIDR(saved)} (diskon langganan {pct(pkgRate)})</span>
+                {selected > 0 && <span className="text-muted">≈ {formatIDR(Math.round(discounted / selected))}/botol</span>}
+              </p>
+            )}
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
               <div className="h-full rounded-full bg-leaf-600 transition-all" style={{ width: `${Math.min(100, (selected / Math.max(1, total)) * 100)}%` }} />
             </div>
@@ -589,8 +611,19 @@ function Summary({
       <div className="space-y-1 border-t border-leaf-100 pt-3">
         {row("Subtotal produk", formatIDR(quote.subtotal))}
         {row("Diskon langganan", pct(quote.rate))}
-        {row("Hemat", `−${formatIDR(quote.savings)}`)}
-        {row("Total produk setelah diskon", formatIDR(quote.productTotal), true)}
+        {row(
+          "Total produk setelah diskon",
+          <>
+            {quote.savings > 0 && <span className="mr-2 text-xs font-normal text-muted line-through">{formatIDR(quote.subtotal)}</span>}
+            {formatIDR(quote.productTotal)}
+          </>,
+          true,
+        )}
+        {quote.savings > 0 && (
+          <p className="text-right">
+            <span className="rounded-full bg-sun-300/50 px-2 py-0.5 text-xs font-bold text-leaf-900">Kamu hemat {formatIDR(quote.savings)}</span>
+          </p>
+        )}
       </div>
       <div className="space-y-1 border-t border-leaf-100 pt-3">
         {row("Frekuensi kirim", freqLabel(t.freq))}
