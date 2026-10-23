@@ -113,7 +113,10 @@ export function SubscriptionsPanel({ initial }: { initial: Subscription[] }) {
         </p>
       ) : (
         <ul className="mt-4 space-y-3">
-          {rows.map((s) => (
+          {rows.map((s) =>
+            s.schedule && s.quote ? (
+              <ScheduledSubscription key={s.id} s={s} pending={pending} onCancel={() => confirm("Batalkan langganan ini? Pengiriman yang belum dibuat tidak akan dikirim.") && act("cancel", s.id)} />
+            ) : (
             <li key={s.id} className="rounded-2xl bg-white p-4 text-sm ring-1 ring-leaf-100">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <b className="text-ink">
@@ -160,10 +163,50 @@ export function SubscriptionsPanel({ initial }: { initial: Subscription[] }) {
                 </button>
               </div>
             </li>
-          ))}
+            ),
+          )}
         </ul>
       )}
       {error && <p className="mt-2 text-sm text-plum-700">{error}</p>}
     </section>
+  );
+}
+
+/** Fixed-duration juice subscription (tier pricing): deliveries are planned up front, no pause. */
+function ScheduledSubscription({ s, pending, onCancel }: { s: Subscription; pending: boolean; onCancel: () => void }) {
+  const q = s.quote!;
+  const short = (d: string) => new Date(d + "T00:00").toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
+  return (
+    <li className="rounded-2xl bg-white p-4 text-sm ring-1 ring-leaf-100">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <b className="text-ink">
+          {s.title ?? "Langganan Jus"} · {q.total_bottles} botol · {q.duration_days} hari
+        </b>
+        <span className="rounded-full bg-lime-100 px-3 py-0.5 text-xs font-bold text-leaf-900">Aktif</span>
+      </div>
+      <p className="mt-1 text-muted">
+        {q.people} orang × {q.bottles_per_day} botol/hari · {q.deliveries}× kirim{s.slot ? ` ${SLOTS[s.slot].toLowerCase()}` : ""} · {s.code}
+      </p>
+      {s.items && <p className="mt-1 text-xs text-muted">{s.items.map((i) => `${i.qty}× ${i.name.replace(/^Cold-pressed Juice - Healthila \((.*)\)$/, "$1")}`).join(" · ")}</p>}
+      <ul className="mt-2 space-y-0.5 text-xs">
+        {s.schedule!.map((e, i) => (
+          <li key={e.date} className={`flex justify-between gap-3 ${e.order_id ? "text-muted line-through decoration-leaf-300" : "text-ink"}`}>
+            <span>
+              {i + 1}. {short(e.date)} · {e.bottles} botol
+            </span>
+            <span>{e.order_id ? "dijadwalkan" : "menunggu"}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-muted">
+        Produk {rupiah(q.product_total)} (hemat {rupiah(q.savings)}, diskon {Math.round(q.rate * 1000) / 10}%) · ongkir{" "}
+        {q.shipping_total == null ? "dikonfirmasi admin" : rupiah(q.shipping_total)} · <b className="text-ink">total {rupiah(q.payable)}</b>
+      </p>
+      <div className="mt-3 flex gap-2 text-xs">
+        <button type="button" disabled={pending} onClick={onCancel} className="rounded-full px-3 py-1 text-plum-700 underline">
+          Batalkan
+        </button>
+      </div>
+    </li>
   );
 }

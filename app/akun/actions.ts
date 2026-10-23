@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { fetchOngkir } from "@/lib/ongkir";
 import { sessionToken } from "@/lib/session";
 import { webRpc, WebRpcError } from "@/lib/web-rpc";
 
@@ -26,6 +27,25 @@ export type Subscription = {
   status: "active" | "paused" | "cancelled";
   next_date: string;
   address: string;
+  /** Fixed-duration juice subscriptions (tier pricing, healthila-crm 0119). */
+  quote: TierQuote | null;
+  schedule: { date: string; days: number; bottles: number; product_total: number; order_id?: string }[] | null;
+};
+
+export type TierQuote = {
+  people: number;
+  bottles_per_day: number;
+  duration_days: number;
+  every_days: number;
+  total_bottles: number;
+  subtotal: number;
+  rate: number;
+  product_total: number;
+  savings: number;
+  deliveries: number;
+  shipping_per_delivery: number | null;
+  shipping_total: number | null;
+  payable: number;
 };
 
 type Result<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -48,4 +68,32 @@ export async function manageReminders(action: "list" | "add" | "delete", p: Reco
 
 export async function manageSubscriptions(action: "list" | "create" | "pause" | "resume" | "cancel", p: Record<string, unknown> = {}) {
   return call<Subscription[]>("web_subscriptions_manage", action, p);
+}
+
+/**
+ * Juice subscription with quantity tiers. Ongkir is estimated here from the
+ * address (never trusted from the browser); the database recomputes the whole
+ * quote and the delivery schedule (private.sub_tier_quote).
+ */
+export async function createJuiceSubscription(p: {
+  kind: string;
+  audience: string | null;
+  people: number;
+  bottles_per_day: number;
+  duration_days: number;
+  every_days: number;
+  category: string;
+  items: { item_id: string; qty: number }[];
+  start_date: string;
+  slot: string;
+  name: string;
+  address: string;
+  preferences: string;
+}) {
+  const ongkir = await fetchOngkir(String(p.address ?? "").slice(0, 500));
+  const shipping = ongkir.state === "calculated" ? Math.round(ongkir.fee) : null;
+  return call<{ id: string; code: string; quote: TierQuote }[]>("web_subscriptions_manage", "create", {
+    ...p,
+    shipping_per_delivery: shipping,
+  });
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
-import { Apple, Building2, Check, CupSoda, House, type LucideIcon, Minus, Plus, Salad, School, Sparkles } from "lucide-react";
+import { Apple, Building2, CupSoda, House, type LucideIcon, Minus, Plus, Salad, School, Sparkles } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import { DynIcon } from "@/lib/icons";
 import type { DeliverySlot } from "@/lib/delivery";
@@ -11,6 +11,8 @@ import { rupiah } from "@/lib/format";
 import type { SubscriptionItem, SubscriptionPlan } from "@/lib/subscriptions";
 import { manageSubscriptions } from "../akun/actions";
 import { DAYS } from "../akun/RetentionPanels";
+import { emptyTier, JuiceTierSteps, type TierDraft } from "./JuiceTierSteps";
+import { Step } from "./Step";
 
 const KIND_UI: Record<SubscriptionPlan["kind"], { letter: string; icon: LucideIcon }> = {
   buah_utuh: { letter: "A", icon: Apple },
@@ -46,6 +48,8 @@ type Draft = {
   name: string;
   address: string;
   preferences: string;
+  /** 'tier' plans (juice): people, bottles, duration, flavours, cadence. */
+  tier: TierDraft;
 };
 
 /** Recommended option for the head count: ~Rp35rb of fruit, or one box/bottle, per person. */
@@ -83,6 +87,7 @@ export function SubscribeWizard({
     name,
     address: addresses[0] ?? "",
     preferences: "",
+    tier: emptyTier(),
   });
   const [customPax, setCustomPax] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -95,7 +100,7 @@ export function SubscribeWizard({
       if (saved && loggedIn) {
         sessionStorage.removeItem(DRAFT_KEY);
         // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time restore after login
-        setD((cur) => ({ ...saved, name: saved.name || cur.name, address: saved.address || cur.address }));
+        setD((cur) => ({ ...saved, tier: saved.tier ?? emptyTier(), name: saved.name || cur.name, address: saved.address || cur.address }));
       }
     } catch {
       // storage unavailable
@@ -104,18 +109,20 @@ export function SubscribeWizard({
 
   const plan = plans.find((p) => p.kind === d.kind) ?? null;
   const catalog = plan?.pricing === "catalog";
+  const tier = plan?.pricing === "tier";
   const planItems = items.filter((i) => i.plan_kind === d.kind);
   const picked = planItems.filter((i) => (d.picks[i.id] ?? 0) > 0);
   const units = picked.reduce((n, i) => n + d.picks[i.id], 0);
-  const catalogTotal = picked.reduce((n, i) => n + d.picks[i.id] * i.sub_price, 0);
-  const catalogNormal = picked.reduce((n, i) => n + d.picks[i.id] * (i.normal_price ?? i.sub_price), 0);
+  const catalogTotal = picked.reduce((n, i) => n + d.picks[i.id] * (i.sub_price ?? 0), 0);
+  const catalogNormal = picked.reduce((n, i) => n + d.picks[i.id] * (i.normal_price ?? i.sub_price ?? 0), 0);
   const rec = plan && d.pax && !catalog ? recommend(plan, d.pax) : null;
   const price = catalog ? catalogTotal : plan && d.option ? (plan.pricing === "budget" ? d.option : d.option * (plan.unit_price ?? 0)) : 0;
   const packageDone = catalog ? d.picksDone && units > 0 : !!d.option;
-  const step = !d.kind ? 1 : !d.audience ? 2 : !d.pax ? 3 : !packageDone ? 4 : 5;
+  const step = !d.kind ? 1 : !d.audience ? 2 : tier ? 3 : !d.pax ? 3 : !packageDone ? 4 : 5;
   const setQty = (id: string, q: number) =>
     setD((cur) => ({ ...cur, picks: { ...cur.picks, [id]: Math.max(0, Math.min(99, q)) } }));
   const set = (patch: Partial<Draft>) => setD((cur) => ({ ...cur, ...patch }));
+  const setTier = (patch: Partial<TierDraft>) => setD((cur) => ({ ...cur, tier: { ...cur.tier, ...patch } }));
 
   function toggleDay(n: number) {
     if (!plan?.multi_day || d.interval === "2") return set({ weekdays: [n] });
@@ -165,14 +172,14 @@ export function SubscribeWizard({
   return (
     <div className="space-y-4">
       {/* 1. Jenis */}
-      <Step n={1} title="Mau langganan apa?" done={!!plan} summary={plan ? `${KIND_UI[plan.kind].letter}. ${plan.title}` : null} onEdit={() => set({ kind: null, option: null, picks: {}, picksDone: false })}>
+      <Step n={1} title="Mau langganan apa?" done={!!plan} summary={plan ? `${KIND_UI[plan.kind].letter}. ${plan.title}` : null} onEdit={() => set({ kind: null, option: null, picks: {}, picksDone: false, tier: emptyTier() })}>
         <div className="grid gap-3 sm:grid-cols-3">
           {plans.map((p) => (
             <button
               key={p.kind}
               type="button"
               disabled={!p.available}
-              onClick={() => set({ kind: p.kind, option: null, picks: {}, picksDone: false, weekdays: d.weekdays.slice(0, p.multi_day ? 7 : 1) })}
+              onClick={() => set({ kind: p.kind, option: null, picks: {}, picksDone: false, tier: emptyTier(), weekdays: d.weekdays.slice(0, p.multi_day ? 7 : 1) })}
               className={`${card(d.kind === p.kind)} disabled:cursor-not-allowed disabled:opacity-55`}
             >
               <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-leaf-50 text-leaf-700">
@@ -187,8 +194,10 @@ export function SubscribeWizard({
                   ? "Segera hadir"
                   : p.pricing === "budget"
                     ? `mulai ${rupiah(Math.min(...p.options))}/kiriman`
-                    : p.pricing === "catalog"
-                      ? `mulai ${rupiah(Math.min(...items.filter((i) => i.plan_kind === p.kind).map((i) => i.sub_price)))}/${p.unit_label}`
+                    : p.pricing === "tier"
+                      ? `hemat hingga ${Math.round(Math.max(0, ...p.tiers.map((t) => t.rate)) * 100)}% sesuai jumlah botol`
+                      : p.pricing === "catalog"
+                      ? `mulai ${rupiah(Math.min(...items.filter((i) => i.plan_kind === p.kind).map((i) => i.sub_price ?? Infinity)))}/${p.unit_label}`
                       : `${rupiah(p.unit_price ?? 0)}/${p.unit_label}`}
               </span>
             </button>
@@ -219,8 +228,27 @@ export function SubscribeWizard({
         </Step>
       )}
 
+      {step >= 3 && plan && tier && (
+        <JuiceTierSteps
+          plan={plan}
+          items={items}
+          slots={slots}
+          audience={d.audience}
+          loggedIn={loggedIn}
+          t={d.tier}
+          setT={setTier}
+          name={d.name}
+          address={d.address}
+          preferences={d.preferences}
+          slot={d.slot}
+          addresses={addresses}
+          setContact={set}
+          onLogin={loginFirst}
+        />
+      )}
+
       {/* 3. Pax */}
-      {step >= 3 && (
+      {step >= 3 && !tier && (
         <Step n={3} title="Untuk berapa orang (pax)?" done={!!d.pax} summary={d.pax ? `${d.pax} pax` : null} onEdit={() => set({ pax: null, option: null, picksDone: false })}>
           <div className="flex flex-wrap gap-2">
             {PAX.map((p) => (
@@ -255,7 +283,7 @@ export function SubscribeWizard({
       )}
 
       {/* 4. Paket */}
-      {step >= 4 && plan && catalog && (
+      {step >= 4 && plan && catalog && !tier && (
         <Step
           n={4}
           title={`Pilih ${plan.unit_label === "botol" ? "jus" : "produk"} per kiriman`}
@@ -284,7 +312,7 @@ export function SubscribeWizard({
                     {i.variant && <span className="block truncate text-xs text-muted">{i.name}</span>}
                     <span className="text-sm">
                       <b className="text-leaf-700">{rupiah(i.sub_price)}</b>
-                      {i.normal_price && i.normal_price > i.sub_price && <span className="ml-1.5 text-xs text-muted line-through">{rupiah(i.normal_price)}</span>}
+                      {i.normal_price && i.sub_price != null && i.normal_price > i.sub_price && <span className="ml-1.5 text-xs text-muted line-through">{rupiah(i.normal_price)}</span>}
                     </span>
                   </span>
                   <span className="flex items-center gap-1">
@@ -328,7 +356,7 @@ export function SubscribeWizard({
         </Step>
       )}
 
-      {step >= 4 && plan && !catalog && (
+      {step >= 4 && plan && !catalog && !tier && (
         <Step
           n={4}
           title={plan.pricing === "budget" ? "Pilih budget per kiriman" : `Berapa ${plan.unit_label} per kiriman?`}
@@ -355,7 +383,7 @@ export function SubscribeWizard({
       )}
 
       {/* 5. Jadwal & data */}
-      {step >= 5 && plan && (
+      {step >= 5 && plan && !tier && (
         <Step n={5} title="Jadwal & pengiriman" done={false} summary={null}>
           {!(plan.multi_day && d.weekdays.length > 1) && (
             <label className="block text-sm font-medium text-ink">
@@ -460,44 +488,5 @@ export function SubscribeWizard({
         </Link>
       </p>
     </div>
-  );
-}
-
-function Step({
-  n,
-  title,
-  done,
-  summary,
-  onEdit,
-  children,
-}: {
-  n: number;
-  title: string;
-  done: boolean;
-  summary: string | null;
-  onEdit?: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-3xl bg-white p-5 ring-1 ring-leaf-100 sm:p-6">
-      <div className="flex items-center gap-3">
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold ${done ? "bg-leaf-700 text-white" : "bg-leaf-50 text-leaf-700"}`}>
-          {done ? <Check className="h-4 w-4" strokeWidth={3} /> : n}
-        </span>
-        <h2 className="flex-1 text-lg font-bold text-ink">{title}</h2>
-        {done && summary && (
-          <>
-            <span className="hidden text-sm font-semibold text-leaf-700 sm:inline">{summary}</span>
-            {onEdit && (
-              <button type="button" onClick={onEdit} className="text-xs text-muted underline hover:text-ink">
-                ubah
-              </button>
-            )}
-          </>
-        )}
-      </div>
-      {done && summary && <p className="mt-1 pl-11 text-sm font-semibold text-leaf-700 sm:hidden">{summary}</p>}
-      {!done && <div className="mt-4">{children}</div>}
-    </section>
   );
 }

@@ -7,13 +7,18 @@ export type SubscriptionPlan = {
   kind: "buah_utuh" | "buah_potong" | "jus";
   title: string;
   description: string | null;
-  pricing: "budget" | "per_unit" | "catalog";
+  pricing: "budget" | "per_unit" | "catalog" | "tier";
   unit_label: string;
   unit_price: number | null;
   options: number[];
   multi_day: boolean;
   sort: number;
   available: boolean;
+  /** 'tier' plans (0119): quantity discount by total bottles, durations & delivery cadences. */
+  tiers: { min: number; rate: number }[];
+  durations: number[];
+  frequencies: number[];
+  shelf_life_days: number | null;
 };
 
 export const getSubscriptionPlans = unstable_cache(
@@ -26,7 +31,12 @@ export const getSubscriptionPlans = unstable_cache(
       console.error("[plans]", error.message);
       return [];
     }
-    return (data ?? []) as SubscriptionPlan[];
+    return ((data ?? []) as SubscriptionPlan[]).map((p) => ({
+      ...p,
+      tiers: (p.tiers ?? []).map((t) => ({ min: Number(t.min), rate: Number(t.rate) })),
+      durations: p.durations ?? [],
+      frequencies: p.frequencies ?? [],
+    }));
   },
   ["web-subscription-plans"],
   { revalidate: 300 },
@@ -40,8 +50,11 @@ export type SubscriptionItem = {
   variant: string | null;
   photo: string | null;
   normal_price: number | null;
-  sub_price: number;
+  /** Bundling price ('catalog' plans); null in 'tier' plans (retail price + tier discount). */
+  sub_price: number | null;
   sort: number;
+  category: "cold_pressed" | "regular" | null;
+  in_stock: boolean;
 };
 
 export const getSubscriptionItems = unstable_cache(
@@ -51,13 +64,13 @@ export const getSubscriptionItems = unstable_cache(
     });
     const { data, error } = await db
       .from("web_subscription_items_public")
-      .select("id, plan_kind, name, variant, photo, normal_price, sub_price, sort")
+      .select("id, plan_kind, name, variant, photo, normal_price, sub_price, sort, category, in_stock")
       .order("sort");
     if (error) {
       console.error("[subscription-items]", error.message);
       return [];
     }
-    return ((data ?? []) as SubscriptionItem[]).map((i) => ({ ...i, normal_price: i.normal_price == null ? null : Number(i.normal_price), sub_price: Number(i.sub_price) }));
+    return ((data ?? []) as SubscriptionItem[]).map((i) => ({ ...i, normal_price: i.normal_price == null ? null : Number(i.normal_price), sub_price: i.sub_price == null ? null : Number(i.sub_price) }));
   },
   ["web-subscription-items"],
   { revalidate: 300 },
