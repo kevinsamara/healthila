@@ -50,6 +50,8 @@ export async function StoreJsonLd() {
         ],
         hasMap: site.googleMaps,
         sameAs: [site.instagram, site.googleMaps],
+        // Registered trademarks at DJKI (DGIP), see /tentang#merek.
+        identifier: ["IDM001194628", "IDM001214101"].map((value) => ({ "@type": "PropertyValue", propertyID: "DJKI trademark registration", value })),
         ...(hours.length ? { openingHoursSpecification: hours } : {}),
       }}
     />
