@@ -39,7 +39,7 @@ export const nav = [
   { href: "/jus-dessert", label: "Jus & Dessert" },
   { href: "/parcel", label: "Parcel" },
   { href: "/langganan", label: "Langganan" },
-  { href: "/lainnya", label: "Lainnya" },
+  { href: "/acara", label: "Acara" },
   { href: "/artikel", label: "Artikel" },
   { href: "/tentang", label: "Tentang" },
   { href: "/faq", label: "FAQ" },

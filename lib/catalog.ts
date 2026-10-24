@@ -134,10 +134,24 @@ async function loadProducts(): Promise<Product[]> {
   const startByKey = new Map<string, number>(
     ((containers.data ?? []) as { key: string; start_price: number }[]).map((c) => [c.key, Number(c.start_price)]),
   );
-  const products = (data ?? []).map(normalize);
-  for (const p of products) {
+  // Keep the raw rows alongside the normalized product so we can read the
+  // admin-set start_from_price (web_products.start_from_price) which is
+  // dropped during normalize().
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  const products = rows.map(normalize);
+  for (let i = 0; i < products.length; i++) {
+    const p = products[i]!;
     if (p.section !== "parcel") continue;
-    // Parcel products have no CRM price; use the container they're built on.
+    // Admin-set "mulai dari" wins — tiap produk parcel bisa punya harga start
+    // sendiri yang di-set langsung di CRM (products.catalog_start_from_price),
+    // tidak bergantung pada container-match heuristic.
+    const admin = rows[i]!["start_from_price"];
+    const adminPrice = admin == null ? null : Number(admin);
+    if (adminPrice != null && Number.isFinite(adminPrice)) {
+      p.from_price = adminPrice;
+      continue;
+    }
+    // Fallback: container-based (existing behavior).
     const prices = PARCEL_CONTAINERS.filter((c) => c.crmMatch?.test(p.name)).map((c) => startByKey.get(c.key) ?? c.start);
     p.from_price = prices.length ? Math.min(...prices) : null;
   }
