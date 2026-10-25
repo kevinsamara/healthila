@@ -40,18 +40,22 @@ export default async function AkunPage() {
   ];
 
   const header = (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-leaf-900">
-          {firstName ? `Halo, ${firstName}` : "Akun Saya"}
-        </h1>
-        <p className="mt-1 text-sm text-muted">WhatsApp {account.phone}</p>
+    // Wrap di container yang sama lebarnya dengan AccountShell (max-w-6xl +
+    // px-4) supaya "Halo, X" dan tombol Keluar tidak nempel ke tepi layar.
+    <div className="mx-auto max-w-6xl px-4 pt-10">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-leaf-900">
+            {firstName ? `Halo, ${firstName}` : "Akun Saya"}
+          </h1>
+          <p className="mt-1 text-sm text-muted">WhatsApp {account.phone}</p>
+        </div>
+        <form action={logout}>
+          <button className="rounded-full border border-leaf-200 px-4 py-2 text-sm font-semibold text-muted hover:text-plum-700">
+            Keluar
+          </button>
+        </form>
       </div>
-      <form action={logout}>
-        <button className="rounded-full border border-leaf-200 px-4 py-2 text-sm font-semibold text-muted hover:text-plum-700">
-          Keluar
-        </button>
-      </form>
     </div>
   );
 

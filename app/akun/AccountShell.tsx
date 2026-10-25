@@ -43,7 +43,7 @@ export function AccountShell({
   const activeLabel = tabs.find((t) => t.key === tab)?.label ?? "";
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto max-w-6xl px-4 pb-10 pt-6">
       {/* Mobile tab trigger */}
       <button
         onClick={() => setOpen(true)}
