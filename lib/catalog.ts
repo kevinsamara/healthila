@@ -50,6 +50,10 @@ export type Product = {
   occasions: string[];
   /** Parcels priced per order: the matching container's "mulai dari" price. */
   from_price: number | null;
+  /** Admin-flagged "HOT" di CRM — tampil di section Produk HOT homepage. */
+  is_hot: boolean;
+  /** Timestamp terdekat promo publik akan tutup; least(expires_at, today's daily_end at WIB). */
+  promo_ends_at: string | null;
 };
 
 function db() {
@@ -67,6 +71,8 @@ function normalize(row: Record<string, unknown>): Product {
     badges: (row.badges as string[] | null) ?? [],
     occasions: (row.occasions as string[] | null) ?? [],
     from_price: null,
+    is_hot: !!row.is_hot,
+    promo_ends_at: (row.promo_ends_at as string | null) ?? null,
     in_stock: row.in_stock !== false,
     base_per_unit: null,
     base_unit: null,

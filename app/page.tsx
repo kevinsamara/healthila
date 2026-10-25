@@ -6,6 +6,7 @@ import { ArticleCard } from "@/components/ArticleCard";
 import { BulkSection } from "@/components/BulkSection";
 import { HeroCarousel, type HeroPhoto, type HeroSlide } from "@/components/HeroCarousel";
 import { CtaBand, HowToOrder, SectionTitle, Testimonials, WhyHealthila } from "@/components/HomeSections";
+import { HotAndFlash } from "@/components/HotAndFlash";
 import { ProductCard } from "@/components/ProductCard";
 import { getArticles } from "@/lib/articles";
 import { getProducts, type Product } from "@/lib/catalog";
@@ -24,6 +25,18 @@ export default async function Home() {
   const available = all.filter((p) => p.in_stock);
   const promos = available.filter((p) => p.promo_price != null || p.packagings.some((k) => k.promo_price != null));
   const featured = pick(available.filter((p) => p.photo_url), promos, 8);
+  // HOT: admin-tagged (products.catalog_is_hot) + stok ada + ada foto; sort
+  // ikut catalog_sort_order (sort_order di view). Max 4.
+  const hotProducts = available
+    .filter((p) => p.is_hot && p.photo_url)
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .slice(0, 4);
+  // Flash sale: promo publik aktif dengan harga diskon riil + punya waktu
+  // tutup (expires_at ATAU daily_end_time). Max 4, sort by soonest ending.
+  const flashProducts = available
+    .filter((p) => p.photo_url && p.promo_price != null && p.price != null && p.promo_price < p.price && p.promo_ends_at)
+    .sort((a, b) => (a.promo_ends_at ?? "").localeCompare(b.promo_ends_at ?? ""))
+    .slice(0, 4);
   const photoOf = (keys: SectionKey[]) => all.find((p) => keys.includes(p.section) && p.photo_url)?.photo_url ?? null;
 
   const categories = [
@@ -89,6 +102,8 @@ export default async function Home() {
       </section>
 
       <BulkSection />
+
+      <HotAndFlash hot={hotProducts} flash={flashProducts} />
 
       {/* Featured */}
       {featured.length > 0 && (
