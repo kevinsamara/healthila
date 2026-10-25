@@ -30,13 +30,13 @@ export default async function Home() {
   const hotProducts = available
     .filter((p) => p.is_hot && p.photo_url)
     .sort((a, b) => a.sort_order - b.sort_order)
-    .slice(0, 4);
+    .slice(0, 8);
   // Flash sale: promo publik aktif dengan harga diskon riil + punya waktu
   // tutup (expires_at ATAU daily_end_time). Max 4, sort by soonest ending.
   const flashProducts = available
     .filter((p) => p.photo_url && p.promo_price != null && p.price != null && p.promo_price < p.price && p.promo_ends_at)
     .sort((a, b) => (a.promo_ends_at ?? "").localeCompare(b.promo_ends_at ?? ""))
-    .slice(0, 4);
+    .slice(0, 8);
   const photoOf = (keys: SectionKey[]) => all.find((p) => keys.includes(p.section) && p.photo_url)?.photo_url ?? null;
 
   const categories = [

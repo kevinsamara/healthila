@@ -7,90 +7,56 @@ import type { Product } from "@/lib/catalog";
 import { rupiah } from "@/lib/format";
 
 /**
- * Dua kolom di atas Produk Unggulan:
- *   A. Produk HOT — admin tag di CRM (products.catalog_is_hot).
- *   B. Flash Sale — product_promos aktif dengan expires_at atau daily_end_time
- *      (view compute `promo_ends_at` = whichever ends sooner).
- *
- * Section ini tidak di-render kalau dua kolomnya kosong (server component
- * yang panggil kita yang handle itu). Kalau satu kosong, kolom-nya hilang
- * (grid otomatis full-width yang tersisa).
+ * Dua strip horizontal mirip Shopee: Flash Sale di atas, Produk HOT di bawah.
+ * Masing-masing compact row (horizontal scroll di mobile, grid di desktop).
+ * Section auto-hide kalau dua-duanya kosong; satu kosong → strip-nya hilang,
+ * yang satunya tetap full-width.
  */
 export function HotAndFlash({ hot, flash }: { hot: Product[]; flash: Product[] }) {
   const hasHot = hot.length > 0;
   const hasFlash = flash.length > 0;
   if (!hasHot && !hasFlash) return null;
-
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-16">
-      <div className={`grid gap-6 ${hasHot && hasFlash ? "md:grid-cols-2" : ""}`}>
-        {hasHot && <HotColumn products={hot} />}
-        {hasFlash && <FlashColumn products={flash} />}
-      </div>
+    <section className="mx-auto max-w-7xl space-y-4 px-4 pt-12">
+      {hasFlash && <FlashStrip products={flash} />}
+      {hasHot && <HotStrip products={hot} />}
     </section>
   );
 }
 
-function HotColumn({ products }: { products: Product[] }) {
-  return (
-    <div className="rounded-3xl bg-gradient-to-br from-coral-500 to-plum-700 p-4 ring-1 ring-plum-700/30">
-      <div className="mb-3 flex items-center gap-2 px-2 pt-1">
-        <Flame className="h-5 w-5 text-sun-400" strokeWidth={2.4} />
-        <h3 className="text-lg font-extrabold tracking-tight text-white">Produk HOT</h3>
-        <span className="ml-auto text-[11px] font-semibold uppercase tracking-wider text-white/70">Paling dicari</span>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {products.slice(0, 4).map((p) => (
-          <HotCard key={p.id} p={p} />
-        ))}
-      </div>
-    </div>
-  );
-}
+/* ──────────────────────────────── FLASH SALE ─────────────────────────────── */
 
-function HotCard({ p }: { p: Product }) {
-  return (
-    <Link href={`/produk/${p.slug}`} className="group block overflow-hidden rounded-2xl bg-white ring-1 ring-white/20 hover:ring-sun-400">
-      {p.photo_url && (
-        <div className="relative aspect-square w-full overflow-hidden bg-leaf-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
-          <span className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-coral-500 px-2 py-0.5 text-[10px] font-extrabold uppercase text-white shadow">
-            <Flame className="h-3 w-3" /> HOT
-          </span>
-        </div>
-      )}
-      <div className="p-2.5">
-        <p className="line-clamp-2 text-sm font-bold text-ink">{p.name}</p>
-        {p.price != null && (
-          <p className="mt-1 text-sm font-bold text-leaf-700">{rupiah(p.price)}<span className="text-xs text-muted">/{p.unit}</span></p>
-        )}
-      </div>
-    </Link>
-  );
-}
-
-function FlashColumn({ products }: { products: Product[] }) {
+function FlashStrip({ products }: { products: Product[] }) {
   const earliest = products.reduce<string | null>((min, p) => {
     if (!p.promo_ends_at) return min;
     if (!min) return p.promo_ends_at;
     return p.promo_ends_at < min ? p.promo_ends_at : min;
   }, null);
   return (
-    <div className="rounded-3xl bg-gradient-to-br from-leaf-900 to-leaf-700 p-4 ring-1 ring-leaf-900/30">
-      <div className="mb-3 flex flex-wrap items-center gap-2 px-2 pt-1">
-        <Zap className="h-5 w-5 text-sun-400" strokeWidth={2.4} />
-        <h3 className="text-lg font-extrabold tracking-tight text-white">Flash Sale</h3>
+    <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-coral-500 via-coral-500 to-plum-700 shadow">
+      {/* Header strip */}
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <Zap className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
+        <span className="text-lg font-extrabold tracking-tight text-white">Flash Sale</span>
         {earliest && (
-          <span className="ml-auto">
+          <>
+            <span className="text-xs text-white/80">Berakhir dalam</span>
             <Countdown target={earliest} />
-          </span>
+          </>
         )}
+        <Link href="/katalog" className="ml-auto text-xs font-semibold text-white/90 hover:text-white">
+          Lihat semua ›
+        </Link>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        {products.slice(0, 4).map((p) => (
-          <FlashCard key={p.id} p={p} />
-        ))}
+      {/* Products row */}
+      <div className="bg-white">
+        <ul className="flex gap-2 overflow-x-auto px-3 py-3 sm:gap-3" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          {products.slice(0, 8).map((p) => (
+            <li key={p.id} className="shrink-0 basis-[140px] sm:basis-[160px]">
+              <FlashCard p={p} />
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
@@ -99,34 +65,85 @@ function FlashColumn({ products }: { products: Product[] }) {
 function FlashCard({ p }: { p: Product }) {
   const discountPct = p.price && p.promo_price ? Math.round((1 - p.promo_price / p.price) * 100) : 0;
   return (
-    <Link href={`/produk/${p.slug}`} className="group block overflow-hidden rounded-2xl bg-white ring-1 ring-white/20 hover:ring-sun-400">
-      {p.photo_url && (
-        <div className="relative aspect-square w-full overflow-hidden bg-leaf-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
+    <Link href={`/produk/${p.slug}`} className="group block overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-coral-500">
+      <div className="relative aspect-square w-full overflow-hidden bg-leaf-50">
+        {p.photo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
-          {discountPct > 0 && (
-            <span className="absolute left-2 top-2 rounded-full bg-sun-400 px-2 py-0.5 text-[10px] font-extrabold text-leaf-900 shadow">
-              -{discountPct}%
-            </span>
-          )}
-        </div>
-      )}
-      <div className="p-2.5">
-        <p className="line-clamp-2 text-sm font-bold text-ink">{p.name}</p>
-        <div className="mt-1 flex items-baseline gap-1.5">
-          <span className="text-sm font-bold text-coral-500">{rupiah(p.promo_price ?? p.price ?? 0)}</span>
-          {p.price != null && p.promo_price != null && p.promo_price < p.price && (
-            <span className="text-[11px] text-muted line-through">{rupiah(p.price)}</span>
-          )}
-        </div>
+        ) : (
+          <div className="flex h-full items-center justify-center text-leaf-200">—</div>
+        )}
+        {discountPct > 0 && (
+          <span className="absolute left-0 top-0 bg-coral-500 px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+            -{discountPct}%
+          </span>
+        )}
+      </div>
+      <div className="p-2">
+        <p className="line-clamp-2 text-[11px] leading-tight text-ink min-h-[26px]">{p.name}</p>
+        <p className="mt-1 text-sm font-extrabold text-coral-500 leading-tight">{rupiah(p.promo_price ?? p.price ?? 0)}</p>
+        {p.price != null && p.promo_price != null && p.promo_price < p.price && (
+          <p className="text-[10px] text-muted line-through leading-tight">{rupiah(p.price)}</p>
+        )}
       </div>
     </Link>
   );
 }
 
+/* ────────────────────────────────── HOT ──────────────────────────────────── */
+
+function HotStrip({ products }: { products: Product[] }) {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-plum-700 via-[#b8245e] to-coral-500 shadow">
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <Flame className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
+        <span className="text-lg font-extrabold tracking-tight text-white">Produk HOT</span>
+        <span className="text-xs text-white/80">Paling dicari</span>
+        <Link href="/katalog" className="ml-auto text-xs font-semibold text-white/90 hover:text-white">
+          Lihat semua ›
+        </Link>
+      </div>
+      <div className="bg-white">
+        <ul className="flex gap-2 overflow-x-auto px-3 py-3 sm:gap-3" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          {products.slice(0, 8).map((p) => (
+            <li key={p.id} className="shrink-0 basis-[140px] sm:basis-[160px]">
+              <HotCard p={p} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function HotCard({ p }: { p: Product }) {
+  return (
+    <Link href={`/produk/${p.slug}`} className="group block overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-plum-700">
+      <div className="relative aspect-square w-full overflow-hidden bg-leaf-50">
+        {p.photo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+        ) : (
+          <div className="flex h-full items-center justify-center text-leaf-200">—</div>
+        )}
+        <span className="absolute left-0 top-0 flex items-center gap-0.5 bg-plum-700 px-1.5 py-0.5 text-[10px] font-extrabold text-white">
+          <Flame className="h-2.5 w-2.5" /> HOT
+        </span>
+      </div>
+      <div className="p-2">
+        <p className="line-clamp-2 text-[11px] leading-tight text-ink min-h-[26px]">{p.name}</p>
+        {p.price != null && (
+          <p className="mt-1 text-sm font-extrabold text-leaf-700 leading-tight">{rupiah(p.price)}</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+/* ──────────────────────────────── COUNTDOWN ──────────────────────────────── */
+
 /** Countdown to target ISO timestamp. Updates every second client-side.
- *  Format: "HH:MM:SS" if > 1 hour, else "MM:SS". Over 24h shows "N hari".
- *  Hides itself when expired to avoid flash of "00:00:00". */
+ *  Shopee-style boxed digits (HH : MM : SS). Hides when expired. */
 function Countdown({ target }: { target: string }) {
   const [left, setLeft] = useState<number>(() => Math.max(0, new Date(target).getTime() - Date.now()));
   useEffect(() => {
@@ -140,10 +157,19 @@ function Countdown({ target }: { target: string }) {
   const m = Math.floor((sec % 3600) / 60);
   const s = sec % 60;
   const pad = (n: number) => String(n).padStart(2, "0");
-  const label = d > 0 ? `${d} hari ${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(h)}:${pad(m)}:${pad(s)}`;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-coral-500 px-3 py-1 text-xs font-extrabold tabular-nums text-white shadow">
-      Berakhir <span className="rounded bg-white/20 px-1.5 py-0.5">{label}</span>
-    </span>
+    <div className="flex items-center gap-1 text-[11px] font-extrabold tabular-nums">
+      {d > 0 && (
+        <>
+          <span className="rounded bg-leaf-900 px-1.5 py-0.5 text-white">{d}d</span>
+          <span className="text-white/80">:</span>
+        </>
+      )}
+      <span className="rounded bg-leaf-900 px-1.5 py-0.5 text-white">{pad(h)}</span>
+      <span className="text-white/80">:</span>
+      <span className="rounded bg-leaf-900 px-1.5 py-0.5 text-white">{pad(m)}</span>
+      <span className="text-white/80">:</span>
+      <span className="rounded bg-leaf-900 px-1.5 py-0.5 text-white">{pad(s)}</span>
+    </div>
   );
 }
