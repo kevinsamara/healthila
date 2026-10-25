@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 
 /**
  * POST /api/revalidate — bust catalog cache after CRM edits.
@@ -25,7 +25,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   const tag = url.searchParams.get("tag") ?? "catalog";
-  revalidateTag(tag);
+  // Next 16 renamed classic revalidateTag(tag) → updateTag(tag). The new
+  // revalidateTag(tag, profile) is for cache-life profiles; we just want to
+  // invalidate the tag so unstable_cache re-fetches on next request.
+  updateTag(tag);
   return NextResponse.json({ ok: true, tag });
 }
 

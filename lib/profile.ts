@@ -2,8 +2,8 @@ import "server-only";
 import { sessionToken } from "./session";
 import { webRpc } from "./web-rpc";
 
-/** Website profile of the signed-in buyer (healthila-crm 0115). */
-export type WebProfile = { birth_date: string | null; asked: boolean };
+/** Website profile of the signed-in buyer (healthila-crm 0115/0124). */
+export type WebProfile = { birth_date: string | null; asked: boolean; locked: boolean };
 
 export async function getProfile(): Promise<WebProfile | null> {
   const token = await sessionToken();
