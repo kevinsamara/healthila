@@ -87,9 +87,11 @@ function FlashCard({ p }: { p: Product }) {
           </span>
         )}
       </div>
-      <div className="space-y-1.5 p-2">
-        <p className="line-clamp-2 text-[12px] leading-tight text-ink min-h-[28px]">{p.name}</p>
-        <div className="flex items-center justify-between gap-1">
+      {/* Fixed-height body: nama 2 baris (atau 1 + spacer) + row harga tetap
+          sama tingginya di semua kartu — Flash & HOT selaras persis. */}
+      <div className="flex flex-col gap-1.5 p-2">
+        <p className="line-clamp-2 h-[30px] text-[12px] leading-tight text-ink">{p.name}</p>
+        <div className="flex h-7 items-center justify-between gap-1">
           <PriceButton>{rupiah(p.promo_price ?? p.price ?? 0)}</PriceButton>
           {p.price != null && p.promo_price != null && p.promo_price < p.price && (
             <span className="shrink-0 text-[10px] text-muted line-through">{rupiah(p.price)}</span>
@@ -143,9 +145,12 @@ function HotCard({ p }: { p: Product }) {
           <Flame className="h-2.5 w-2.5" /> HOT
         </span>
       </div>
-      <div className="space-y-1.5 p-2">
-        <p className="line-clamp-2 text-[12px] leading-tight text-ink min-h-[28px]">{p.name}</p>
-        {p.price != null && <PriceButton>{rupiah(p.price)}</PriceButton>}
+      {/* Lihat FlashCard — tinggi identik supaya tile rapi sejajar. */}
+      <div className="flex flex-col gap-1.5 p-2">
+        <p className="line-clamp-2 h-[30px] text-[12px] leading-tight text-ink">{p.name}</p>
+        <div className="flex h-7 items-center">
+          {p.price != null && <PriceButton>{rupiah(p.price)}</PriceButton>}
+        </div>
       </div>
     </Link>
   );
