@@ -165,10 +165,13 @@ function HotCard({ p }: { p: Product }) {
 
 /* ──────────────────────────────── UI PARTS ───────────────────────────────── */
 
-/** Pil oranye untuk harga — biar menonjol seperti tombol CTA. */
+/** Pil oranye untuk harga — biar menonjol seperti tombol CTA.
+ *  whitespace-nowrap + shrink-0: pil tidak boleh wrap atau menyusut sehingga
+ *  text "Rp250.000" tetap satu baris di dalam pill. Mencegah card ikut
+ *  tinggi karena isi pil wrap. */
 function PriceButton({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full bg-sun-400 px-2.5 py-1 text-[12px] font-extrabold tabular-nums text-leaf-900 shadow-sm">
+    <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-sun-400 px-2.5 py-1 text-[12px] font-extrabold tabular-nums text-leaf-900 shadow-sm">
       {children}
     </span>
   );
