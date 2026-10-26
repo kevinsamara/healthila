@@ -27,7 +27,7 @@ const AUTOPLAY_MS = 7000;
 /**
  * Full-width hero slider: Buah → Jus & Dessert → Parcel, each with its own
  * colours, copy and a 2×2 grid of that section's product photos. Every slide
- * is in the HTML (first heading is the page's h1). Photos are shuffled in the
+ * is in the HTML (first slide badge is the page h1). Photos are shuffled in the
  * browser because the page itself is cached.
  */
 export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
@@ -71,7 +71,8 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
     >
       <div className="flex transition-transform duration-700 ease-out" style={{ transform: `translateX(-${index * 100}%)` }}>
         {slides.map((s, si) => {
-          const Heading = si === 0 ? "h1" : "h2";
+          // The first slide's badge is the page h1 (keyword), the big line is its h2.
+          const Badge = si === 0 ? "h1" : "p";
           const photos = s.photos.slice(0, PER_SLIDE);
           return (
             <div
@@ -85,8 +86,8 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
               <div className="pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-white/5" />
               <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pt-16 pb-20 md:grid-cols-2 md:pt-24 md:pb-28">
                 <div>
-                  <p className={`inline-block rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase ${s.badgeClass}`}>{s.badge}</p>
-                  <Heading className="mt-5 text-5xl leading-[1.05] font-extrabold sm:text-7xl">{s.heading}</Heading>
+                  <Badge className={`inline-block rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase ${s.badgeClass}`}>{s.badge}</Badge>
+                  <h2 className="mt-5 text-5xl leading-[1.05] font-extrabold sm:text-7xl">{s.heading}</h2>
                   <p className={`mt-5 max-w-md text-lg ${s.textClass}`}>{s.text}</p>
                   <div className="mt-8 flex flex-wrap gap-3">
                     <Link href={s.cta.href} className={`flex h-13 items-center rounded-full px-7 font-bold ${s.cta.className}`}>

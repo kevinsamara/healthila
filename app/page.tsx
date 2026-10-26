@@ -166,7 +166,7 @@ function heroSlides(available: Product[]): HeroSlide[] {
     {
       key: "parcel",
       bg: "bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500",
-      badge: "Parcel & hampers buah",
+      badge: "Toko buah & parcel buah Malang",
       badgeClass: "bg-sun-400 text-plum-700",
       heading: "Parcel buah & hampers untuk setiap momen.",
       text: "Ulang tahun, jenguk, lamaran, hari raya — dirangkai elegan, bisa custom isi dan budget.",
