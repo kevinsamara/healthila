@@ -16,10 +16,14 @@ export type Packaging = {
   quantity: number;
   price: number | null;
   promo_price: number | null;
+  /** Timestamp terdekat promo varian ini akan tutup (least of expires_at vs today daily_end). */
+  promo_ends_at: string | null;
   is_default: boolean;
   /** Selling unit of the variant in the CRM (kg, pcs, …). */
   unit: string | null;
   photo_url: string | null;
+  /** Stok tersedia dalam satuan varian ini (pack, botol). Null = tidak dilacak. */
+  stock_qty: number | null;
 };
 
 export type Product = {
@@ -54,6 +58,8 @@ export type Product = {
   is_hot: boolean;
   /** Timestamp terdekat promo publik akan tutup; least(expires_at, today's daily_end at WIB). */
   promo_ends_at: string | null;
+  /** Stok tersedia dalam base unit produk (kg, pcs). Null = tidak dilacak (parcel/juice/MTO). */
+  stock_qty: number | null;
 };
 
 function db() {
@@ -73,6 +79,7 @@ function normalize(row: Record<string, unknown>): Product {
     from_price: null,
     is_hot: !!row.is_hot,
     promo_ends_at: (row.promo_ends_at as string | null) ?? null,
+    stock_qty: row.stock_qty == null ? null : Number(row.stock_qty),
     in_stock: row.in_stock !== false,
     base_per_unit: null,
     base_unit: null,
@@ -81,9 +88,31 @@ function normalize(row: Record<string, unknown>): Product {
       quantity: Number(p.quantity),
       price: num(p.price),
       promo_price: num(p.promo_price),
+      promo_ends_at: (p.promo_ends_at as string | null) ?? null,
+      stock_qty: p.stock_qty == null ? null : Number(p.stock_qty),
     })),
   };
   product.product_group = canonicalGroup(product.product_group ?? product.category);
+  // Fallback flash-sale: kalau product-level promo kosong, tapi salah satu
+  // varian punya promo aktif, pakai varian dengan saving terbesar sebagai
+  // display promo di homepage. Dengan ini Mangga Gadung Klonal (promo di
+  // varian "Super") bisa muncul di flash sale strip.
+  if (product.promo_price == null) {
+    let best: Packaging | null = null;
+    let bestSaving = 0;
+    for (const k of product.packagings) {
+      if (k.promo_price == null || k.price == null || k.promo_price >= k.price) continue;
+      const saving = k.price - k.promo_price;
+      if (saving > bestSaving) { best = k; bestSaving = saving; }
+    }
+    if (best) {
+      // Hanya override price/promo untuk display homepage; packagings[] tetap
+      // utuh supaya PDP tampil varian lengkap.
+      product.price = best.price;
+      product.promo_price = best.promo_price;
+      product.promo_ends_at = best.promo_ends_at;
+    }
+  }
   return toPack(product, num(row.pack_grams));
 }
 

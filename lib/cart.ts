@@ -24,6 +24,10 @@ export type CartItem = {
   baseUnit?: string | null;
   /** Free-text request for this line (pilih yang matang, kartu ucapan, …). */
   note?: string | null;
+  /** Qty maksimum yg boleh ditambahkan — snapshot dari stock_qty saat
+   *  tambah ke cart. Null = tidak dilacak (parcel/juice/MTO = unlimited).
+   *  Checkout RPC tetap re-check di server, ini pencegahan di UI saja. */
+  maxQty?: number | null;
 };
 
 const KEY = "healthila_cart_v2";
@@ -71,6 +75,13 @@ export function useCart() {
   return useSyncExternalStore(subscribe, read, () => EMPTY);
 }
 
+/** Clamp qty ke [0, maxQty]. Null maxQty = unlimited. */
+function clampQty(qty: number, max: number | null | undefined): number {
+  if (qty <= 0) return 0;
+  if (max == null) return qty;
+  return Math.min(qty, max);
+}
+
 export function addItem(item: Omit<CartItem, "key" | "qty">, qty = 1) {
   trackEvent("add_to_cart", {
     currency: "IDR",
@@ -81,15 +92,19 @@ export function addItem(item: Omit<CartItem, "key" | "qty">, qty = 1) {
   const key = `${item.productId}:${item.packagingId ?? "base"}:${item.unitLabel ?? ""}`;
   const items = read();
   const existing = items.find((i) => i.key === key);
+  const max = item.maxQty ?? existing?.maxQty ?? null;
   write(
     existing
-      ? items.map((i) => (i.key === key ? { ...i, qty: i.qty + qty, note: item.note || i.note } : i))
-      : [...items, { ...item, key, qty }],
+      ? items.map((i) => (i.key === key ? { ...i, qty: clampQty(i.qty + qty, max), note: item.note || i.note, maxQty: max } : i))
+      : [...items, { ...item, key, qty: clampQty(qty, max) }],
   );
 }
 
 export function setQty(key: string, qty: number) {
-  write(qty <= 0 ? read().filter((i) => i.key !== key) : read().map((i) => (i.key === key ? { ...i, qty } : i)));
+  const items = read();
+  const target = items.find((i) => i.key === key);
+  const clamped = clampQty(qty, target?.maxQty ?? null);
+  write(clamped <= 0 ? items.filter((i) => i.key !== key) : items.map((i) => (i.key === key ? { ...i, qty: clamped } : i)));
 }
 
 export function clearCart() {

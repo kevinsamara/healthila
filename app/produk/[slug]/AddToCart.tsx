@@ -38,10 +38,15 @@ export function AddToCart({ product }: { product: Product }) {
   const [added, setAdded] = useState(false);
   const [note, setNote] = useState("");
   const opt = options[selected];
-  const unitWord = sellUnit(product, opt.id ? (product.packagings.find((k) => k.id === opt.id) ?? null) : null);
+  const selectedPkg = opt.id ? (product.packagings.find((k) => k.id === opt.id) ?? null) : null;
+  const unitWord = sellUnit(product, selectedPkg);
+  const maxQty = selectedPkg ? selectedPkg.stock_qty : product.stock_qty;
+  // Clamp qty state kalau user pilih varian dengan stok lebih kecil.
+  const effectiveQty = maxQty != null && qty > maxQty ? Math.max(1, maxQty) : qty;
 
   function add() {
     if (opt.price == null) return;
+    if (maxQty != null && maxQty <= 0) return;
     addItem(
       {
         productId: product.id,
@@ -55,8 +60,9 @@ export function AddToCart({ product }: { product: Product }) {
         basePerUnit: product.base_per_unit,
         baseUnit: product.base_unit,
         note: note.trim() || null,
+        maxQty,
       },
-      qty,
+      effectiveQty,
     );
     setAdded(true);
   }
@@ -151,14 +157,22 @@ export function AddToCart({ product }: { product: Product }) {
                 <button type="button" aria-label="Kurangi" onClick={() => setQty((q) => Math.max(1, q - 1))} className="h-12 w-12 text-xl text-leaf-700">
                   −
                 </button>
-                <span className="min-w-20 text-center font-semibold">{qtyLabel(qty, unitWord)}</span>
-                <button type="button" aria-label="Tambah" onClick={() => setQty((q) => q + 1)} className="h-12 w-12 text-xl text-leaf-700">
+                <span className="min-w-20 text-center font-semibold">{qtyLabel(effectiveQty, unitWord)}</span>
+                <button
+                  type="button" aria-label="Tambah"
+                  onClick={() => setQty((q) => (maxQty != null ? Math.min(maxQty, q + 1) : q + 1))}
+                  disabled={maxQty != null && effectiveQty >= maxQty}
+                  className="h-12 w-12 text-xl text-leaf-700 disabled:text-leaf-200 disabled:cursor-not-allowed"
+                >
                   +
                 </button>
               </div>
-              <p className="text-sm text-muted">
-                Subtotal <span className="font-bold text-ink">{rupiah(opt.price * qty)}</span>
-              </p>
+              <div className="text-sm text-muted">
+                <p>Subtotal <span className="font-bold text-ink">{rupiah(opt.price * effectiveQty)}</span></p>
+                {maxQty != null && maxQty > 0 && (
+                  <p className="mt-0.5 text-[11px] text-plum-700">Stok tersisa: {maxQty} {unitWord ?? ""}</p>
+                )}
+              </div>
             </div>
           </div>
           <label className="block text-sm font-semibold text-ink">

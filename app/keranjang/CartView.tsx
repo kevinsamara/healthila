@@ -166,13 +166,21 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
                     −
                   </button>
                   <span className="min-w-12 text-center text-sm font-semibold">{qtyLabel(i.qty, i.unitLabel)}</span>
-                  <button aria-label="Tambah" onClick={() => setQty(i.key, i.qty + 1)} className="h-9 w-9 text-leaf-700">
+                  <button
+                    aria-label="Tambah"
+                    onClick={() => setQty(i.key, i.qty + 1)}
+                    disabled={i.maxQty != null && i.qty >= i.maxQty}
+                    className="h-9 w-9 text-leaf-700 disabled:text-leaf-200 disabled:cursor-not-allowed"
+                  >
                     +
                   </button>
                 </div>
                 <button onClick={() => setQty(i.key, 0)} className="text-sm text-plum-700 hover:underline">
                   Hapus
                 </button>
+                {i.maxQty != null && i.qty >= i.maxQty && (
+                  <span className="text-[11px] font-semibold text-plum-700">Stok maksimum ({i.maxQty} {i.unitLabel ?? ""})</span>
+                )}
               </div>
             </div>
             <p className="shrink-0 font-bold text-ink">{rupiah(i.price * i.qty)}</p>

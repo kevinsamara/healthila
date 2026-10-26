@@ -49,6 +49,10 @@ export function QuickAdd({ product }: { product: Product }) {
     );
   }
 
+  // Qty maksimum = stock varian (kalau pilih packaging) atau stock produk
+  // (kalau beli dalam base unit). Null = tidak dilacak = unlimited.
+  const maxQty = pkg ? pkg.stock_qty : product.stock_qty;
+
   function add() {
     addItem({
       productId: product.id,
@@ -61,6 +65,7 @@ export function QuickAdd({ product }: { product: Product }) {
       photo: product.photo_url,
       basePerUnit: product.base_per_unit,
       baseUnit: product.base_unit,
+      maxQty,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1600);
