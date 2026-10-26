@@ -51,11 +51,18 @@ function FlashColumn({ products }: { products: Product[] }) {
           Lihat semua ›
         </Link>
       </div>
-      {/* 2x2 grid */}
+      {/* Horizontal strip — kartu berbaris memanjang ke samping, bukan 2 row.
+          Scroll horizontal kalau lebih dari muat; 2 kartu + sedikit teaser
+          kartu ketiga di viewport sempit biar user tahu bisa scroll. */}
       <div className="bg-white p-3">
-        <ul className="grid grid-cols-2 gap-3">
-          {products.slice(0, 4).map((p) => (
-            <li key={p.id}><FlashCard p={p} /></li>
+        <ul
+          className="flex gap-3 overflow-x-auto"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollSnapType: "x mandatory" }}
+        >
+          {products.slice(0, 8).map((p) => (
+            <li key={p.id} className="shrink-0 basis-[46%] sm:basis-[150px]" style={{ scrollSnapAlign: "start" }}>
+              <FlashCard p={p} />
+            </li>
           ))}
         </ul>
       </div>
@@ -107,9 +114,14 @@ function HotColumn({ products }: { products: Product[] }) {
         </Link>
       </div>
       <div className="bg-white p-3">
-        <ul className="grid grid-cols-2 gap-3">
-          {products.slice(0, 4).map((p) => (
-            <li key={p.id}><HotCard p={p} /></li>
+        <ul
+          className="flex gap-3 overflow-x-auto"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollSnapType: "x mandatory" }}
+        >
+          {products.slice(0, 8).map((p) => (
+            <li key={p.id} className="shrink-0 basis-[46%] sm:basis-[150px]" style={{ scrollSnapAlign: "start" }}>
+              <HotCard p={p} />
+            </li>
           ))}
         </ul>
       </div>
