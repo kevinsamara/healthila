@@ -3,9 +3,9 @@ export const site = {
   tagline: "fruitful heart, eating smart",
   description:
     "Toko buah online di Malang: buah segar lokal & impor, parcel buah & hampers, jus cold-pressed. Delivery buah se-Kota Malang, pesan online konfirmasi via WhatsApp.",
-  // Canonical host. Vercel serves www (healthila.id redirects there), so every
-  // canonical / sitemap URL must use www or Google sees redirects.
-  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://www.healthila.id").replace(/\/$/, ""),
+  // Canonical host: the apex (www redirects there), so canonicals and the
+  // sitemap never point at a redirect.
+  url: (process.env.NEXT_PUBLIC_SITE_URL || "https://healthila.id").replace(/\/$/, ""),
   city: "Malang",
   geo: { lat: -7.9653613, lng: 112.6084339 },
   // Customer-facing ordering number (Fonnte sender is a different number).
