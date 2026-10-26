@@ -113,8 +113,15 @@ function normalize(row: Record<string, unknown>): Product {
       product.promo_ends_at = best.promo_ends_at;
     }
   }
-  return toPack(product, num(row.pack_grams));
+  return toPack(product, num(row.pack_grams) ?? DEFAULT_PACK_GRAMS[(product.product_group ?? "").toLowerCase()] ?? null);
 }
+
+/**
+ * Groups always sold per pack on the website even when the CRM sells per kg
+ * and no pack size is set (owner, Oct 2026: every grape = pack 500gr). A pack
+ * size set in Healthila OS (web_pack_grams) still wins.
+ */
+const DEFAULT_PACK_GRAMS: Record<string, number> = { anggur: 500 };
 
 // The CRM mixes catalog_group and category spellings for the same fruit.
 const GROUP_ALIASES: Record<string, string> = { pir: "Pear", lengkeng: "Kelengkeng", parsel: "Parcel" };
