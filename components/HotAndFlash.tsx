@@ -7,9 +7,10 @@ import type { Product } from "@/lib/catalog";
 import { rupiah } from "@/lib/format";
 
 /**
- * Dua strip horizontal mirip Shopee: Flash Sale di atas, Produk HOT di bawah.
- * Masing-masing compact row (horizontal scroll di mobile, grid di desktop).
- * Section auto-hide kalau dua-duanya kosong; satu kosong → strip-nya hilang,
+ * Dua kolom di atas Produk Unggulan: Flash Sale (kiri) + Produk HOT (kanan).
+ * Masing-masing kolom berisi 2x2 grid kartu compact (4 produk per kolom).
+ * Harga ditampilkan sebagai "pil" oranye biar menonjol.
+ * Section auto-hide kalau dua-duanya kosong; satu kosong → kolomnya hilang,
  * yang satunya tetap full-width.
  */
 export function HotAndFlash({ hot, flash }: { hot: Product[]; flash: Product[] }) {
@@ -17,44 +18,44 @@ export function HotAndFlash({ hot, flash }: { hot: Product[]; flash: Product[] }
   const hasFlash = flash.length > 0;
   if (!hasHot && !hasFlash) return null;
   return (
-    <section className="mx-auto max-w-7xl space-y-4 px-4 pt-12">
-      {hasFlash && <FlashStrip products={flash} />}
-      {hasHot && <HotStrip products={hot} />}
+    <section className="mx-auto max-w-7xl px-4 pt-12">
+      <div className={`grid gap-5 ${hasHot && hasFlash ? "md:grid-cols-2" : ""}`}>
+        {hasFlash && <FlashColumn products={flash} />}
+        {hasHot && <HotColumn products={hot} />}
+      </div>
     </section>
   );
 }
 
 /* ──────────────────────────────── FLASH SALE ─────────────────────────────── */
 
-function FlashStrip({ products }: { products: Product[] }) {
+function FlashColumn({ products }: { products: Product[] }) {
   const earliest = products.reduce<string | null>((min, p) => {
     if (!p.promo_ends_at) return min;
     if (!min) return p.promo_ends_at;
     return p.promo_ends_at < min ? p.promo_ends_at : min;
   }, null);
   return (
-    <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-coral-500 via-coral-500 to-plum-700 shadow">
+    <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-coral-500 via-coral-500 to-plum-700 shadow">
       {/* Header strip */}
-      <div className="flex items-center gap-3 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-2.5 px-4 py-2.5">
         <Zap className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
-        <span className="text-lg font-extrabold tracking-tight text-white">Flash Sale</span>
+        <span className="text-base font-extrabold tracking-tight text-white">Flash Sale</span>
         {earliest && (
           <>
-            <span className="text-xs text-white/80">Berakhir dalam</span>
+            <span className="text-[11px] text-white/80">Berakhir dalam</span>
             <Countdown target={earliest} />
           </>
         )}
-        <Link href="/katalog" className="ml-auto text-xs font-semibold text-white/90 hover:text-white">
+        <Link href="/katalog" className="ml-auto text-[11px] font-semibold text-white/90 hover:text-white">
           Lihat semua ›
         </Link>
       </div>
-      {/* Products row */}
-      <div className="bg-white">
-        <ul className="flex gap-2 overflow-x-auto px-3 py-3 sm:gap-3" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          {products.slice(0, 8).map((p) => (
-            <li key={p.id} className="shrink-0 basis-[140px] sm:basis-[160px]">
-              <FlashCard p={p} />
-            </li>
+      {/* 2x2 grid */}
+      <div className="bg-white p-3">
+        <ul className="grid grid-cols-2 gap-3">
+          {products.slice(0, 4).map((p) => (
+            <li key={p.id}><FlashCard p={p} /></li>
           ))}
         </ul>
       </div>
@@ -79,12 +80,14 @@ function FlashCard({ p }: { p: Product }) {
           </span>
         )}
       </div>
-      <div className="p-2">
-        <p className="line-clamp-2 text-[11px] leading-tight text-ink min-h-[26px]">{p.name}</p>
-        <p className="mt-1 text-sm font-extrabold text-coral-500 leading-tight">{rupiah(p.promo_price ?? p.price ?? 0)}</p>
-        {p.price != null && p.promo_price != null && p.promo_price < p.price && (
-          <p className="text-[10px] text-muted line-through leading-tight">{rupiah(p.price)}</p>
-        )}
+      <div className="space-y-1.5 p-2">
+        <p className="line-clamp-2 text-[12px] leading-tight text-ink min-h-[28px]">{p.name}</p>
+        <div className="flex items-center justify-between gap-1">
+          <PriceButton>{rupiah(p.promo_price ?? p.price ?? 0)}</PriceButton>
+          {p.price != null && p.promo_price != null && p.promo_price < p.price && (
+            <span className="shrink-0 text-[10px] text-muted line-through">{rupiah(p.price)}</span>
+          )}
+        </div>
       </div>
     </Link>
   );
@@ -92,23 +95,21 @@ function FlashCard({ p }: { p: Product }) {
 
 /* ────────────────────────────────── HOT ──────────────────────────────────── */
 
-function HotStrip({ products }: { products: Product[] }) {
+function HotColumn({ products }: { products: Product[] }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-gradient-to-r from-plum-700 via-[#b8245e] to-coral-500 shadow">
-      <div className="flex items-center gap-3 px-4 py-2.5">
+    <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500 shadow">
+      <div className="flex flex-wrap items-center gap-2.5 px-4 py-2.5">
         <Flame className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
-        <span className="text-lg font-extrabold tracking-tight text-white">Produk HOT</span>
-        <span className="text-xs text-white/80">Paling dicari</span>
-        <Link href="/katalog" className="ml-auto text-xs font-semibold text-white/90 hover:text-white">
+        <span className="text-base font-extrabold tracking-tight text-white">Produk HOT</span>
+        <span className="text-[11px] text-white/80">Paling dicari</span>
+        <Link href="/katalog" className="ml-auto text-[11px] font-semibold text-white/90 hover:text-white">
           Lihat semua ›
         </Link>
       </div>
-      <div className="bg-white">
-        <ul className="flex gap-2 overflow-x-auto px-3 py-3 sm:gap-3" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          {products.slice(0, 8).map((p) => (
-            <li key={p.id} className="shrink-0 basis-[140px] sm:basis-[160px]">
-              <HotCard p={p} />
-            </li>
+      <div className="bg-white p-3">
+        <ul className="grid grid-cols-2 gap-3">
+          {products.slice(0, 4).map((p) => (
+            <li key={p.id}><HotCard p={p} /></li>
           ))}
         </ul>
       </div>
@@ -130,20 +131,26 @@ function HotCard({ p }: { p: Product }) {
           <Flame className="h-2.5 w-2.5" /> HOT
         </span>
       </div>
-      <div className="p-2">
-        <p className="line-clamp-2 text-[11px] leading-tight text-ink min-h-[26px]">{p.name}</p>
-        {p.price != null && (
-          <p className="mt-1 text-sm font-extrabold text-leaf-700 leading-tight">{rupiah(p.price)}</p>
-        )}
+      <div className="space-y-1.5 p-2">
+        <p className="line-clamp-2 text-[12px] leading-tight text-ink min-h-[28px]">{p.name}</p>
+        {p.price != null && <PriceButton>{rupiah(p.price)}</PriceButton>}
       </div>
     </Link>
   );
 }
 
-/* ──────────────────────────────── COUNTDOWN ──────────────────────────────── */
+/* ──────────────────────────────── UI PARTS ───────────────────────────────── */
 
-/** Countdown to target ISO timestamp. Updates every second client-side.
- *  Shopee-style boxed digits (HH : MM : SS). Hides when expired. */
+/** Pil oranye untuk harga — biar menonjol seperti tombol CTA. */
+function PriceButton({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-sun-400 px-2.5 py-1 text-[12px] font-extrabold tabular-nums text-leaf-900 shadow-sm">
+      {children}
+    </span>
+  );
+}
+
+/** Countdown Shopee-style boxed digits (HH : MM : SS). Hides when expired. */
 function Countdown({ target }: { target: string }) {
   const [left, setLeft] = useState<number>(() => Math.max(0, new Date(target).getTime() - Date.now()));
   useEffect(() => {
