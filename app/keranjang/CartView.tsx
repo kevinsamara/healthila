@@ -285,6 +285,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
           <p className="mt-1 text-xs text-muted">Ongkir final & pembayaran dikonfirmasi admin via WhatsApp.</p>
         )}
         <FreeShippingNote left={profile?.freeShippingLeft} />
+        <TotebagHint subtotal={total} />
 
         {error && (
           <p className="mt-4 rounded-xl bg-plum-50 px-3 py-2 text-sm font-medium text-plum-700" role="alert">
@@ -407,13 +408,33 @@ function FreeShippingNote({ left }: { left: number | null | undefined }) {
       <Truck className="mr-1 inline h-4 w-4 align-[-3px]" />
       {left != null ? (
         <>
-          Pesanan ini dapat <b>FREE ONGKIR s.d. {rupiah(FREE_SHIPPING.max)}</b> — sisa {left}× lagi untuk nomor Kakak.
+          Pesanan ini dapat <b>FREE ONGKIR s.d. {rupiah(FREE_SHIPPING.max)}</b> — sisa {left}× lagi bulan ini untuk nomor Kakak.
         </>
       ) : (
         <>
-          <b>FREE ONGKIR s.d. {rupiah(FREE_SHIPPING.max)}</b> untuk {FREE_SHIPPING.orders} pembelian pertama via website (per nomor WhatsApp).
+          <b>FREE ONGKIR s.d. {rupiah(FREE_SHIPPING.max)}</b> untuk {FREE_SHIPPING.orders}× pesanan pertama tiap bulan via website (per nomor WhatsApp).
         </>
       )}
+    </p>
+  );
+}
+
+/** Totebag hint — order >=250rb di web dapat totebag gratis, 1x/bulan/customer. */
+function TotebagHint({ subtotal }: { subtotal: number }) {
+  const target = 250_000;
+  if (subtotal >= target) {
+    return (
+      <p className="mt-2 rounded-xl bg-plum-50 px-3 py-2 text-xs font-medium text-plum-700">
+        🎁 <b>Totebag Healthila GRATIS</b> — pesanan Kakak sudah ≥ Rp250.000.
+        <span className="block text-[11px] font-normal text-plum-700/70">Max 1 totebag per nomor WhatsApp per bulan.</span>
+      </p>
+    );
+  }
+  const left = target - subtotal;
+  if (left > 100_000) return null; // kalau masih jauh, jangan ganggu
+  return (
+    <p className="mt-2 rounded-xl bg-sun-100 px-3 py-2 text-xs font-medium text-leaf-900">
+      🎁 Tinggal <b>{rupiah(left)}</b> lagi, Kakak dapat <b>totebag Healthila GRATIS</b>! (web only, 1×/bulan)
     </p>
   );
 }
@@ -562,7 +583,7 @@ function buildMessage(items: CartItem[], total: number, f: Form, code: string | 
     ...lines,
     "",
     `Subtotal: ${rupiah(total)}`,
-    freeShippingMax ? `🚚 Promo FREE ONGKIR s.d. ${rupiah(freeShippingMax)} (pembelian pertama via website)` : null,
+    freeShippingMax ? `🚚 Promo FREE ONGKIR s.d. ${rupiah(freeShippingMax)} (2× per bulan via website)` : null,
     "",
     `Nama: ${f.name.trim()}`,
     code ? null : `No. WhatsApp: ${f.phone.trim()}`,
