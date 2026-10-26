@@ -5,6 +5,30 @@ import { fetchOngkir } from "@/lib/ongkir";
 import { sessionToken } from "@/lib/session";
 import { webRpc, WebRpcError } from "@/lib/web-rpc";
 
+/** Tukar poin loyalty jadi voucher. Return voucher code untuk ditampilkan ke customer. */
+export async function redeemLoyaltyVoucher(
+  voucherId: string
+): Promise<
+  | { ok: true; code: string; name: string; points_spent: number; balance_after: number }
+  | { ok: false; error: string }
+> {
+  const token = await sessionToken();
+  if (!token) return { ok: false, error: "Silakan masuk dulu." };
+  try {
+    const r = await webRpc<{ ok: true; code: string; name: string; points_spent: number; balance_after: number }>(
+      "web_redeem_voucher",
+      { p_session_token: token, p_voucher_id: voucherId }
+    );
+    revalidatePath("/akun");
+    return { ...r, ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof WebRpcError && e.friendly ? e.message : "Gagal menukar poin, coba lagi.",
+    };
+  }
+}
+
 /** Occasion reminders + subscriptions of the signed-in buyer (healthila-crm 0112). */
 
 export type Reminder = { id: string; label: string; recipient: string | null; month: number; day: number; lead_days: number };

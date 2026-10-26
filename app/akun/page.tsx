@@ -10,6 +10,7 @@ import { getProducts, type Product } from "@/lib/catalog";
 import { manageReminders, manageSubscriptions } from "./actions";
 import { RemindersPanel, SubscriptionsPanel } from "./RetentionPanels";
 import { AccountShell, type TabDef } from "./AccountShell";
+import { RedeemButton } from "./RedeemButton";
 import { Cake, Camera, CircleCheck, Lock, Sparkles, Ticket, Heart, Lightbulb, MapPin } from "lucide-react";
 import { site, waLink } from "@/lib/site";
 
@@ -23,7 +24,7 @@ export default async function AkunPage() {
   ]);
 
   const firstName = account.name ? account.name.split(" ")[0] : null;
-  const overviewSafe: AccountOverview = overview ?? { loyalty_points: 0, loyalty_history: [], vouchers: [], favorites: [] };
+  const overviewSafe: AccountOverview = overview ?? { loyalty_points: 0, loyalty_history: [], vouchers: [], redeemable_vouchers: [], favorites: [] };
   const activeOrders = account.orders.filter((o) => o.status !== "cancelled" && o.status !== "completed").length;
   const vouchersCount = overviewSafe.vouchers.length;
 
@@ -300,7 +301,10 @@ function LoyaltyPanel({ overview }: { overview: AccountOverview }) {
 }
 
 function VoucherPanel({ overview }: { overview: AccountOverview }) {
-  if (overview.vouchers.length === 0) {
+  const hasActive = overview.vouchers.length > 0;
+  const hasRedeemable = overview.redeemable_vouchers.length > 0;
+
+  if (!hasActive && !hasRedeemable) {
     return (
       <Card title="Voucher Kakak">
         <div className="py-8 text-center">
@@ -314,33 +318,77 @@ function VoucherPanel({ overview }: { overview: AccountOverview }) {
       </Card>
     );
   }
+
   return (
-    <Card title="Voucher Kakak" hint={`${overview.vouchers.length} voucher siap dipakai`}>
-      <ul className="space-y-3">
-        {overview.vouchers.map((v) => (
-          <li key={v.code} className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sun-100 to-coral-100 p-4 ring-1 ring-sun-300">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-bold text-ink">{v.name}</p>
-                <p className="mt-0.5 font-mono text-sm font-semibold text-plum-700">{v.code}</p>
-                {v.notes && <p className="mt-1 text-xs text-leaf-900/80">{v.notes}</p>}
-              </div>
-              <div className="shrink-0 text-right">
-                <p className="text-xs font-semibold uppercase tracking-wide text-plum-700">Diskon</p>
-                <p className="text-xl font-extrabold text-leaf-900">
-                  {v.kind === "percent" ? `${v.amount}%` : v.kind === "free_shipping" ? "Ongkir" : rupiah(v.amount)}
-                </p>
-              </div>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-leaf-900/80">
-              {v.min_subtotal != null && v.min_subtotal > 0 && <span>Min. belanja {rupiah(v.min_subtotal)}</span>}
-              {v.max_discount != null && v.max_discount > 0 && v.kind === "percent" && <span>Maks. potongan {rupiah(v.max_discount)}</span>}
-              {v.expires_at && <span>Berlaku s/d {v.expires_at}</span>}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Card>
+    <div className="space-y-4">
+      {hasActive && (
+        <Card title="Voucher Kakak" hint={`${overview.vouchers.length} voucher siap dipakai`}>
+          <ul className="space-y-3">
+            {overview.vouchers.map((v) => (
+              <li key={v.code} className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sun-100 to-coral-100 p-4 ring-1 ring-sun-300">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-ink">{v.name}</p>
+                    <p className="mt-0.5 font-mono text-sm font-semibold text-plum-700">{v.code}</p>
+                    {v.notes && <p className="mt-1 text-xs text-leaf-900/80">{v.notes}</p>}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-plum-700">Diskon</p>
+                    <p className="text-xl font-extrabold text-leaf-900">
+                      {v.kind === "percent" ? `${v.amount}%` : v.kind === "free_shipping" ? "Ongkir" : rupiah(v.amount)}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-leaf-900/80">
+                  {v.min_subtotal != null && v.min_subtotal > 0 && <span>Min. belanja {rupiah(v.min_subtotal)}</span>}
+                  {v.max_discount != null && v.max_discount > 0 && v.kind === "percent" && <span>Maks. potongan {rupiah(v.max_discount)}</span>}
+                  {v.expires_at && <span>Berlaku s/d {v.expires_at}</span>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {hasRedeemable && (
+        <Card title="Tukar Poin Kakak" hint={`Saldo poin: ${overview.loyalty_points}`}>
+          <ul className="space-y-3">
+            {overview.redeemable_vouchers.map((v) => (
+              <li key={v.id} className={`relative overflow-hidden rounded-2xl p-4 ring-1 ${
+                v.affordable ? "bg-leaf-50 ring-leaf-200" : "bg-slate-50 ring-slate-200 opacity-80"
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-ink">{v.name}</p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      Diskon{" "}
+                      <b className="text-leaf-700">
+                        {v.kind === "percent" ? `${v.amount}%` : v.kind === "free_shipping" ? "Ongkir" : rupiah(v.amount)}
+                      </b>
+                      {v.min_subtotal != null && v.min_subtotal > 0 && <> · Min. belanja {rupiah(v.min_subtotal)}</>}
+                      {v.expires_at && <> · s/d {v.expires_at}</>}
+                    </p>
+                    {v.notes && <p className="mt-1 text-xs text-muted italic">{v.notes}</p>}
+                    <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-plum-100 px-2 py-0.5 text-[11px] font-bold text-plum-700">
+                      ⭐ {v.points_cost} poin
+                    </p>
+                  </div>
+                  <RedeemButton
+                    voucherId={v.id}
+                    pointsCost={v.points_cost}
+                    affordable={v.affordable}
+                    label={v.name}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[11px] text-muted">
+            Poin terpotong saat tombol &ldquo;Tukar&rdquo; ditekan. Voucher langsung muncul di daftar atas dan bisa dipakai saat checkout.
+          </p>
+        </Card>
+      )}
+    </div>
   );
 }
 
