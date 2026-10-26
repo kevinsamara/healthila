@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
+import { LoginPrompt } from "@/components/LoginPrompt";
 import { StoreJsonLd } from "@/components/JsonLd";
 import { Analytics } from "@/components/Analytics";
 import { site } from "@/lib/site";
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <main className="flex-1">{children}</main>
         <Footer />
         <WhatsAppFab />
+        <LoginPrompt />
         <StoreJsonLd />
         <Analytics />
       </body>
