@@ -73,8 +73,11 @@ function FlashColumn({ products }: { products: Product[] }) {
 function FlashCard({ p }: { p: Product }) {
   const discountPct = p.price && p.promo_price ? Math.round((1 - p.promo_price / p.price) * 100) : 0;
   return (
-    <Link href={`/produk/${p.slug}`} className="group block overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-coral-500">
-      <div className="relative aspect-square w-full overflow-hidden bg-leaf-50">
+    <Link
+      href={`/produk/${p.slug}`}
+      className="group flex h-full flex-col overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-coral-500"
+    >
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-leaf-50">
         {p.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
@@ -87,14 +90,15 @@ function FlashCard({ p }: { p: Product }) {
           </span>
         )}
       </div>
-      {/* Fixed-height body: nama 2 baris (atau 1 + spacer) + row harga tetap
-          sama tingginya di semua kartu — Flash & HOT selaras persis. */}
-      <div className="flex flex-col gap-1.5 p-2">
-        <p className="line-clamp-2 h-[30px] text-[12px] leading-tight text-ink">{p.name}</p>
-        <div className="flex h-7 items-center justify-between gap-1">
+      {/* Fixed-height body — HARUS sama persis di Flash & HOT. Mobile text
+          berisiko wrap, jadi: name block fix 32px, price row fix 32px, dua
+          baris strikethrough disembunyikan via overflow-hidden. */}
+      <div className="flex flex-col gap-1 overflow-hidden p-2">
+        <p className="line-clamp-2 h-8 overflow-hidden text-[12px] leading-tight text-ink">{p.name}</p>
+        <div className="flex h-8 items-center justify-between gap-1 overflow-hidden">
           <PriceButton>{rupiah(p.promo_price ?? p.price ?? 0)}</PriceButton>
           {p.price != null && p.promo_price != null && p.promo_price < p.price && (
-            <span className="shrink-0 text-[10px] text-muted line-through">{rupiah(p.price)}</span>
+            <span className="shrink-0 whitespace-nowrap text-[10px] text-muted line-through">{rupiah(p.price)}</span>
           )}
         </div>
       </div>
@@ -133,8 +137,11 @@ function HotColumn({ products }: { products: Product[] }) {
 
 function HotCard({ p }: { p: Product }) {
   return (
-    <Link href={`/produk/${p.slug}`} className="group block overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-plum-700">
-      <div className="relative aspect-square w-full overflow-hidden bg-leaf-50">
+    <Link
+      href={`/produk/${p.slug}`}
+      className="group flex h-full flex-col overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-plum-700"
+    >
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-leaf-50">
         {p.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
@@ -145,10 +152,10 @@ function HotCard({ p }: { p: Product }) {
           <Flame className="h-2.5 w-2.5" /> HOT
         </span>
       </div>
-      {/* Lihat FlashCard — tinggi identik supaya tile rapi sejajar. */}
-      <div className="flex flex-col gap-1.5 p-2">
-        <p className="line-clamp-2 h-[30px] text-[12px] leading-tight text-ink">{p.name}</p>
-        <div className="flex h-7 items-center">
+      {/* Dimensi sama persis dengan FlashCard. */}
+      <div className="flex flex-col gap-1 overflow-hidden p-2">
+        <p className="line-clamp-2 h-8 overflow-hidden text-[12px] leading-tight text-ink">{p.name}</p>
+        <div className="flex h-8 items-center overflow-hidden">
           {p.price != null && <PriceButton>{rupiah(p.price)}</PriceButton>}
         </div>
       </div>
