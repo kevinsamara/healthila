@@ -48,7 +48,10 @@ export type Subscription = {
   weekday: number;
   slot: number | null;
   preferences: string | null;
-  status: "active" | "paused" | "cancelled";
+  status: "pending_payment" | "active" | "paused" | "cancelled";
+  pay_status: "awaiting" | "submitted" | "verified" | "rejected" | null;
+  pay_amount: number | null;
+  pay_expires_at: string | null;
   next_date: string;
   address: string;
   /** Fixed-duration juice subscriptions (tier pricing, healthila-crm 0119). */
@@ -117,7 +120,7 @@ export async function createJuiceSubscription(p: {
 }) {
   const ongkir = await fetchOngkir(String(p.address ?? "").slice(0, 500));
   const shipping = ongkir.state === "calculated" ? Math.round(ongkir.fee) : null;
-  return call<{ id: string; code: string; quote: TierQuote }[]>("web_subscriptions_manage", "create", {
+  return call<{ id: string; code: string; quote: TierQuote; status: string; pay_status: string | null; pay_amount: number | null }[]>("web_subscriptions_manage", "create", {
     ...p,
     shipping_per_delivery: shipping,
   });

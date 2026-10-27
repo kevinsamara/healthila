@@ -191,8 +191,10 @@ export function JuiceTierSteps({
         preferences,
       });
       if (!r.ok) return setError(r.error);
-      trackEvent("generate_lead", { lead_type: "langganan", plan: plan.kind, currency: "IDR", value: r.data?.[0]?.quote?.payable ?? quote.payable });
-      router.push("/akun#langganan");
+      const created = r.data?.[0];
+      trackEvent("generate_lead", { lead_type: "langganan", plan: plan.kind, currency: "IDR", value: created?.quote?.payable ?? quote.payable });
+      // Paid up front with QRIS when the ongkir is known; otherwise admin confirms on WhatsApp.
+      router.push(created?.pay_status === "awaiting" ? `/bayar/${created.code}` : "/akun#langganan");
     });
   }
 
@@ -527,9 +529,13 @@ export function JuiceTierSteps({
                 onClick={submit}
                 className="mt-5 h-12 w-full rounded-full bg-leaf-700 font-bold text-white hover:bg-leaf-900 disabled:opacity-50"
               >
-                {pending ? "Menyimpan…" : `Mulai langganan · ${formatIDR(quote.payable)}`}
+                {pending ? "Menyimpan…" : ongkir.fee != null ? `Bayar langganan · ${formatIDR(quote.payable)}` : "Kirim langganan ke admin"}
               </button>
-              <p className="mt-2 text-center text-xs text-muted">Admin mengonfirmasi pembayaran lewat WhatsApp sebelum pengiriman pertama.</p>
+              <p className="mt-2 text-center text-xs text-muted">
+                {ongkir.fee != null
+                  ? "Bayar di muka dengan QRIS (batas 2 jam). Langganan aktif setelah pembayaran dicek admin; tiap pengiriman sudah lunas."
+                  : "Ongkir alamat ini belum bisa dihitung otomatis — admin mengonfirmasi ongkir & pembayaran lewat WhatsApp."}
+              </p>
             </>
           ) : (
             <div className="mt-5 rounded-2xl bg-leaf-50 p-4 text-center">

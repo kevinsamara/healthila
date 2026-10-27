@@ -183,7 +183,11 @@ function ScheduledSubscription({ s, pending, onCancel }: { s: Subscription; pend
         <b className="text-ink">
           {s.title ?? "Langganan Jus"} · {q.total_bottles} botol · {durationLabel(q.duration_days)}
         </b>
-        <span className="rounded-full bg-lime-100 px-3 py-0.5 text-xs font-bold text-leaf-900">Aktif</span>
+        {s.status === "pending_payment" ? (
+          <span className="rounded-full bg-sun-300/50 px-3 py-0.5 text-xs font-bold text-ink">{s.pay_status === "submitted" ? "Bukti bayar dicek" : "Menunggu pembayaran"}</span>
+        ) : (
+          <span className="rounded-full bg-lime-100 px-3 py-0.5 text-xs font-bold text-leaf-900">{s.pay_status === "verified" ? "Aktif · Lunas" : "Aktif"}</span>
+        )}
       </div>
       <p className="mt-1 text-muted">
         {q.people} orang × {q.bottles_per_day} botol/kiriman · {q.deliveries}× kirim{s.slot ? ` ${SLOTS[s.slot].toLowerCase()}` : ""} · {s.code}
@@ -203,7 +207,12 @@ function ScheduledSubscription({ s, pending, onCancel }: { s: Subscription; pend
         Produk {rupiah(q.product_total)} (hemat {rupiah(q.savings)}, diskon {Math.round(q.rate * 1000) / 10}%) · ongkir{" "}
         {q.shipping_total == null ? "dikonfirmasi admin" : rupiah(q.shipping_total)} · <b className="text-ink">total {rupiah(q.payable)}</b>
       </p>
-      <div className="mt-3 flex gap-2 text-xs">
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        {s.status === "pending_payment" && (
+          <Link href={`/bayar/${s.code}`} className="rounded-full bg-leaf-700 px-4 py-1.5 font-bold text-white hover:bg-leaf-900">
+            {s.pay_status === "submitted" ? "Lihat pembayaran" : `Bayar ${rupiah(s.pay_amount ?? q.payable)}`}
+          </Link>
+        )}
         <button type="button" disabled={pending} onClick={onCancel} className="rounded-full px-3 py-1 text-plum-700 underline">
           Batalkan
         </button>

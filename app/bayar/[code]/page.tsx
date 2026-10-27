@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { rupiah } from "@/lib/format";
-import { getQrisPayment } from "@/lib/payment";
+import { getQrisPayment, isSubscriptionCode } from "@/lib/payment";
 import { qrisWithAmount, qrSvg } from "@/lib/qris";
 import { waLink } from "@/lib/site";
 import { Countdown, CopyAmount, ProofUpload } from "./PaymentClient";
@@ -16,6 +16,7 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
   const sp = await searchParams;
   const key = typeof sp.k === "string" ? sp.k : null;
   const pay = await getQrisPayment(code, key);
+  const sub = isSubscriptionCode(code);
 
   if (!pay) {
     return (
@@ -31,7 +32,7 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
     );
   }
 
-  const wa = waLink(`Halo Healthila, saya mau tanya pembayaran pesanan ${pay.code} (${rupiah(pay.amount)}).`);
+  const wa = waLink(`Halo Healthila, saya mau tanya pembayaran ${sub ? "langganan" : "pesanan"} ${pay.code} (${rupiah(pay.amount)}).`);
 
   if (pay.status === "verified") {
     return (
@@ -39,7 +40,7 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
         <CircleCheck className="mx-auto h-14 w-14 text-leaf-700" strokeWidth={1.6} />
         <h1 className="mt-3 text-center text-2xl font-extrabold text-leaf-900">Pembayaran diterima</h1>
         <p className="mt-2 text-center text-muted">
-          {pay.code} sudah lunas. Pantau status pengiriman di{" "}
+          {pay.code} sudah lunas.{sub ? " Langganan aktif — jadwal kirim & status tiap pengiriman ada di" : " Pantau status pengiriman di"}{" "}
           <Link href="/akun" className="font-semibold text-leaf-700 underline">
             Akun
           </Link>
@@ -53,11 +54,13 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
     return (
       <Shell>
         <h1 className="text-center text-2xl font-extrabold text-ink">
-          {pay.status === "expired" ? "Batas waktu pembayaran lewat" : pay.status === "cancelled" ? "Pesanan dibatalkan" : "Pembayaran belum terverifikasi"}
+          {pay.status === "expired" ? "Batas waktu pembayaran lewat" : pay.status === "cancelled" ? (sub ? "Langganan dibatalkan" : "Pesanan dibatalkan") : "Pembayaran belum terverifikasi"}
         </h1>
         <p className="mt-2 text-center text-muted">
           {pay.status === "expired"
-            ? "Pesanan Kakak tetap tersimpan. Admin kami akan konfirmasi pembayaran lewat WhatsApp."
+            ? sub
+              ? "Langganan Kakak tetap tersimpan dan belum aktif. Chat admin untuk melanjutkan pembayaran."
+              : "Pesanan Kakak tetap tersimpan. Admin kami akan konfirmasi pembayaran lewat WhatsApp."
             : "Silakan hubungi admin kami lewat WhatsApp untuk bantuan."}
         </p>
         <a href={wa} target="_blank" rel="noopener noreferrer" className="mx-auto mt-6 flex h-12 w-fit items-center gap-2 rounded-full bg-leaf-700 px-7 font-bold text-white hover:bg-leaf-900">
@@ -70,11 +73,13 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
   const svg = await qrSvg(qrisWithAmount(pay.amount));
   return (
     <Shell>
-      <p className="text-center text-sm font-semibold tracking-wide text-leaf-500 uppercase">Bayar pesanan {pay.code}</p>
+      <p className="text-center text-sm font-semibold tracking-wide text-leaf-500 uppercase">
+        {sub ? "Bayar langganan" : "Bayar pesanan"} {pay.code}
+      </p>
       <CopyAmount amount={pay.amount} />
       <dl className="mx-auto mt-2 max-w-xs space-y-0.5 text-xs text-muted">
-        <Line k="Belanja" v={rupiah(pay.subtotal)} />
-        <Line k="Ongkir" v={pay.shipping ? rupiah(pay.shipping) : "Gratis"} />
+        <Line k={sub ? "Jus (setelah diskon langganan)" : "Belanja"} v={rupiah(pay.subtotal)} />
+        <Line k={sub && pay.deliveries ? `Ongkir ${pay.deliveries}× kirim` : "Ongkir"} v={pay.shipping ? rupiah(pay.shipping) : "Gratis"} />
         <Line k="Kode unik" v={`−${rupiah(pay.unique_code)}`} />
       </dl>
 
@@ -89,7 +94,7 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
         <li>
           Pastikan nominal <b className="text-ink">{rupiah(pay.amount)}</b> — persis sampai angka terakhir.
         </li>
-        <li>Upload screenshot bukti bayar di bawah.</li>
+        <li>Upload screenshot bukti bayar di bawah.{sub ? " Langganan aktif setelah admin mengecek pembayaran." : ""}</li>
       </ol>
 
       <ProofUpload code={pay.code} k={key} submitted={pay.status === "submitted"} />
