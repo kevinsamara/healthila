@@ -4,11 +4,13 @@ import Link from "next/link";
 import { AboutHealthila } from "@/components/AboutHealthila";
 import { ArticleCard } from "@/components/ArticleCard";
 import { BulkSection } from "@/components/BulkSection";
+import { FlashStrip } from "@/components/FlashStrip";
 import { HeroCarousel, type HeroPhoto, type HeroSlide } from "@/components/HeroCarousel";
 import { CtaBand, HowToOrder, SectionTitle, Testimonials, WhyHealthila } from "@/components/HomeSections";
 import { HotAndFlash } from "@/components/HotAndFlash";
 import { ProductCard } from "@/components/ProductCard";
 import { getArticles } from "@/lib/articles";
+import { getBundles } from "@/lib/bundles";
 import { getProducts, type Product } from "@/lib/catalog";
 import { waLink, type SectionKey } from "@/lib/site";
 import { Citrus, CupSoda, ShoppingBasket } from "lucide-react";
@@ -20,7 +22,7 @@ export const revalidate = 300;
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
-  const [all, articles] = await Promise.all([getProducts(), getArticles()]);
+  const [all, articles, bundles] = await Promise.all([getProducts(), getArticles(), getBundles()]);
   // Showcase only what can be ordered today; sold-out items still appear in the catalog.
   const available = all.filter((p) => p.in_stock);
   const promos = available.filter((p) => p.promo_price != null || p.packagings.some((k) => k.promo_price != null));
@@ -71,6 +73,14 @@ export default async function Home() {
 
   return (
     <>
+      {flashProducts.length + hotProducts.length + bundles.length > 0 && (
+        <FlashStrip
+          count={flashProducts.length}
+          maxPct={Math.max(0, ...flashProducts.map((p) => (p.price && p.promo_price ? Math.round((1 - p.promo_price / p.price) * 100) : 0)))}
+          endsAt={flashProducts[0]?.promo_ends_at ?? null}
+          fallback={[hotProducts.length && "Produk HOT", bundles.length && "Bundling hemat"].filter(Boolean).join(" & ")}
+        />
+      )}
       <HeroCarousel slides={heroSlides(available)} />
 
       {/* Category banners */}
@@ -103,7 +113,7 @@ export default async function Home() {
 
       <BulkSection />
 
-      <HotAndFlash hot={hotProducts} flash={flashProducts} />
+      <HotAndFlash hot={hotProducts} flash={flashProducts} bundles={bundles} />
 
       {/* Featured */}
       {featured.length > 0 && (

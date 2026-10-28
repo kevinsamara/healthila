@@ -21,6 +21,8 @@ const Line = z.object({
   packagingId: z.string().uuid().nullable(),
   quantity: z.number().positive().max(1000),
   label: z.string().max(80).nullable(),
+  /** Bundling line: expanded and priced by web_place_order. */
+  bundleId: z.string().uuid().nullable().optional(),
 });
 
 const Input = z.object({
@@ -77,12 +79,11 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       p_address: input.address,
       p_delivery_date: input.date,
       p_notes: notes,
-      p_lines: input.lines.map((l) => ({
-        product_id: l.productId,
-        packaging_id: l.packagingId,
-        quantity: l.quantity,
-        label: l.label,
-      })),
+      p_lines: input.lines.map((l) =>
+        l.bundleId
+          ? { bundle_id: l.bundleId, quantity: l.quantity }
+          : { product_id: l.productId, packaging_id: l.packagingId, quantity: l.quantity, label: l.label },
+      ),
       p_key: input.key,
       p_session_token: await sessionToken(),
       p_slot: input.slot,

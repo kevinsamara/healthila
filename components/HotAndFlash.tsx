@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Flame, Zap } from "lucide-react";
+import { Flame, Package, Zap } from "lucide-react";
+import type { Bundle } from "@/lib/bundles";
 import type { Product } from "@/lib/catalog";
+import { BundleVisual } from "./BundleVisual";
 import { rupiah } from "@/lib/format";
 
 /**
@@ -13,17 +15,68 @@ import { rupiah } from "@/lib/format";
  * Section auto-hide kalau dua-duanya kosong; satu kosong → kolomnya hilang,
  * yang satunya tetap full-width.
  */
-export function HotAndFlash({ hot, flash }: { hot: Product[]; flash: Product[] }) {
+export function HotAndFlash({ hot, flash, bundles = [] }: { hot: Product[]; flash: Product[]; bundles?: Bundle[] }) {
   const hasHot = hot.length > 0;
   const hasFlash = flash.length > 0;
-  if (!hasHot && !hasFlash) return null;
+  const hasBundles = bundles.length > 0;
+  const cols = Number(hasHot) + Number(hasFlash) + Number(hasBundles);
+  if (!cols) return null;
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-12">
-      <div className={`grid gap-5 ${hasHot && hasFlash ? "md:grid-cols-2" : ""}`}>
+    // #flash-sale: target of the sticky "Flash Sale" bar under the header (FlashStrip).
+    <section id="flash-sale" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12">
+      <div className={`grid gap-5 ${cols === 3 ? "md:grid-cols-2 lg:grid-cols-3" : cols === 2 ? "md:grid-cols-2" : ""}`}>
         {hasFlash && <FlashColumn products={flash} />}
         {hasHot && <HotColumn products={hot} />}
+        {hasBundles && <BundleColumn bundles={bundles} />}
       </div>
     </section>
+  );
+}
+
+/* ──────────────────────────────── BUNDLING ───────────────────────────────── */
+
+function BundleColumn({ bundles }: { bundles: Bundle[] }) {
+  return (
+    <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-leaf-900 via-leaf-700 to-[#5fcf8f] shadow">
+      <div className="flex flex-wrap items-center gap-2.5 px-4 py-2.5">
+        <Package className="h-5 w-5 text-sun-400" strokeWidth={2.4} />
+        <span className="text-base font-extrabold tracking-tight text-white">Bundling</span>
+        <span className="text-[11px] text-white/80">Paket lebih hemat</span>
+        <Link href="/bundling" className="ml-auto text-[11px] font-semibold text-white/90 hover:text-white">
+          Lihat semua ›
+        </Link>
+      </div>
+      <div className="bg-white p-3">
+        <ul className="flex gap-3 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none", scrollSnapType: "x mandatory" }}>
+          {bundles.slice(0, 8).map((b) => (
+            <li key={b.id} className="shrink-0 basis-[46%] sm:basis-[150px]" style={{ scrollSnapAlign: "start" }}>
+              <BundleCard b={b} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function BundleCard({ b }: { b: Bundle }) {
+  const saving = Math.max(0, Math.round(b.regular_price - b.bundle_price));
+  const pct = saving ? Math.round((saving / b.regular_price) * 100) : 0;
+  return (
+    <Link href={`/bundling/${b.slug}`} className="group flex h-full flex-col overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-leaf-600">
+      <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-leaf-50">
+        <BundleVisual bundle={b} sizes="160px" />
+        <span className="absolute top-0 left-0 bg-leaf-700 px-1.5 py-0.5 text-[10px] font-extrabold text-white">{pct > 0 ? `-${pct}%` : "PAKET"}</span>
+      </div>
+      {/* Dimensi sama persis dengan FlashCard / HotCard. */}
+      <div className="flex flex-col gap-1 overflow-hidden p-2">
+        <p className="line-clamp-2 h-8 overflow-hidden text-[12px] leading-tight text-ink">{b.name}</p>
+        <div className="flex h-8 items-center justify-between gap-1 overflow-hidden">
+          <PriceButton>{rupiah(b.bundle_price)}</PriceButton>
+          {saving > 0 && <span className="shrink-0 whitespace-nowrap text-[10px] text-muted line-through">{rupiah(b.regular_price)}</span>}
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -179,12 +232,15 @@ function PriceButton({ children }: { children: React.ReactNode }) {
 
 /** Countdown Shopee-style boxed digits (HH : MM : SS). Hides when expired. */
 function Countdown({ target }: { target: string }) {
-  const [left, setLeft] = useState<number>(() => Math.max(0, new Date(target).getTime() - Date.now()));
+  // Starts empty and ticks on the client only: the server's clock would not match (hydration error).
+  const [left, setLeft] = useState<number | null>(null);
   useEffect(() => {
-    const id = setInterval(() => setLeft(Math.max(0, new Date(target).getTime() - Date.now())), 1000);
+    const tick = () => setLeft(Math.max(0, new Date(target).getTime() - Date.now()));
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, [target]);
-  if (left <= 0) return null;
+  if (left == null || left <= 0) return null;
   const sec = Math.floor(left / 1000);
   const d = Math.floor(sec / 86400);
   const h = Math.floor((sec % 86400) / 3600);

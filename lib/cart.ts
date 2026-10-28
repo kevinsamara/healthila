@@ -28,6 +28,8 @@ export type CartItem = {
    *  tambah ke cart. Null = tidak dilacak (parcel/juice/MTO = unlimited).
    *  Checkout RPC tetap re-check di server, ini pencegahan di UI saja. */
   maxQty?: number | null;
+  /** Bundling (healthila-crm 0123): productId holds the bundle id, slug the bundle page. */
+  bundleId?: string | null;
 };
 
 const KEY = "healthila_cart_v2";

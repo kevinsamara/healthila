@@ -100,6 +100,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
           packagingId: i.packagingId,
           // Web-only packs are stored in the CRM's base unit (kg).
           quantity: i.basePerUnit ? Math.round(i.qty * i.basePerUnit * 1000) / 1000 : i.qty,
+          bundleId: i.bundleId ?? null,
           label: i.basePerUnit ? qtyLabel(i.qty, i.unitLabel) : null,
         })),
       });
@@ -147,11 +148,11 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
       <ul className="h-fit divide-y divide-leaf-100 rounded-3xl bg-white ring-1 ring-leaf-100">
         {items.map((i) => (
           <li key={i.key} className="flex gap-4 p-4">
-            <Link href={`/produk/${i.slug}`} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-leaf-50">
+            <Link href={i.bundleId ? `/bundling/${i.slug}` : `/produk/${i.slug}`} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-leaf-50">
               {i.photo && <Image src={i.photo} alt={i.name} fill sizes="80px" className="object-cover" />}
             </Link>
             <div className="min-w-0 flex-1">
-              <Link href={`/produk/${i.slug}`} className="line-clamp-2 font-semibold text-ink hover:text-leaf-700">
+              <Link href={i.bundleId ? `/bundling/${i.slug}` : `/produk/${i.slug}`} className="line-clamp-2 font-semibold text-ink hover:text-leaf-700">
                 {i.name}
               </Link>
               {i.variant && <p className="text-sm text-muted">{i.variant}</p>}
