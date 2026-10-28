@@ -1,12 +1,38 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { sendToStaffGroup } from "@/lib/notify";
 import { rupiah } from "@/lib/format";
 import { getQrisPayment } from "@/lib/payment";
-import { webSecret } from "@/lib/web-rpc";
+import { sessionToken } from "@/lib/session";
+import { webRpc, WebRpcError, webSecret } from "@/lib/web-rpc";
 
 const CRM_URL = (process.env.CRM_URL || "https://crm.healthila.id").replace(/\/$/, "");
+
+/** Apply voucher ke order invoice preview. Immediate consume: discount
+ *  langsung terpotong + voucher ter-catat sudah dipakai. */
+export async function applyBayarVoucher(
+  code: string, key: string | null, voucherCode: string
+): Promise<{ ok: true; discount: number; new_amount: number } | { ok: false; error: string }> {
+  const trimmed = voucherCode.trim().toUpperCase();
+  if (!trimmed) return { ok: false, error: "Masukkan kode voucher dulu." };
+  const token = await sessionToken();
+  if (!token) return { ok: false, error: "Login dulu untuk pakai voucher." };
+  try {
+    const r = await webRpc<{ ok: true; code: string; discount: number; new_total: number; new_amount: number }>(
+      "web_bayar_apply_voucher",
+      { p_code: code, p_key: key && key.length <= 64 ? key : null, p_session_token: token, p_voucher_code: trimmed }
+    );
+    revalidatePath(`/bayar/${code}`);
+    return { ok: true, discount: r.discount, new_amount: r.new_amount };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof WebRpcError && e.friendly ? e.message : "Gagal menerapkan voucher, coba lagi.",
+    };
+  }
+}
 
 /** Buyer uploads the QRIS payment screenshot → Healthila OS (private bucket). */
 export async function uploadPaymentProof(code: string, key: string | null, form: FormData): Promise<{ ok: true } | { ok: false; error: string }> {

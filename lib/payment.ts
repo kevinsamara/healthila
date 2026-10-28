@@ -19,6 +19,58 @@ export type QrisPayment = {
 /** Visible with the checkout key (buyer's browser) or the buyer's own session. */
 export const isSubscriptionCode = (code: string) => /^SUB-[0-9A-F]{6}$/.test(code);
 
+/** Detail invoice preview sebelum QRIS — items, totals, voucher (crm 0131). */
+export type BayarDetail = {
+  code: string;
+  subtotal: number;
+  shipping: number;
+  discount: number;
+  total: number;
+  unique_code: number;
+  amount: number;
+  expires_at: string;
+  status: QrisPayment["status"];
+  items: Array<{
+    id: string; name: string; variant: string | null;
+    quantity: number; unit: string | null;
+    unit_price: number; line_total: number;
+  }>;
+  applied_vouchers: Array<{ code: string; name: string | null; discount: number }>;
+  available_vouchers: Array<{
+    code: string; name: string | null;
+    kind: "nominal" | "percent" | string;
+    amount: number;
+    min_subtotal: number | null; max_discount: number | null;
+    expires_at: string | null;
+  }>;
+  logged_in: boolean;
+};
+
+export async function getBayarDetail(code: string, key: string | null): Promise<BayarDetail | null> {
+  if (!/^WEB-\d{6}-[0-9A-F]{4}$/.test(code) && !/^HLA-[0-9A-F]{6}$/.test(code)) return null;
+  try {
+    const d = await webRpc<BayarDetail | null>("web_bayar_detail", {
+      p_code: code,
+      p_key: key && key.length <= 64 ? key : null,
+      p_session_token: await sessionToken(),
+    });
+    return d ? {
+      ...d,
+      subtotal: Number(d.subtotal),
+      shipping: Number(d.shipping),
+      discount: Number(d.discount),
+      total: Number(d.total),
+      amount: Number(d.amount),
+      items: (d.items ?? []).map((it) => ({
+        ...it,
+        quantity: Number(it.quantity),
+        unit_price: Number(it.unit_price),
+        line_total: Number(it.line_total),
+      })),
+    } : null;
+  } catch { return null; }
+}
+
 export async function getQrisPayment(code: string, key: string | null): Promise<QrisPayment | null> {
   if (isSubscriptionCode(code)) {
     // Subscriptions belong to a signed-in buyer: the session is the only key.
