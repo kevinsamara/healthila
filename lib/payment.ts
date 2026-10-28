@@ -31,7 +31,9 @@ export async function getQrisPayment(code: string, key: string | null): Promise<
       return null;
     }
   }
-  if (!/^WEB-\d{6}-[0-9A-F]{4}$/.test(code)) return null;
+  // Accept WEB-YYMMDD-xxxx (website orders) + HLA-xxxxxx (CRM orders yg
+  // di-init via web_pay_init_crm_order utk pay-via-QRIS lewat collect WA).
+  if (!/^WEB-\d{6}-[0-9A-F]{4}$/.test(code) && !/^HLA-[0-9A-F]{6}$/.test(code)) return null;
   try {
     const p = await webRpc<QrisPayment | null>("web_qris_get", {
       p_code: code,

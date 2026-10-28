@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { rupiah } from "@/lib/format";
@@ -6,7 +7,7 @@ import { getQrisPayment, isSubscriptionCode } from "@/lib/payment";
 import { qrisWithAmount, qrSvg } from "@/lib/qris";
 import { waLink } from "@/lib/site";
 import { Countdown, CopyAmount, ProofUpload } from "./PaymentClient";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, Gift, LogIn } from "lucide-react";
 
 export const metadata: Metadata = { title: "Pembayaran QRIS", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -17,6 +18,9 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
   const key = typeof sp.k === "string" ? sp.k : null;
   const pay = await getQrisPayment(code, key);
   const sub = isSubscriptionCode(code);
+  // Login state untuk banner Rp5.000 bonus bagi pembeli baru.
+  const jar = await cookies();
+  const loggedIn = jar.get("hl_auth")?.value === "1";
 
   if (!pay) {
     return (
@@ -40,12 +44,16 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
         <CircleCheck className="mx-auto h-14 w-14 text-leaf-700" strokeWidth={1.6} />
         <h1 className="mt-3 text-center text-2xl font-extrabold text-leaf-900">Pembayaran diterima</h1>
         <p className="mt-2 text-center text-muted">
-          {pay.code} sudah lunas.{sub ? " Langganan aktif — jadwal kirim & status tiap pengiriman ada di" : " Pantau status pengiriman di"}{" "}
-          <Link href="/akun" className="font-semibold text-leaf-700 underline">
-            Akun
-          </Link>
-          .
+          {pay.code} sudah lunas.{sub ? " Langganan aktif — jadwal kirim & status tiap pengiriman ada di Akun." : " Pantau status pengiriman di Akun."}
         </p>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <Link href="/" className="flex h-12 items-center justify-center rounded-full bg-leaf-700 px-6 font-bold text-white hover:bg-leaf-900">
+            Kembali ke beranda
+          </Link>
+          <Link href="/akun" className="flex h-12 items-center justify-center rounded-full border border-leaf-200 px-6 font-semibold text-leaf-700 hover:bg-leaf-50">
+            Lihat Akun
+          </Link>
+        </div>
       </Shell>
     );
   }
@@ -71,8 +79,29 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
   }
 
   const svg = await qrSvg(qrisWithAmount(pay.amount));
+  const loginNext = encodeURIComponent(`/bayar/${code}${key ? `?k=${key}` : ""}`);
   return (
     <Shell>
+      {!loggedIn && (
+        <div className="mb-5 rounded-2xl bg-gradient-to-br from-sun-100 to-coral-100 p-4 ring-1 ring-sun-300">
+          <div className="flex items-start gap-3">
+            <Gift className="h-6 w-6 shrink-0 text-plum-700" strokeWidth={2} />
+            <div className="min-w-0">
+              <p className="font-bold text-leaf-900">Login dulu, dapat voucher Rp5.000!</p>
+              <p className="mt-0.5 text-xs text-leaf-900/80">
+                Pembeli yang login pertama kali di healthila.id dapat voucher <b>Rp5.000</b> otomatis untuk pembelian berikutnya.
+                Login pakai nomor WhatsApp yang sama saat pesan.
+              </p>
+              <Link
+                href={`/masuk?next=${loginNext}`}
+                className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-full bg-leaf-700 px-5 text-sm font-bold text-white hover:bg-leaf-900"
+              >
+                <LogIn className="h-4 w-4" /> Masuk dulu
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
       <p className="text-center text-sm font-semibold tracking-wide text-leaf-500 uppercase">
         {sub ? "Bayar langganan" : "Bayar pesanan"} {pay.code}
       </p>
