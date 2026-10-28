@@ -38,7 +38,7 @@ export function HotAndFlash({ hot, flash, bundles = [] }: { hot: Product[]; flas
 function BundleColumn({ bundles }: { bundles: Bundle[] }) {
   return (
     <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-leaf-900 via-leaf-700 to-[#5fcf8f] shadow">
-      <div className="flex flex-wrap items-center gap-2.5 px-4 py-2.5">
+      <div className="flex min-h-[52px] flex-wrap items-center gap-2.5 px-4 py-2">
         <Package className="h-5 w-5 text-sun-400" strokeWidth={2.4} />
         <span className="text-base font-extrabold tracking-tight text-white">Bundling</span>
         <span className="text-[11px] text-white/80">Paket lebih hemat</span>
@@ -91,18 +91,16 @@ function FlashColumn({ products }: { products: Product[] }) {
   return (
     <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-coral-500 via-coral-500 to-plum-700 shadow">
       {/* Header strip */}
-      <div className="flex flex-wrap items-center gap-2.5 px-4 py-2.5">
+      <div className="flex min-h-[52px] flex-wrap items-center gap-2.5 px-4 py-2">
         <Zap className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
         <span className="text-base font-extrabold tracking-tight text-white">Flash Sale</span>
         {earliest && (
-          <>
-            <span className="text-[11px] text-white/80">Berakhir dalam</span>
+          // "Berakhir dalam" with the timer underneath: narrower than one long row.
+          <span className="ml-auto flex flex-col items-end gap-0.5">
+            <span className="text-[10px] leading-none text-white/80">Berakhir dalam</span>
             <Countdown target={earliest} />
-          </>
+          </span>
         )}
-        <Link href="/katalog" className="ml-auto text-[11px] font-semibold text-white/90 hover:text-white">
-          Lihat semua ›
-        </Link>
       </div>
       {/* Horizontal strip — kartu berbaris memanjang ke samping, bukan 2 row.
           Scroll horizontal kalau lebih dari muat; 2 kartu + sedikit teaser
@@ -164,7 +162,7 @@ function FlashCard({ p }: { p: Product }) {
 function HotColumn({ products }: { products: Product[] }) {
   return (
     <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500 shadow">
-      <div className="flex flex-wrap items-center gap-2.5 px-4 py-2.5">
+      <div className="flex min-h-[52px] flex-wrap items-center gap-2.5 px-4 py-2">
         <Flame className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
         <span className="text-base font-extrabold tracking-tight text-white">Produk HOT</span>
         <span className="text-[11px] text-white/80">Paling dicari</span>
