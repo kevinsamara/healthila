@@ -24,8 +24,26 @@ export function HotAndFlash({ hot, flash, bundles = [] }: { hot: Product[]; flas
   return (
     // #flash-sale: target of the sticky "Flash Sale" bar under the header (FlashStrip).
     <section id="flash-sale" className="mx-auto max-w-7xl scroll-mt-32 px-4 pt-12">
-      <div className={`grid gap-5 ${cols === 3 ? "md:grid-cols-2 lg:grid-cols-3" : cols === 2 ? "md:grid-cols-2" : ""}`}>
-        {hasFlash && <FlashColumn products={flash} />}
+      {/* Flash Sale gets the wide column; HOT & Bundling share the rest.
+          Tablet with 3 columns: Flash on its own row, the other two below. */}
+      <div
+        className={`grid gap-5 ${
+          cols === 3
+            ? hasFlash
+              ? "md:grid-cols-2 lg:grid-cols-[1.7fr_1fr_1fr]"
+              : "md:grid-cols-2 lg:grid-cols-3"
+            : cols === 2
+              ? hasFlash
+                ? "md:grid-cols-[1.5fr_1fr]"
+                : "md:grid-cols-2"
+              : ""
+        }`}
+      >
+        {hasFlash && (
+          <div className={`min-w-0 ${cols === 3 ? "md:col-span-2 lg:col-span-1" : ""}`}>
+            <FlashColumn products={flash} />
+          </div>
+        )}
         {hasHot && <HotColumn products={hot} />}
         {hasBundles && <BundleColumn bundles={bundles} />}
       </div>
@@ -37,7 +55,7 @@ export function HotAndFlash({ hot, flash, bundles = [] }: { hot: Product[]; flas
 
 function BundleColumn({ bundles }: { bundles: Bundle[] }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-leaf-900 via-leaf-700 to-[#5fcf8f] shadow">
+    <div className="h-full min-w-0 overflow-hidden rounded-2xl bg-gradient-to-br from-leaf-900 via-leaf-700 to-[#5fcf8f] shadow">
       <div className="flex min-h-[52px] flex-wrap items-center gap-2.5 px-4 py-2">
         <Package className="h-5 w-5 text-sun-400" strokeWidth={2.4} />
         <span className="text-base font-extrabold tracking-tight text-white">Bundling</span>
@@ -89,7 +107,7 @@ function FlashColumn({ products }: { products: Product[] }) {
     return p.promo_ends_at < min ? p.promo_ends_at : min;
   }, null);
   return (
-    <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-coral-500 via-coral-500 to-plum-700 shadow">
+    <div className="h-full min-w-0 overflow-hidden rounded-2xl bg-gradient-to-br from-coral-500 via-coral-500 to-plum-700 shadow">
       {/* Header strip */}
       <div className="flex min-h-[52px] flex-wrap items-center gap-2.5 px-4 py-2">
         <Zap className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
@@ -161,7 +179,7 @@ function FlashCard({ p }: { p: Product }) {
 
 function HotColumn({ products }: { products: Product[] }) {
   return (
-    <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500 shadow">
+    <div className="h-full min-w-0 overflow-hidden rounded-2xl bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500 shadow">
       <div className="flex min-h-[52px] flex-wrap items-center gap-2.5 px-4 py-2">
         <Flame className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
         <span className="text-base font-extrabold tracking-tight text-white">Produk HOT</span>
