@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SalesBadge } from "@/components/SalesBadge";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, ProductCard } from "@/components/ProductCard";
@@ -75,8 +76,9 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
         <div className="mt-6 grid gap-10 lg:grid-cols-2 lg:gap-14">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <ProductGallery product={product} />
-            {(product.is_new || product.badges.length > 0) && (
+            {(product.is_new || product.badges.length > 0 || product.sales_badge) && (
               <div className="mt-3 flex flex-wrap gap-1.5">
+                <SalesBadge badge={product.sales_badge} />
                 {product.is_new && <Badge tone="lime">Baru</Badge>}
                 {product.badges.map((b) => (
                   <Badge key={b} tone="sun">

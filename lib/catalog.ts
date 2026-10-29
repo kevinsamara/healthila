@@ -54,6 +54,8 @@ export type Product = {
   occasions: string[];
   /** Parcels priced per order: the matching container's "mulai dari" price. */
   from_price: number | null;
+  /** Automatic sales label (healthila-crm 0125): top sellers 30 days / fastest this week. */
+  sales_badge: "best_seller" | "favorite" | null;
   /** Admin-flagged "HOT" di CRM — tampil di section Produk HOT homepage. */
   is_hot: boolean;
   /** Timestamp terdekat promo publik akan tutup; least(expires_at, today's daily_end at WIB). */
@@ -77,6 +79,7 @@ function normalize(row: Record<string, unknown>): Product {
     badges: (row.badges as string[] | null) ?? [],
     occasions: (row.occasions as string[] | null) ?? [],
     from_price: null,
+    sales_badge: null,
     is_hot: !!row.is_hot,
     promo_ends_at: (row.promo_ends_at as string | null) ?? null,
     stock_qty: row.stock_qty == null ? null : Number(row.stock_qty),
@@ -165,10 +168,14 @@ function toPack(p: Product, grams: number | null): Product {
 export const getProducts = unstable_cache(loadProducts, ["web-products"], { revalidate: 300, tags: ["catalog"] });
 
 async function loadProducts(): Promise<Product[]> {
-  const [{ data, error }, containers] = await Promise.all([
+  const [{ data, error }, containers, salesBadges] = await Promise.all([
     db().from("web_products").select("*").order("sort_order", { ascending: true }).order("name", { ascending: true }),
     db().from("web_parcel_containers_public").select("key, start_price"),
+    db().from("web_product_badges").select("product_id, badge"),
   ]);
+  const badgeOf = new Map(
+    ((salesBadges.data ?? []) as { product_id: string; badge: Product["sales_badge"] }[]).map((b) => [b.product_id, b.badge]),
+  );
   if (error) {
     console.error("[catalog] getProducts", error.message);
     return [];
@@ -181,6 +188,7 @@ async function loadProducts(): Promise<Product[]> {
   // dropped during normalize().
   const rows = (data ?? []) as Array<Record<string, unknown>>;
   const products = rows.map(normalize);
+  for (const p of products) p.sales_badge = badgeOf.get(p.id) ?? null;
   for (let i = 0; i < products.length; i++) {
     const p = products[i]!;
     if (p.section !== "parcel") continue;

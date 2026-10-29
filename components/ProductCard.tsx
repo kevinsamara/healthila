@@ -5,6 +5,7 @@ import { FruitGlyph } from "@/lib/icons";
 import { rupiah } from "@/lib/format";
 import { cardUnit, displayPrice } from "@/lib/price";
 import { QuickAdd } from "./QuickAdd";
+import { SalesBadge } from "./SalesBadge";
 
 export function ProductCard({ product }: { product: Product }) {
   const { price, was } = displayPrice(product);
@@ -22,6 +23,7 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         )}
         <div className="absolute top-3 left-3 flex flex-wrap gap-1">
+          <SalesBadge badge={product.sales_badge} />
           {was != null && product.in_stock && <Badge tone="coral">Promo</Badge>}
           {product.is_new && <Badge tone="lime">Baru</Badge>}
         </div>

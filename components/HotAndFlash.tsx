@@ -6,6 +6,7 @@ import { Flame, Package, Zap } from "lucide-react";
 import type { Bundle } from "@/lib/bundles";
 import type { Product } from "@/lib/catalog";
 import { BundleVisual } from "./BundleVisual";
+import { SalesBadge } from "./SalesBadge";
 import { rupiah } from "@/lib/format";
 
 /**
@@ -158,6 +159,9 @@ function FlashCard({ p }: { p: Product }) {
             -{discountPct}%
           </span>
         )}
+        <span className="absolute bottom-1 left-1">
+          <SalesBadge badge={p.sales_badge} size="xs" />
+        </span>
       </div>
       {/* Fixed-height body — HARUS sama persis di Flash & HOT. Mobile text
           berisiko wrap, jadi: name block fix 32px, price row fix 32px, dua
@@ -219,6 +223,9 @@ function HotCard({ p }: { p: Product }) {
         )}
         <span className="absolute left-0 top-0 flex items-center gap-0.5 bg-plum-700 px-1.5 py-0.5 text-[10px] font-extrabold text-white">
           <Flame className="h-2.5 w-2.5" /> HOT
+        </span>
+        <span className="absolute bottom-1 left-1">
+          <SalesBadge badge={p.sales_badge} size="xs" />
         </span>
       </div>
       {/* Dimensi sama persis dengan FlashCard. */}
