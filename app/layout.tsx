@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { WhatsAppFab } from "@/components/WhatsAppFab";
 import { LoginPrompt } from "@/components/LoginPrompt";
+import { BundlePopupLoader } from "@/components/BundlePopupLoader";
 import { StoreJsonLd } from "@/components/JsonLd";
 import { Analytics } from "@/components/Analytics";
 import { site } from "@/lib/site";
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Footer />
         <WhatsAppFab />
         <LoginPrompt />
+        <BundlePopupLoader />
         <StoreJsonLd />
         <Analytics />
       </body>
