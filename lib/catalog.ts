@@ -76,7 +76,8 @@ function normalize(row: Record<string, unknown>): Product {
     ...(row as unknown as Product),
     price: num(row.price),
     promo_price: num(row.promo_price),
-    badges: (row.badges as string[] | null) ?? [],
+    // "Best Seller" / "Favorit" come only from sales (sales_badge); manual copies are ignored.
+    badges: ((row.badges as string[] | null) ?? []).filter((b) => !/best\s*-?\s*seller|favou?rit/i.test(b)),
     occasions: (row.occasions as string[] | null) ?? [],
     from_price: null,
     sales_badge: null,
