@@ -32,19 +32,19 @@ export function Header() {
           />
         </Link>
 
-        <nav className="ml-6 hidden items-center gap-0.5 xl:flex">
+        <nav className="ml-3 hidden items-center gap-0.5 xl:flex">
           {nav.map((n) => {
             const active = pathname === n.href || pathname.startsWith(n.href + "/");
             return (
               <Link
                 key={n.href}
                 href={n.href}
-                className={`relative rounded-full px-3 py-2 text-[15px] font-medium whitespace-nowrap transition ${
+                className={`relative rounded-full px-2 py-2 text-[15px] font-medium whitespace-nowrap transition ${
                   active ? "text-coral-500" : "text-ink hover:text-leaf-700"
                 }`}
               >
                 {n.label}
-                {active && <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-coral-500" />}
+                {active && <span className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-coral-500" />}
               </Link>
             );
           })}
