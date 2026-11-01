@@ -29,7 +29,7 @@ export function CsWidget() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed right-4 bottom-20 z-40 flex h-12 items-center gap-2 rounded-full bg-leaf-700 px-4 text-sm font-bold text-white shadow-lg shadow-black/15 transition hover:scale-105 sm:right-6 sm:bottom-[5.5rem]"
+        className="fixed right-4 bottom-20 z-40 flex h-12 items-center gap-2 rounded-full bg-leaf-700 px-4 text-sm font-bold text-white shadow-lg ring-1 shadow-black/15 ring-white/40 transition hover:scale-105 sm:right-6 sm:bottom-[5.5rem]"
       >
         <Bot className="h-5 w-5" /> CS 24 Jam
       </button>

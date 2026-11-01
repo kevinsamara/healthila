@@ -1,14 +1,17 @@
+import Image from "next/image";
 import Link from "next/link";
 import { site, waLink } from "@/lib/site";
 
 export function Footer() {
   return (
-    <footer className="mt-20 bg-leaf-900 text-leaf-100">
+    <footer className="mt-20 bg-[#007045] text-leaf-100">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="text-xl font-extrabold text-white">Healthila</p>
-          <p className="mt-1 text-sm text-lime-300">{site.tagline}</p>
-          <p className="mt-4 text-sm leading-relaxed text-leaf-200">
+          {/* The logo image carries the name and tagline; the text stays for search engines and screen readers. */}
+          <p className="sr-only">Healthila</p>
+          <p className="sr-only">{site.tagline}</p>
+          <Image src="/healthila-logo-lime.png" alt="" width={720} height={214} className="h-auto w-52" />
+          <p className="mt-5 text-sm leading-relaxed text-leaf-100">
             Toko buah & parcel buah di Malang. Buah segar, hampers, jus & dessert — delivery se-Malang, konfirmasi lewat WhatsApp.
           </p>
         </div>
@@ -57,7 +60,7 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <div className="border-t border-white/10 py-5 text-center text-xs text-leaf-200">
+      <div className="border-t border-white/10 py-5 text-center text-xs text-leaf-100">
         © {new Date().getFullYear()} Healthila. Semua hak dilindungi.
       </div>
     </footer>
