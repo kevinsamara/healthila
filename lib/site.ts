@@ -43,6 +43,7 @@ export const nav = [
   { href: "/artikel", label: "Artikel" },
   { href: "/tentang", label: "Tentang" },
   { href: "/faq", label: "FAQ" },
+  { href: "/cs", label: "Tanya CS" },
 ];
 
 export function waLink(text?: string) {
