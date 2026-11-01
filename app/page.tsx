@@ -12,6 +12,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { getArticles } from "@/lib/articles";
 import { getBundles } from "@/lib/bundles";
 import { getProducts, type Product } from "@/lib/catalog";
+import { getHeroSlideKeys } from "@/lib/hero-slides";
 import { waLink, type SectionKey } from "@/lib/site";
 import { Citrus, CupSoda, ShoppingBasket } from "lucide-react";
 import { DynIcon } from "@/lib/icons";
@@ -22,7 +23,7 @@ export const revalidate = 300;
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
-  const [all, articles, bundles] = await Promise.all([getProducts(), getArticles(), getBundles()]);
+  const [all, articles, bundles, slideKeys] = await Promise.all([getProducts(), getArticles(), getBundles(), getHeroSlideKeys()]);
   // Showcase only what can be ordered today; sold-out items still appear in the catalog.
   const available = all.filter((p) => p.in_stock);
   const promos = available.filter((p) => p.promo_price != null || p.packagings.some((k) => k.promo_price != null));
@@ -81,7 +82,7 @@ export default async function Home() {
           fallback={[hotProducts.length && "Produk HOT", bundles.length && "Bundling hemat"].filter(Boolean).join(" & ")}
         />
       )}
-      <HeroCarousel slides={heroSlides(available)} />
+      <HeroCarousel slides={heroSlides(available, slideKeys)} />
 
       {/* Category banners */}
       <section className="mx-auto max-w-7xl px-4 py-16">
@@ -166,13 +167,32 @@ function pick(base: Product[], priority: Product[], n: number) {
   return out;
 }
 
-/** Hero slides: Parcel first (main focus), then Buah and Jus & Dessert, each with its own photos. */
-function heroSlides(available: Product[]): HeroSlide[] {
+/** Hero slides, each with its own photos; Healthila OS › Carousel Beranda picks which show and their order. */
+function heroSlides(available: Product[], keys: string[]): HeroSlide[] {
   const photos = (keys: SectionKey[]): HeroPhoto[] =>
     available
       .filter((p) => keys.includes(p.section) && p.photo_url)
       .map((p) => ({ id: p.id, slug: p.slug, name: p.name, photo: p.photo_url! }));
+  // Parcels tagged Natal; topped up with other parcels until the Christmas catalog fills the grid.
+  const parcels = photos(["parcel"]);
+  const natal = available.filter((p) => p.occasions.includes("natal")).map((p) => p.id);
+  const tagged = parcels.filter((p) => natal.includes(p.id));
+  const natalPhotos = tagged.length >= 4 ? tagged : [...tagged, ...parcels.filter((p) => !natal.includes(p.id))].slice(0, 4);
   const slides: HeroSlide[] = [
+    {
+      key: "natal",
+      bg: "bg-gradient-to-br from-[#0a3b2c] to-[#0f5a3f]",
+      badge: "Spesial Natal · Parcel buah Malang",
+      badgeClass: "bg-[#f3c969] text-[#0a3b2c]",
+      heading: "Natal lebih manis dengan parcel buah segar.",
+      text: "Rangkaian buah segar bernuansa merah-hijau, lengkap dengan kartu ucapan Natal. Bisa custom isi dan budget.",
+      textClass: "text-white/90",
+      cta: { href: "/hampers/natal", label: "Lihat Hampers Natal", className: "bg-[#f3c969] text-[#0a3b2c] hover:bg-[#f8dc97]" },
+      secondary: { href: "/parcel/custom", label: "Rancang Parcel" },
+      whatsapp: waLink("Halo Healthila, saya mau pesan hampers Natal"),
+      photos: natalPhotos,
+      snow: true,
+    },
     {
       key: "parcel",
       bg: "bg-gradient-to-br from-plum-700 via-[#b8245e] to-coral-500",
@@ -184,7 +204,7 @@ function heroSlides(available: Product[]): HeroSlide[] {
       cta: { href: "/parcel", label: "Lihat Parcel", className: "bg-sun-400 text-leaf-900 hover:bg-sun-300" },
       secondary: { href: "/parcel/custom", label: "Rancang Parcel" },
       whatsapp: waLink("Halo Healthila, saya mau tanya parcel"),
-      photos: photos(["parcel"]),
+      photos: parcels,
     },
     {
       key: "buah",
@@ -211,7 +231,8 @@ function heroSlides(available: Product[]): HeroSlide[] {
       photos: photos(["jus", "dessert"]),
     },
   ];
-  // Parcel leads (it carries the h1); drop other slides without photos.
-  return slides.filter((sl, i) => i === 0 || sl.photos.length >= 2);
+  const shown = keys.flatMap((k) => slides.filter((sl) => sl.key === k && sl.photos.length >= 2));
+  // Never an empty cover, even if the visible slides have no photos.
+  return shown.length ? shown : slides.filter((sl) => sl.key === "parcel");
 }
 

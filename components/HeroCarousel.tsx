@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Snowflake } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { WhatsAppIcon } from "./WhatsAppFab";
 
@@ -19,15 +20,16 @@ export type HeroSlide = {
   secondary?: { href: string; label: string };
   whatsapp: string;
   photos: HeroPhoto[];
+  /** Falling-snow decoration (Natal). */
+  snow?: boolean;
 };
 
 const PER_SLIDE = 4;
 const AUTOPLAY_MS = 7000;
 
 /**
- * Full-width hero slider: Buah → Jus & Dessert → Parcel, each with its own
- * colours, copy and a 2×2 grid of that section's product photos. Every slide
- * is in the HTML (first slide badge is the page h1). Photos are shuffled in the
+ * Full-width hero slider, each slide with its own colours, copy and a 2×2 grid
+ * of product photos. Every slide is in the HTML. Photos are shuffled in the
  * browser because the page itself is cached.
  */
 export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
@@ -69,10 +71,9 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
         if (Math.abs(dx) > 50) go(index + (dx < 0 ? 1 : -1));
       }}
     >
+      <h1 className="sr-only">Toko buah & parcel buah Malang</h1>
       <div className="flex transition-transform duration-700 ease-out" style={{ transform: `translateX(-${index * 100}%)` }}>
         {slides.map((s, si) => {
-          // The first slide's badge is the page h1 (keyword), the big line is its h2.
-          const Badge = si === 0 ? "h1" : "p";
           const photos = s.photos.slice(0, PER_SLIDE);
           return (
             <div
@@ -84,9 +85,10 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
               className={`relative w-full shrink-0 ${s.bg}`}
             >
               <div className="pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-white/5" />
+              {s.snow && <Snow />}
               <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pt-16 pb-20 md:grid-cols-2 md:pt-24 md:pb-28">
                 <div>
-                  <Badge className={`inline-block rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase ${s.badgeClass}`}>{s.badge}</Badge>
+                  <p className={`inline-block rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase ${s.badgeClass}`}>{s.badge}</p>
                   <h2 className="mt-5 text-5xl leading-[1.05] font-extrabold sm:text-7xl">{s.heading}</h2>
                   <p className={`mt-5 max-w-md text-lg ${s.textClass}`}>{s.text}</p>
                   <div className="mt-8 flex flex-wrap gap-3">
@@ -163,6 +165,31 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
         </>
       )}
     </section>
+  );
+}
+
+/** [left %, top %, size px, opacity]: scattered flakes that stay clear of the copy's centre line. */
+const FLAKES = [
+  [4, 12, 28, 0.2],
+  [20, 8, 16, 0.28],
+  [36, 16, 22, 0.16],
+  [47, 6, 14, 0.3],
+  [44, 84, 24, 0.18],
+  [8, 88, 18, 0.26],
+  [62, 4, 20, 0.2],
+  [93, 14, 30, 0.2],
+  [96, 62, 18, 0.26],
+  [60, 92, 16, 0.24],
+];
+
+function Snow() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden text-white">
+      <span className="absolute -right-32 -bottom-40 h-[34rem] w-[34rem] rounded-full bg-[#a3162e] md:h-[46rem] md:w-[46rem]" />
+      {FLAKES.map(([left, top, size, opacity]) => (
+        <Snowflake key={`${left}-${top}`} className="absolute hidden md:block" style={{ left: `${left}%`, top: `${top}%`, width: size, height: size, opacity }} />
+      ))}
+    </div>
   );
 }
 
