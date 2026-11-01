@@ -17,6 +17,12 @@ export function CsWidget() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Full screen on phones: a link in the chat must reveal the page it opened.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- follows the route change
+    if (window.innerWidth < 640) setOpen(false);
+  }, [pathname]);
+
   if (pathname === "/cs") return null;
   if (!open)
     return (
