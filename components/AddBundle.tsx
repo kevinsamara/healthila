@@ -25,7 +25,7 @@ export function AddBundle({
         packagingId: null,
         bundleId: bundle.id,
         slug: bundle.slug,
-        name: `Bundling ${bundle.name}`,
+        name: /^bundling/i.test(bundle.name) ? bundle.name : `Bundling ${bundle.name}`,
         variant: bundle.summary,
         unitLabel: "paket",
         price: bundle.bundle_price,

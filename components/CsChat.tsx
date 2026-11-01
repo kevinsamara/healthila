@@ -2,13 +2,37 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Bot, Send } from "lucide-react";
+import { Bot, Send, ShoppingBag } from "lucide-react";
+import { cartCount, useCart } from "@/lib/cart";
 import { site, waLink } from "@/lib/site";
+import { CsCards, type CsRef } from "./CsCards";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const STARTERS = ["Parcel buah mulai dari berapa?", "Hari ini bisa antar sampai jam berapa?", "Bagaimana cara langganan jus?", "Garansinya bagaimana kalau buah kurang bagus?"];
 const MAX_CHARS = 500;
+const STORE_KEY = "hl_cs_chat";
+
+/** Answers end with [[produk:slug]] / [[bundling:slug]] markers; a half-streamed one stays hidden. */
+function parseAnswer(raw: string): { text: string; refs: CsRef[] } {
+  const refs: CsRef[] = [];
+  const text = raw
+    .replace(/\[\[(produk|bundling):([a-z0-9-]+)\]\]/g, (_, kind: CsRef["kind"], slug: string) => {
+      if (!refs.some((r) => r.slug === slug)) refs.push({ kind, slug });
+      return "";
+    })
+    .replace(/\[\[[^\]]*\]?$/, "")
+    .trim();
+  return { text, refs: refs.slice(0, 6) };
+}
+
+const save = (m: Msg[]) => {
+  try {
+    sessionStorage.setItem(STORE_KEY, JSON.stringify(m));
+  } catch {
+    // storage blocked: the chat just lasts until the page closes
+  }
+};
 
 /** healthila.id/... in an answer becomes a link. */
 function Linked({ text }: { text: string }) {
@@ -23,11 +47,24 @@ function Linked({ text }: { text: string }) {
   );
 }
 
-export function CsChat() {
+export function CsChat({ embedded = false }: { embedded?: boolean }) {
   const [messages, setMessages] = useState<Msg[]>([]);
+  const inCart = cartCount(useCart());
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const list = useRef<HTMLDivElement>(null);
+
+  // Same conversation on the /cs page and in the floating chat, across pages.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORE_KEY) ?? "[]") as Msg[];
+      while (saved.length && (saved[saved.length - 1]!.role === "user" || !saved[saved.length - 1]!.content)) saved.pop();
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- browser-only restore
+      if (saved.length) setMessages(saved);
+    } catch {
+      // nothing to restore
+    }
+  }, []);
 
   useEffect(() => {
     list.current?.scrollTo({ top: list.current.scrollHeight });
@@ -40,7 +77,11 @@ export function CsChat() {
     setMessages([...history, { role: "assistant", content: "" }]);
     setInput("");
     setBusy(true);
-    const put = (content: string) => setMessages([...history, { role: "assistant", content }]);
+    const put = (content: string) => {
+      const next: Msg[] = [...history, { role: "assistant", content }];
+      setMessages(next);
+      save(next);
+    };
     try {
       const res = await fetch("/api/cs", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history }) });
       if (!res.body) throw new Error("no body");
@@ -62,7 +103,7 @@ export function CsChat() {
   }
 
   return (
-    <div className="mt-6 flex h-[65vh] min-h-[420px] flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-leaf-100">
+    <div className={embedded ? "flex min-h-0 flex-1 flex-col" : "mt-6 flex h-[65vh] min-h-[420px] flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-leaf-100"}>
       <div ref={list} aria-live="polite" className="flex-1 space-y-3 overflow-y-auto p-4 sm:p-5">
         <div className="flex gap-2">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-leaf-700 text-white">
@@ -79,22 +120,27 @@ export function CsChat() {
             ))}
           </div>
         )}
-        {messages.map((m, i) =>
-          m.role === "user" ? (
+        {messages.map((m, i) => {
+          const answer = m.role === "assistant" ? parseAnswer(m.content) : null;
+          const streaming = busy && i === messages.length - 1;
+          return m.role === "user" ? (
             <p key={i} className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-tr-sm bg-leaf-700 px-4 py-2.5 whitespace-pre-wrap text-white">
               {m.content}
             </p>
           ) : (
-            <div key={i} className="flex gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-leaf-700 text-white">
-                <Bot className="h-4 w-4" />
-              </span>
-              <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-leaf-50 px-4 py-2.5 whitespace-pre-wrap text-ink">
-                {m.content ? <Linked text={m.content} /> : <span className="text-muted">Sedang mengetik…</span>}
-              </p>
+            <div key={i}>
+              <div className="flex gap-2">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-leaf-700 text-white">
+                  <Bot className="h-4 w-4" />
+                </span>
+                <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-leaf-50 px-4 py-2.5 whitespace-pre-wrap text-ink">
+                  {answer?.text ? <Linked text={answer.text} /> : <span className="text-muted">Sedang mengetik…</span>}
+                </p>
+              </div>
+              {!streaming && answer && answer.refs.length > 0 && <CsCards refs={answer.refs} />}
             </div>
-          ),
-        )}
+          );
+        })}
       </div>
       <form
         onSubmit={(e) => {
@@ -103,6 +149,11 @@ export function CsChat() {
         }}
         className="border-t border-leaf-100 p-3"
       >
+        {inCart > 0 && (
+          <Link href="/keranjang" className="mb-2 flex items-center justify-center gap-1.5 text-sm font-semibold text-leaf-700 hover:underline">
+            <ShoppingBag className="h-4 w-4" /> Lihat keranjang ({inCart})
+          </Link>
+        )}
         <div className="flex gap-2">
           <input
             value={input}

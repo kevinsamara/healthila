@@ -114,7 +114,8 @@ export function clearCart() {
 }
 
 export function cartCount(items: CartItem[]) {
-  return items.reduce((n, i) => n + i.qty, 0);
+  // Stock-capped lines can be fractional (0,728 kg); the badge shows whole numbers.
+  return Math.ceil(items.reduce((n, i) => n + i.qty, 0));
 }
 
 export function cartTotal(items: CartItem[]) {

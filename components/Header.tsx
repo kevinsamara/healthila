@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
-import { nav } from "@/lib/site";
+import { ChevronDown } from "lucide-react";
+import { nav, type NavLink } from "@/lib/site";
 import { cartCount, useCart } from "@/lib/cart";
 
 // The httpOnly session cookie is invisible here; hl_auth is a plain hint set alongside it.
@@ -32,22 +33,14 @@ export function Header() {
           />
         </Link>
 
-        <nav className="ml-3 hidden items-center gap-0.5 xl:flex">
-          {nav.map((n) => {
-            const active = pathname === n.href || pathname.startsWith(n.href + "/");
-            return (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={`relative rounded-full px-2 py-2 text-[15px] font-medium whitespace-nowrap transition ${
-                  active ? "text-coral-500" : "text-ink hover:text-leaf-700"
-                }`}
-              >
-                {n.label}
-                {active && <span className="absolute inset-x-2 -bottom-0.5 h-0.5 rounded-full bg-coral-500" />}
-              </Link>
-            );
-          })}
+        <nav className="ml-6 hidden items-center gap-0.5 xl:flex">
+          {nav.map((n) =>
+            "children" in n ? (
+              <NavMenu key={n.label} label={n.label} items={n.children} pathname={pathname} />
+            ) : (
+              <TopLink key={n.href} item={n} active={isActive(pathname, n.href)} />
+            ),
+          )}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
@@ -92,22 +85,69 @@ export function Header() {
 
       {open && (
         <nav className="border-t border-black/5 bg-white px-4 py-2 xl:hidden">
-          {nav.map((n) => (
-            <Link
-              key={n.href}
-              href={n.href}
-              onClick={() => setOpen(false)}
-              className="block py-3 text-base font-medium text-ink"
-            >
-              {n.label}
-            </Link>
-          ))}
+          {nav
+            .flatMap((n) => ("children" in n ? n.children : [n]))
+            .map((n) => (
+              <Link key={n.href} href={n.href} onClick={() => setOpen(false)} className="block py-3 text-base font-medium text-ink">
+                {n.label}
+              </Link>
+            ))}
           <Link href="/katalog" onClick={() => setOpen(false)} className="block py-3 text-base font-bold text-leaf-700">
             Lihat semua produk →
           </Link>
         </nav>
       )}
     </header>
+  );
+}
+
+const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(href + "/");
+const LINK = "relative rounded-full px-3 py-2 text-[15px] font-medium whitespace-nowrap transition";
+const tone = (active: boolean) => (active ? "text-coral-500" : "text-ink hover:text-leaf-700");
+
+function TopLink({ item, active }: { item: NavLink; active: boolean }) {
+  return (
+    <Link href={item.href} className={`${LINK} ${tone(active)}`}>
+      {item.label}
+      {active && <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-coral-500" />}
+    </Link>
+  );
+}
+
+/** Desktop dropdown: opens on hover, click (touch screens) and keyboard. */
+function NavMenu({ label, items, pathname }: { label: string; items: NavLink[]; pathname: string }) {
+  const [open, setOpen] = useState(false);
+  const active = items.some((i) => isActive(pathname, i.href));
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onBlur={(e) => !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}
+      onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+    >
+      <button type="button" aria-expanded={open} aria-haspopup="true" onClick={() => setOpen((v) => !v)} className={`${LINK} inline-flex items-center gap-1 ${tone(active)}`}>
+        {label}
+        <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} />
+        {active && <span className="absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-coral-500" />}
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 z-50 pt-2">
+          <div className="min-w-44 rounded-2xl bg-white p-1.5 shadow-xl ring-1 ring-black/5">
+            {items.map((i) => (
+              <Link
+                key={i.href}
+                href={i.href}
+                onClick={() => setOpen(false)}
+                className={`block rounded-xl px-3 py-2 text-[15px] font-medium whitespace-nowrap hover:bg-leaf-50 ${isActive(pathname, i.href) ? "text-coral-500" : "text-ink"}`}
+              >
+                {i.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -34,16 +34,24 @@ export function sectionLabel(key: string) {
   return sections.find((s) => s.key === key)?.label ?? "Produk";
 }
 
-export const nav = [
+export type NavLink = { href: string; label: string };
+export type NavItem = NavLink | { label: string; children: NavLink[] };
+
+export const nav: NavItem[] = [
   { href: "/buah-segar", label: "Buah Segar" },
   { href: "/jus-dessert", label: "Jus & Dessert" },
   { href: "/parcel", label: "Parcel" },
   { href: "/langganan", label: "Langganan" },
   { href: "/acara", label: "Acara" },
   { href: "/artikel", label: "Artikel" },
-  { href: "/tentang", label: "Tentang" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/cs", label: "Tanya CS" },
+  {
+    label: "Info",
+    children: [
+      { href: "/tentang", label: "Tentang" },
+      { href: "/faq", label: "FAQ" },
+      { href: "/cs", label: "CS 24 Jam" },
+    ],
+  },
 ];
 
 export function waLink(text?: string) {

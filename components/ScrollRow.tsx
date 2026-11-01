@@ -6,9 +6,10 @@ import { ChevronLeft, ChevronRight, MoveHorizontal } from "lucide-react";
 /**
  * Horizontal snap slider. Floating arrows on every screen size (each hides at
  * its end) plus a "geser" hint, so it reads as a slider on phones too. Slides
- * stretch to the tallest one — give the slide content `h-full`.
+ * stretch to the tallest one — give the slide content `h-full`. `compact` keeps
+ * the arrows inside narrow containers such as the chat.
  */
-export function ScrollRow({ children, label }: { children: React.ReactNode; label: string }) {
+export function ScrollRow({ children, label, compact = false }: { children: React.ReactNode; label: string; compact?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ start: true, end: false });
 
@@ -39,12 +40,12 @@ export function ScrollRow({ children, label }: { children: React.ReactNode; labe
         {children}
       </div>
       {!edge.start && (
-        <button type="button" onClick={() => go(-1)} aria-label="Sebelumnya" className={`${arrow} left-1 sm:-left-4`}>
+        <button type="button" onClick={() => go(-1)} aria-label="Sebelumnya" className={`${arrow} left-1 ${compact ? "" : "sm:-left-4"}`}>
           <ChevronLeft className="h-5 w-5" />
         </button>
       )}
       {!edge.end && (
-        <button type="button" onClick={() => go(1)} aria-label="Berikutnya" className={`${arrow} right-1 sm:-right-4`}>
+        <button type="button" onClick={() => go(1)} aria-label="Berikutnya" className={`${arrow} right-1 ${compact ? "" : "sm:-right-4"}`}>
           <ChevronRight className="h-5 w-5" />
         </button>
       )}

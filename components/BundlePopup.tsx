@@ -85,7 +85,7 @@ export function BundlePopup({ bundles }: { bundles: PopupBundle[] }) {
       aria-label="Promo bundling"
       onMouseEnter={() => (hovered.current = true)}
       onMouseLeave={() => (hovered.current = false)}
-      className="fixed bottom-24 left-3 z-40 w-[calc(100%-1.5rem)] max-w-sm animate-[hl-pop_.35s_ease-out] rounded-2xl bg-white p-3 shadow-2xl ring-1 ring-black/10 sm:bottom-6 sm:left-6"
+      className="fixed bottom-36 left-3 z-40 w-[calc(100%-1.5rem)] max-w-sm animate-[hl-pop_.35s_ease-out] rounded-2xl bg-white p-3 shadow-2xl ring-1 ring-black/10 sm:bottom-6 sm:left-6"
     >
       <style>{"@keyframes hl-pop{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}"}</style>
       <button
