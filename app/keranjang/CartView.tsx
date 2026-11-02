@@ -16,10 +16,15 @@ import { AlarmClock, Cake, Ticket, Truck } from "lucide-react";
 type Form = { name: string; phone: string; address: string; date: string; notes: string; slot: number | null };
 type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string; freeShippingMax: number | null };
 type Profile = NonNullable<Awaited<ReturnType<typeof getCheckoutProfile>>>;
+export type BundleRule = {
+  max_qty_per_customer: number | null;
+  min_companion_subtotal_idr: number | null;
+  min_companion_qty: number | null;
+};
 
 const BUYER_KEY = "healthila_buyer";
 
-export function CartView({ slots }: { slots: DeliverySlot[] }) {
+export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; bundleRules?: Record<string, BundleRule> }) {
   const items = useCart();
   const [form, setForm] = useState<Form>({ name: "", phone: "", address: "", date: "", notes: "", slot: null });
   const [error, setError] = useState<string | null>(null);
@@ -147,12 +152,18 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
     <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
       <ul className="h-fit divide-y divide-leaf-100 rounded-3xl bg-white ring-1 ring-leaf-100">
         {items.map((i) => {
+          // Server-side rules override stale localStorage snapshot (admin bisa
+          // edit max/min kapan saja; cart lama tetap enforce angka terbaru).
+          const rule = i.bundleId ? bundleRules[i.bundleId] : undefined;
+          const effMax = rule?.max_qty_per_customer ?? i.maxQty ?? null;
+          const effMinSub = rule?.min_companion_subtotal_idr ?? i.minCompanionSubtotal ?? null;
+          const effMinQty = rule?.min_companion_qty ?? i.minCompanionQty ?? null;
           const companionSubtotal = items.filter((o) => !o.bundleId).reduce((s, o) => s + o.price * o.qty, 0);
           const companionQty = items.filter((o) => !o.bundleId).reduce((s, o) => s + o.qty, 0);
-          const needSub = i.bundleId && i.minCompanionSubtotal != null && companionSubtotal < i.minCompanionSubtotal
-            ? i.minCompanionSubtotal - companionSubtotal : 0;
-          const needQty = i.bundleId && i.minCompanionQty != null && companionQty < i.minCompanionQty
-            ? i.minCompanionQty - companionQty : 0;
+          const needSub = i.bundleId && effMinSub != null && companionSubtotal < effMinSub
+            ? effMinSub - companionSubtotal : 0;
+          const needQty = i.bundleId && effMinQty != null && companionQty < effMinQty
+            ? effMinQty - companionQty : 0;
           return (
           <li key={i.key} className="flex flex-col gap-2 p-4">
           <div className="flex gap-4">
@@ -178,7 +189,7 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
                   <button
                     aria-label="Tambah"
                     onClick={() => setQty(i.key, i.qty + 1)}
-                    disabled={i.maxQty != null && i.qty >= i.maxQty}
+                    disabled={effMax != null && i.qty >= effMax}
                     className="h-9 w-9 text-leaf-700 disabled:text-leaf-200 disabled:cursor-not-allowed"
                   >
                     +
@@ -187,9 +198,9 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
                 <button onClick={() => setQty(i.key, 0)} className="text-sm text-plum-700 hover:underline">
                   Hapus
                 </button>
-                {i.maxQty != null && i.qty >= i.maxQty && (
+                {effMax != null && i.qty >= effMax && (
                   <span className="text-[11px] font-semibold text-plum-700">
-                    {i.bundleId ? `Maks ${i.maxQty} paket per pelanggan` : `Stok maksimum (${i.maxQty} ${i.unitLabel ?? ""})`}
+                    {i.bundleId ? `Maks ${effMax} paket per pelanggan` : `Stok maksimum (${effMax} ${i.unitLabel ?? ""})`}
                   </span>
                 )}
               </div>
