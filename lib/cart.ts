@@ -30,6 +30,9 @@ export type CartItem = {
   maxQty?: number | null;
   /** Bundling (healthila-crm 0123): productId holds the bundle id, slug the bundle page. */
   bundleId?: string | null;
+  /** Bundling (healthila-crm 0141): butuh produk lain min X / Y qty di cart agar bisa checkout. */
+  minCompanionSubtotal?: number | null;
+  minCompanionQty?: number | null;
 };
 
 const KEY = "healthila_cart_v2";

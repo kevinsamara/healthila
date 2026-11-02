@@ -28,6 +28,9 @@ export type Bundle = {
   bundle_price: number;
   regular_price: number;
   in_stock: boolean;
+  max_qty_per_customer: number | null;
+  min_companion_subtotal_idr: number | null;
+  min_companion_qty: number | null;
   items: BundleItem[];
 };
 

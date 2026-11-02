@@ -10,9 +10,17 @@ export function AddBundle({
   bundle,
   compact = false,
 }: {
-  bundle: { id: string; slug: string; name: string; bundle_price: number; photo: string | null; summary: string; in_stock: boolean };
+  bundle: {
+    id: string; slug: string; name: string; bundle_price: number;
+    photo: string | null; summary: string; in_stock: boolean;
+    max_qty_per_customer?: number | null;
+    min_companion_subtotal_idr?: number | null;
+    min_companion_qty?: number | null;
+  };
   compact?: boolean;
 }) {
+  const maxQty = bundle.max_qty_per_customer ?? null;
+  const qtyCap = maxQty ?? 20;
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
   if (!bundle.in_stock)
@@ -30,6 +38,9 @@ export function AddBundle({
         unitLabel: "paket",
         price: bundle.bundle_price,
         photo: bundle.photo,
+        maxQty,
+        minCompanionSubtotal: bundle.min_companion_subtotal_idr ?? null,
+        minCompanionQty: bundle.min_companion_qty ?? null,
       },
       qty,
     );
@@ -54,17 +65,24 @@ export function AddBundle({
   );
   if (compact) return button;
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex h-11 items-center rounded-full ring-1 ring-leaf-200">
-        <button type="button" aria-label="Kurangi" onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-11 w-11 items-center justify-center">
-          <Minus className="h-4 w-4" />
-        </button>
-        <span className="w-6 text-center font-bold">{qty}</span>
-        <button type="button" aria-label="Tambah" onClick={() => setQty((q) => Math.min(20, q + 1))} className="flex h-11 w-11 items-center justify-center">
-          <Plus className="h-4 w-4" />
-        </button>
+    <div className="space-y-2">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 items-center rounded-full ring-1 ring-leaf-200">
+          <button type="button" aria-label="Kurangi" onClick={() => setQty((q) => Math.max(1, q - 1))} className="flex h-11 w-11 items-center justify-center">
+            <Minus className="h-4 w-4" />
+          </button>
+          <span className="w-6 text-center font-bold">{qty}</span>
+          <button type="button" aria-label="Tambah" onClick={() => setQty((q) => Math.min(qtyCap, q + 1))} disabled={qty >= qtyCap} className="flex h-11 w-11 items-center justify-center disabled:text-leaf-200 disabled:cursor-not-allowed">
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+        {button}
       </div>
-      {button}
+      {maxQty != null && (
+        <p className="text-[11px] font-semibold text-plum-700">
+          Maksimal {maxQty} paket per pelanggan.
+        </p>
+      )}
     </div>
   );
 }

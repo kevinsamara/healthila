@@ -47,7 +47,7 @@ export default async function BundlingIndex() {
                   <div className="mt-3">
                     <AddBundle
                       compact
-                      bundle={{ id: b.id, slug: b.slug, name: b.name, bundle_price: b.bundle_price, photo: b.photo_url ?? b.items.find((i) => i.photo)?.photo ?? null, summary: bundleSummary(b), in_stock: b.in_stock }}
+                      bundle={{ id: b.id, slug: b.slug, name: b.name, bundle_price: b.bundle_price, photo: b.photo_url ?? b.items.find((i) => i.photo)?.photo ?? null, summary: bundleSummary(b), in_stock: b.in_stock, max_qty_per_customer: b.max_qty_per_customer, min_companion_subtotal_idr: b.min_companion_subtotal_idr, min_companion_qty: b.min_companion_qty }}
                     />
                   </div>
                 </div>

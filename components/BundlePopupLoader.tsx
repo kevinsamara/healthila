@@ -16,6 +16,9 @@ export async function BundlePopupLoader() {
         regular: b.regular_price,
         photo: b.photo_url ?? b.items.find((i) => i.photo)?.photo ?? null,
         summary: bundleSummary(b),
+        max_qty_per_customer: b.max_qty_per_customer,
+        min_companion_subtotal_idr: b.min_companion_subtotal_idr,
+        min_companion_qty: b.min_companion_qty,
       }))}
     />
   );

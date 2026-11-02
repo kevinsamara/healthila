@@ -146,8 +146,16 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
   return (
     <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
       <ul className="h-fit divide-y divide-leaf-100 rounded-3xl bg-white ring-1 ring-leaf-100">
-        {items.map((i) => (
-          <li key={i.key} className="flex gap-4 p-4">
+        {items.map((i) => {
+          const companionSubtotal = items.filter((o) => !o.bundleId).reduce((s, o) => s + o.price * o.qty, 0);
+          const companionQty = items.filter((o) => !o.bundleId).reduce((s, o) => s + o.qty, 0);
+          const needSub = i.bundleId && i.minCompanionSubtotal != null && companionSubtotal < i.minCompanionSubtotal
+            ? i.minCompanionSubtotal - companionSubtotal : 0;
+          const needQty = i.bundleId && i.minCompanionQty != null && companionQty < i.minCompanionQty
+            ? i.minCompanionQty - companionQty : 0;
+          return (
+          <li key={i.key} className="flex flex-col gap-2 p-4">
+          <div className="flex gap-4">
             <Link href={i.bundleId ? `/bundling/${i.slug}` : `/produk/${i.slug}`} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-leaf-50">
               {i.photo && <Image src={i.photo} alt={i.name} fill sizes="80px" className="object-cover" />}
             </Link>
@@ -180,13 +188,27 @@ export function CartView({ slots }: { slots: DeliverySlot[] }) {
                   Hapus
                 </button>
                 {i.maxQty != null && i.qty >= i.maxQty && (
-                  <span className="text-[11px] font-semibold text-plum-700">Stok maksimum ({i.maxQty} {i.unitLabel ?? ""})</span>
+                  <span className="text-[11px] font-semibold text-plum-700">
+                    {i.bundleId ? `Maks ${i.maxQty} paket per pelanggan` : `Stok maksimum (${i.maxQty} ${i.unitLabel ?? ""})`}
+                  </span>
                 )}
               </div>
             </div>
             <p className="shrink-0 font-bold text-ink">{rupiah(i.price * i.qty)}</p>
+          </div>
+          {(needSub > 0 || needQty > 0) && (
+            <div className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900 ring-1 ring-amber-200">
+              <span className="font-semibold">Ayo tambah belanja lain supaya bisa checkout paket ini:</span>
+              {needSub > 0 && <> perlu <span className="font-bold">{rupiah(needSub)}</span> lagi produk lain</>}
+              {needSub > 0 && needQty > 0 && <> &amp;</>}
+              {needQty > 0 && <> perlu <span className="font-bold">{needQty}</span> item lain lagi</>}
+              <>.</>
+              <Link href="/katalog" className="ml-1 font-semibold text-leaf-700 underline">Belanja produk lain →</Link>
+            </div>
+          )}
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <form onSubmit={checkout} className="h-fit rounded-3xl bg-white p-6 ring-1 ring-leaf-100">

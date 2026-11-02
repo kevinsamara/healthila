@@ -16,6 +16,9 @@ export type PopupBundle = {
   regular: number;
   photo: string | null;
   summary: string;
+  max_qty_per_customer: number | null;
+  min_companion_subtotal_idr: number | null;
+  min_companion_qty: number | null;
 };
 
 const FIRST_MS = 25_000; // first popup after 25 s on the site
@@ -128,7 +131,7 @@ export function BundlePopup({ bundles }: { bundles: PopupBundle[] }) {
         <div className="flex flex-1">
           <AddBundle
             compact
-            bundle={{ id: current.id, slug: current.slug, name: current.name, bundle_price: current.price, photo: current.photo, summary: current.summary, in_stock: true }}
+            bundle={{ id: current.id, slug: current.slug, name: current.name, bundle_price: current.price, photo: current.photo, summary: current.summary, in_stock: true, max_qty_per_customer: current.max_qty_per_customer, min_companion_subtotal_idr: current.min_companion_subtotal_idr, min_companion_qty: current.min_companion_qty }}
           />
         </div>
       </div>
