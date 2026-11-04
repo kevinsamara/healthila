@@ -10,7 +10,7 @@ import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
 import { selectVariant, useSelectedVariant } from "@/lib/variant-store";
 
-type Option = { id: string | null; label: string; price: number | null; was: number | null; photo?: string | null };
+type Option = { id: string | null; label: string; price: number | null; was: number | null; photo?: string | null; soldOut?: boolean };
 
 export function AddToCart({ product }: { product: Product }) {
   const options: Option[] = product.packagings.length
@@ -20,6 +20,7 @@ export function AddToCart({ product }: { product: Product }) {
         price: k.promo_price ?? k.price,
         was: k.promo_price != null ? k.price : null,
         photo: k.photo_url,
+        soldOut: k.stock_qty != null && k.stock_qty <= 0,
       }))
     : [
         {
@@ -31,7 +32,7 @@ export function AddToCart({ product }: { product: Product }) {
       ];
 
   // Shared with ProductGallery: picking a variant slides the gallery to its photo.
-  const variantId = useSelectedVariant(product.id, options[0].id);
+  const variantId = useSelectedVariant(product.id, (options.find((o) => !o.soldOut) ?? options[0]).id);
   const selected = Math.max(0, options.findIndex((o) => o.id === variantId));
   const setSelected = (i: number) => selectVariant(product.id, options[i].id);
   const [qty, setQty] = useState(1);
@@ -96,12 +97,17 @@ export function AddToCart({ product }: { product: Product }) {
               <button
                 key={o.id ?? i}
                 type="button"
+                disabled={o.soldOut}
                 onClick={() => {
                   setSelected(i);
                   setAdded(false);
                 }}
                 className={`flex items-center gap-2 rounded-xl py-2 text-sm font-semibold ring-1 ${o.photo ? "pr-4 pl-2" : "px-4"} ${
-                  i === selected ? "bg-leaf-700 text-white ring-leaf-700" : "bg-white text-ink ring-leaf-200 hover:ring-leaf-500"
+                  o.soldOut
+                    ? "cursor-not-allowed bg-black/5 text-muted ring-black/5"
+                    : i === selected
+                      ? "bg-leaf-700 text-white ring-leaf-700"
+                      : "bg-white text-ink ring-leaf-200 hover:ring-leaf-500"
                 }`}
               >
                 {o.photo && (
@@ -110,7 +116,11 @@ export function AddToCart({ product }: { product: Product }) {
                   </span>
                 )}
                 {o.label}
-                {o.price != null && <span className="ml-2 font-normal opacity-80">{rupiah(o.price)}</span>}
+                {o.soldOut ? (
+                  <span className="ml-2 font-normal">Habis</span>
+                ) : (
+                  o.price != null && <span className="ml-2 font-normal opacity-80">{rupiah(o.price)}</span>
+                )}
               </button>
             ))}
           </div>
@@ -148,7 +158,13 @@ export function AddToCart({ product }: { product: Product }) {
         </div>
       )}
 
-      {product.in_stock && opt.price != null && (
+      {product.in_stock && opt.soldOut && (
+        <p className="mt-6 rounded-2xl bg-white p-4 text-sm text-muted ring-1 ring-leaf-200">
+          <span className="font-bold text-ink">{opt.label} sedang habis.</span> Silakan pilih varian lain.
+        </p>
+      )}
+
+      {product.in_stock && !opt.soldOut && opt.price != null && (
         <div className="mt-6 space-y-4">
           <div>
             <p className="text-sm font-semibold text-ink">Jumlah</p>
