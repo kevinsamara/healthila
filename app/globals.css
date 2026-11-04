@@ -90,3 +90,22 @@ body {
   transform-box: fill-box;
   transform-origin: center;
 }
+
+/* Brand logo strip (BrandMarquee): two copies slide left by one copy's width. */
+@keyframes brand-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.brand-marquee-track {
+  animation: brand-marquee 40s linear infinite;
+}
+.brand-marquee:hover .brand-marquee-track,
+.brand-marquee:focus-within .brand-marquee-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .brand-marquee-track {
+    animation: none;
+  }
+}

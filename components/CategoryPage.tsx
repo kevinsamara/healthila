@@ -26,6 +26,8 @@ export type CategoryConfig = {
   gridTitle?: string;
   /** Full-width sections after the grid container. */
   after?: React.ReactNode;
+  /** Only these products (brand pages); `sections` is then ignored. */
+  productIds?: string[];
 };
 
 type Filters = {
@@ -45,8 +47,9 @@ export async function CategoryPage({
   const band = config.giftFilters
     ? PRICE_BANDS.find((b) => b.key === harga)
     : undefined;
+  const ids = config.productIds && new Set(config.productIds);
   const all = (await getProducts()).filter((p) =>
-    config.sections.includes(p.section),
+    ids ? ids.has(p.id) : config.sections.includes(p.section),
   );
   const groups = [...new Set(all.map(groupOf))].sort((a, b) =>
     a.localeCompare(b, "id"),

@@ -1,0 +1,145 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import type { TestimonialShot } from "@/lib/testimonials";
+
+const LABEL: Record<TestimonialShot["source"], string> = {
+  whatsapp: "Chat WhatsApp",
+  instagram: "Instagram",
+  google: "Google",
+  langsung: "Lainnya",
+};
+
+/**
+ * Screenshots of customer chats/reviews ("Kata Mereka"): a swipeable strip that
+ * moves one card every few seconds; a tap opens the full screenshot.
+ */
+export function ShotWall({ shots }: { shots: TestimonialShot[] }) {
+  const [filter, setFilter] = useState<TestimonialShot["source"] | "">("");
+  const [open, setOpen] = useState<number | null>(null);
+  const track = useRef<HTMLDivElement>(null);
+  const paused = useRef(false);
+
+  // Source filter only once there are enough screenshots to be worth it.
+  const sources = [...new Set(shots.map((s) => s.source))];
+  const showFilter = shots.length > 8 && sources.length > 1;
+  const list = filter ? shots.filter((s) => s.source === filter) : shots;
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const id = setInterval(() => {
+      const el = track.current;
+      if (!el || paused.current || open != null) return;
+      const card = el.firstElementChild as HTMLElement | null;
+      if (!card) return;
+      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
+      el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + card.offsetWidth, behavior: "smooth" });
+    }, 3500);
+    return () => clearInterval(id);
+  }, [open]);
+
+  useEffect(() => {
+    if (open == null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(null);
+      if (e.key === "ArrowRight") setOpen((i) => (i == null ? i : (i + 1) % list.length));
+      if (e.key === "ArrowLeft") setOpen((i) => (i == null ? i : (i - 1 + list.length) % list.length));
+    };
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open, list.length]);
+
+  if (shots.length === 0) return null;
+  const current = open == null ? null : list[open];
+
+  return (
+    <div>
+      {showFilter && (
+        <div className="mb-5 flex flex-wrap justify-center gap-2">
+          {(["", ...sources] as const).map((s) => (
+            <button
+              key={s || "all"}
+              onClick={() => {
+                setFilter(s);
+                track.current?.scrollTo({ left: 0 });
+              }}
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+                filter === s ? "bg-white text-[#a14a00]" : "bg-white/20 text-white hover:bg-white/30"
+              }`}
+            >
+              {s ? LABEL[s] : "Semua"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div
+        ref={track}
+        onMouseEnter={() => (paused.current = true)}
+        onMouseLeave={() => (paused.current = false)}
+        onTouchStart={() => (paused.current = true)}
+        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+      >
+        {list.map((s, i) => (
+          <figure key={s.id} className="w-[38%] shrink-0 snap-start sm:w-[26%] md:w-[20%] lg:w-[15.5%]">
+            <button
+              onClick={() => setOpen(i)}
+              className="block w-full rounded-2xl bg-white p-1.5 shadow-xl shadow-black/10 transition hover:-translate-y-1"
+              aria-label={`Perbesar testimoni${s.caption ? ` ${s.caption}` : ""}`}
+            >
+              <span className="relative block aspect-[9/16] overflow-hidden rounded-xl bg-leaf-50">
+                <Image src={s.image_url} alt={s.caption ?? `Testimoni pelanggan via ${LABEL[s.source]}`} fill sizes="(min-width: 1024px) 200px, 40vw" className="object-cover object-top" />
+              </span>
+            </button>
+            <figcaption className="mt-2 truncate text-center text-xs font-medium text-white/90">{s.caption ?? LABEL[s.source]}</figcaption>
+          </figure>
+        ))}
+      </div>
+
+      {current && (
+        <div role="dialog" aria-modal="true" aria-label="Screenshot testimoni" className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4" onClick={() => setOpen(null)}>
+          <div className="relative flex max-h-full w-full max-w-md flex-col items-center" onClick={(e) => e.stopPropagation()}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- full-size view of a public storage image */}
+            <img src={current.image_url} alt={current.caption ?? "Testimoni pelanggan"} className="max-h-[80vh] w-auto rounded-xl object-contain" />
+            <p className="mt-3 text-center text-sm text-white">
+              {current.caption ?? LABEL[current.source]} · {open! + 1}/{list.length}
+            </p>
+          </div>
+          <button onClick={() => setOpen(null)} aria-label="Tutup" className="absolute top-4 right-4 rounded-full bg-white/15 p-2 text-white hover:bg-white/25">
+            <X className="h-6 w-6" />
+          </button>
+          {list.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen((open! - 1 + list.length) % list.length);
+                }}
+                aria-label="Sebelumnya"
+                className="absolute left-2 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 sm:left-6"
+              >
+                <ChevronLeft className="h-7 w-7" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen((open! + 1) % list.length);
+                }}
+                aria-label="Berikutnya"
+                className="absolute right-2 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 sm:right-6"
+              >
+                <ChevronRight className="h-7 w-7" />
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

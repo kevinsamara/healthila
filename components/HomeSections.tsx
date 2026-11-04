@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { site } from "@/lib/site";
-import { getTestimonials } from "@/lib/testimonials";
+import { getTestimonialShots, getTestimonials } from "@/lib/testimonials";
+import { getBrands } from "@/lib/brands";
+import { BrandMarquee } from "./BrandMarquee";
+import { ShotWall } from "./ShotWall";
 import { TestimonialSlider, type SlideItem } from "./TestimonialSlider";
 import { Gift, Medal, Smartphone, Star, Truck } from "lucide-react";
 import { DynIcon } from "@/lib/icons";
@@ -99,7 +102,7 @@ const EMOJI = /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{FE0F}\u{200D}]/gu
 const clean = (t: string) => t.replace(EMOJI, "").replace(/[ \t]{2,}/g, " ").replace(/\s+([,.!?])/g, "$1").trim();
 
 export async function Testimonials() {
-  const [google, curated] = await Promise.all([getGoogleReviews(), getTestimonials()]);
+  const [google, curated, shots] = await Promise.all([getGoogleReviews(), getTestimonials(), getTestimonialShots()]);
   const tones = Object.keys(toneCls) as (keyof typeof toneCls)[];
   // Live Google reviews (only the 5 Google picks) + reviews curated in the CRM
   // (old and new); 5-star only, de-duplicated, shuffled per visit by the slider.
@@ -147,6 +150,11 @@ export async function Testimonials() {
             <span className="text-sm text-muted">{google.count} ulasan Google</span>
           </a>
         )}
+        {shots.length > 0 && (
+          <div className="mt-10">
+            <ShotWall shots={shots} />
+          </div>
+        )}
         <div className="mt-10">
           <TestimonialSlider items={items} onDark />
         </div>
@@ -171,7 +179,8 @@ function GoogleG({ small }: { small?: boolean }) {
   );
 }
 
-export function CtaBand() {
+export async function CtaBand() {
+  const brands = await getBrands();
   return (
     <section className="relative overflow-hidden bg-sun-400">
       <BgCircles />
@@ -184,6 +193,9 @@ export function CtaBand() {
         >
           Order Sekarang
         </Link>
+      </div>
+      <div className="relative">
+        <BrandMarquee brands={brands} />
       </div>
     </section>
   );

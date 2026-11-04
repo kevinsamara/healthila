@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 const BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://rkagmdyjikujenzxngmm.supabase.co"}/storage/v1/object/public/`;
 const WIDTHS = new Set([16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840]);
-const BUCKETS = new Set(["product-photos", "web-parcel", "web-articles", "site-assets"]);
+const BUCKETS = new Set(["product-photos", "web-parcel", "web-articles", "site-assets", "web-media"]);
 const MAX_WIDTH = 1600; // larger requests get this size (photos are ≤ ~1600px useful on the site)
 
 export async function GET(req: Request) {
