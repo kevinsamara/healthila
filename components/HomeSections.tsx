@@ -4,6 +4,7 @@ import { site } from "@/lib/site";
 import { getTestimonialShots, getTestimonials } from "@/lib/testimonials";
 import { getBrands } from "@/lib/brands";
 import { BrandMarquee } from "./BrandMarquee";
+import { CloudPattern } from "./CloudPattern";
 import { ShotWall } from "./ShotWall";
 import { TestimonialSlider, type SlideItem } from "./TestimonialSlider";
 import { Gift, Medal, Smartphone, Star, Truck } from "lucide-react";
@@ -135,6 +136,7 @@ export async function Testimonials() {
   return (
     <section className="relative overflow-hidden bg-[#f37900]">
       <BgCircles />
+      <CloudPattern />
       <div className="relative mx-auto max-w-7xl px-4 py-20">
         <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" light />
         {google && (

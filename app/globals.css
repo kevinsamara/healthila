@@ -109,3 +109,27 @@ body {
     animation: none;
   }
 }
+
+/* "Kata Mereka": screenshots bob up/down and sway left/right; clouds drift. */
+@keyframes shot-float {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(6px, -10px); }
+  50% { transform: translate(0, -4px); }
+  75% { transform: translate(-6px, -9px); }
+}
+.shot-float {
+  animation: shot-float 7s ease-in-out infinite;
+}
+@keyframes cloud-drift {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(40px); }
+}
+.cloud-drift {
+  animation: cloud-drift 40s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shot-float,
+  .cloud-drift {
+    animation: none;
+  }
+}

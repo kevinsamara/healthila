@@ -84,20 +84,23 @@ export function ShotWall({ shots }: { shots: TestimonialShot[] }) {
         onMouseEnter={() => (paused.current = true)}
         onMouseLeave={() => (paused.current = false)}
         onTouchStart={() => (paused.current = true)}
-        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 py-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
       >
         {list.map((s, i) => (
           <figure key={s.id} className="w-[38%] shrink-0 snap-start sm:w-[26%] md:w-[20%] lg:w-[15.5%]">
-            <button
-              onClick={() => setOpen(i)}
-              className="block w-full rounded-2xl bg-white p-1.5 shadow-xl shadow-black/10 transition hover:-translate-y-1"
-              aria-label={`Perbesar testimoni${s.caption ? ` ${s.caption}` : ""}`}
-            >
-              <span className="relative block aspect-[9/16] overflow-hidden rounded-xl bg-leaf-50">
-                <Image src={s.image_url} alt={s.caption ?? `Testimoni pelanggan via ${LABEL[s.source]}`} fill sizes="(min-width: 1024px) 200px, 40vw" className="object-cover object-top" />
-              </span>
-            </button>
-            <figcaption className="mt-2 truncate text-center text-xs font-medium text-white/90">{s.caption ?? LABEL[s.source]}</figcaption>
+            {/* Each card floats on its own rhythm so the row never moves in lockstep. */}
+            <div className="shot-float" style={{ animationDelay: `${-(i * 1.3) % 7}s`, animationDuration: `${6 + (i % 3)}s` }}>
+              <button
+                onClick={() => setOpen(i)}
+                className="block w-full rounded-full bg-white p-1.5 shadow-xl shadow-black/15 transition hover:scale-105"
+                aria-label={`Perbesar testimoni${s.caption ? ` ${s.caption}` : ""}`}
+              >
+                <span className="relative block aspect-square overflow-hidden rounded-full bg-leaf-50">
+                  <Image src={s.image_url} alt={s.caption ?? `Testimoni pelanggan via ${LABEL[s.source]}`} fill sizes="(min-width: 1024px) 200px, 40vw" className="object-cover object-top" />
+                </span>
+              </button>
+              <figcaption className="mt-3 truncate text-center text-xs font-medium text-white/90">{s.caption ?? LABEL[s.source]}</figcaption>
+            </div>
           </figure>
         ))}
       </div>
