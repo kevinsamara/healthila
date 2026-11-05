@@ -27,18 +27,32 @@ export function ShotWall({ shots }: { shots: TestimonialShot[] }) {
   const showFilter = shots.length > 8 && sources.length > 1;
   const list = filter ? shots.filter((s) => s.source === filter) : shots;
 
+  // Endless strip: the list is drawn several times so one copy is wider than the
+  // screen; the track scrolls left continuously and jumps back by one copy's
+  // width, which looks seamless. Still swipeable; pauses on hover/touch/lightbox.
+  const reps = list.length > 1 ? Math.max(2, Math.ceil(16 / list.length)) : 1;
   useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setInterval(() => {
-      const el = track.current;
-      if (!el || paused.current || open != null) return;
-      const card = el.firstElementChild as HTMLElement | null;
-      if (!card) return;
-      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-      el.scrollTo({ left: atEnd ? 0 : el.scrollLeft + card.offsetWidth, behavior: "smooth" });
-    }, 3500);
-    return () => clearInterval(id);
-  }, [open]);
+    const el = track.current;
+    if (!el || reps < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let pos = el.scrollLeft;
+    let last = performance.now();
+    let raf = 0;
+    const step = (now: number) => {
+      const dt = Math.min(now - last, 100);
+      last = now;
+      const kids = el.children;
+      const copy = kids.length > list.length ? (kids[list.length] as HTMLElement).offsetLeft - (kids[0] as HTMLElement).offsetLeft : 0;
+      if (Math.abs(el.scrollLeft - pos) > 2) pos = el.scrollLeft; // user swiped
+      if (!paused.current && open == null && copy > 0) {
+        pos += dt * 0.04; // ~40px per second
+        if (pos >= copy) pos -= copy;
+        el.scrollLeft = pos;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [open, list.length, reps]);
 
   useEffect(() => {
     if (open == null) return;
@@ -84,14 +98,19 @@ export function ShotWall({ shots }: { shots: TestimonialShot[] }) {
         onMouseEnter={() => (paused.current = true)}
         onMouseLeave={() => (paused.current = false)}
         onTouchStart={() => (paused.current = true)}
-        className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 py-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+        onTouchEnd={() => setTimeout(() => (paused.current = false), 2500)}
+        className="-mx-4 flex gap-4 overflow-x-auto px-4 py-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
       >
-        {list.map((s, i) => (
-          <figure key={s.id} className="w-[38%] shrink-0 snap-start sm:w-[26%] md:w-[20%] lg:w-[15.5%]">
+        {Array.from({ length: reps }, () => list).flat().map((s, k) => {
+          const i = k % list.length;
+          const dup = k >= list.length;
+          return (
+          <figure key={k} aria-hidden={dup || undefined} className="w-[38%] shrink-0 sm:w-[26%] md:w-[20%] lg:w-[15.5%]">
             {/* Each card floats on its own rhythm so the row never moves in lockstep. */}
-            <div className="shot-float" style={{ animationDelay: `${-(i * 1.3) % 7}s`, animationDuration: `${6 + (i % 3)}s` }}>
+            <div className="shot-float" style={{ animationDelay: `${-(k * 1.3) % 7}s`, animationDuration: `${6 + (k % 3)}s` }}>
               <button
                 onClick={() => setOpen(i)}
+                tabIndex={dup ? -1 : undefined}
                 className="block w-full rounded-full bg-white p-1.5 shadow-xl shadow-black/15 transition hover:scale-105"
                 aria-label={`Perbesar testimoni${s.caption ? ` ${s.caption}` : ""}`}
               >
@@ -102,7 +121,8 @@ export function ShotWall({ shots }: { shots: TestimonialShot[] }) {
               <figcaption className="mt-3 truncate text-center text-xs font-medium text-white/90">{s.caption ?? LABEL[s.source]}</figcaption>
             </div>
           </figure>
-        ))}
+          );
+        })}
       </div>
 
       {current && (
