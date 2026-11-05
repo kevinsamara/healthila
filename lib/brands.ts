@@ -4,8 +4,8 @@ import { unstable_cache } from "next/cache";
 
 /**
  * Brand logos set in Healthila OS › Produk › Brand, read from
- * web_brands_public (healthila-crm migration 0145): only brands with a logo
- * and at least one product on the site.
+ * web_brands_public (healthila-crm migrations 0145/0146): brands with a logo
+ * that are switched on; product_ids may be empty (page shows the empty state).
  */
 export type Brand = {
   id: string;
