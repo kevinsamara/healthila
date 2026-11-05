@@ -23,11 +23,11 @@ export function BrandMarquee({ brands }: { brands: Brand[] }) {
                 <Link
                   href={`/brand/${b.slug}`}
                   tabIndex={n === 1 || i >= brands.length ? -1 : undefined}
-                  className="relative flex h-16 w-32 items-center justify-center rounded-2xl ring-1 ring-black/5 transition hover:ring-leaf-500 sm:h-20 sm:w-40"
+                  className="relative flex h-[4.8rem] w-[9.6rem] items-center justify-center rounded-2xl ring-1 ring-black/5 transition hover:ring-leaf-500 sm:h-24 sm:w-48"
                   title={`Produk ${b.name}`}
                 >
-                  <span className="relative h-10 w-24 sm:h-12 sm:w-28">
-                    <Image src={b.logo_url} alt={b.name} fill sizes="128px" className="object-contain" />
+                  <span className="relative h-12 w-[7.2rem] sm:h-[3.6rem] sm:w-[8.4rem]">
+                    <Image src={b.logo_url} alt={b.name} fill sizes="160px" className="object-contain" />
                   </span>
                 </Link>
               </li>
