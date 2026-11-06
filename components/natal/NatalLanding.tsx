@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Building2, CalendarHeart, Gift, PenLine, ShoppingBasket, Snowflake, Sparkles, Star, TreePine, Truck } from "lucide-react";
+import { Building2, CalendarHeart, MapPin, Gift, PenLine, ShoppingBasket, Snowflake, Sparkles, Star, TreePine, Truck } from "lucide-react";
 import type { Product } from "@/lib/catalog";
 import type { OccasionPage } from "@/lib/occasion-pages";
 import { waLink } from "@/lib/site";
@@ -14,8 +14,8 @@ const GOLD = "#f3c969";
 const PERKS = [
   { icon: Gift, title: "Kartu ucapan Natal gratis", text: "Tulis ucapan Kakak, kami cetak & selipkan." },
   { icon: Sparkles, title: "Pita merah atau hijau", text: "Sentuhan Natal di setiap rangkaian." },
-  { icon: CalendarHeart, title: "Kirim 24 / 25 Desember", text: "Selama slot tersedia, pesan minimal H-3." },
-  { icon: Truck, title: "Antar se-Malang", text: "Bisa custom isi & budget." },
+  { icon: Truck, title: "Free delivery selama masa Natal", text: "Untuk kirim 24–25 Desember, pesan minimal H-3." },
+  { icon: MapPin, title: "Antar se-Malang", text: "Bisa custom isi & budget." },
 ];
 
 const STEPS = [
