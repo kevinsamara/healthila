@@ -232,7 +232,7 @@ function PackAddToCart({ product, fruits }: { product: Product; fruits?: ReadyFr
           >
             Tambah ke Keranjang
           </button>
-          {filling && fruits && <ParcelFillDialog fruits={fruits} onClose={() => setFilling(false)} onConfirm={add} />}
+          {filling && fruits && <ParcelFillDialog fruits={fruits} natal={isNatalCategory(product.category)} onClose={() => setFilling(false)} onConfirm={add} />}
           {isNatalCategory(product.category) && (
             // Natal parcels: checkout directly, or talk it through first.
             <a
