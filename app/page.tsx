@@ -16,6 +16,7 @@ import { getHeroSlideKeys } from "@/lib/hero-slides";
 import { waLink, type SectionKey } from "@/lib/site";
 import { Citrus, CupSoda, ShoppingBasket } from "lucide-react";
 import { DynIcon } from "@/lib/icons";
+import { isNatalParcel } from "@/lib/natal";
 
 export const revalidate = 300;
 
@@ -173,9 +174,9 @@ function heroSlides(available: Product[], keys: string[]): HeroSlide[] {
     available
       .filter((p) => keys.includes(p.section) && p.photo_url)
       .map((p) => ({ id: p.id, slug: p.slug, name: p.name, photo: p.photo_url! }));
-  // Parcels tagged Natal; topped up with other parcels until the Christmas catalog fills the grid.
+  // Parcels in "Parcel Natal" or tagged Natal; topped up with other parcels until the Christmas catalog fills the grid.
   const parcels = photos(["parcel"]);
-  const natal = available.filter((p) => p.occasions.includes("natal")).map((p) => p.id);
+  const natal = available.filter(isNatalParcel).map((p) => p.id);
   const tagged = parcels.filter((p) => natal.includes(p.id));
   const natalPhotos = tagged.length >= 4 ? tagged : [...tagged, ...parcels.filter((p) => !natal.includes(p.id))].slice(0, 4);
   const slides: HeroSlide[] = [

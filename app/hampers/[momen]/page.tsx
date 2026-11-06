@@ -9,6 +9,8 @@ import { getProducts } from "@/lib/catalog";
 import { occasionPage, OCCASION_PAGES } from "@/lib/occasion-pages";
 import { waLink } from "@/lib/site";
 import { ShoppingBasket } from "lucide-react";
+import { NatalLanding } from "@/components/natal/NatalLanding";
+import { isNatalParcel } from "@/lib/natal";
 
 export const revalidate = 3600;
 export const dynamicParams = false;
@@ -27,10 +29,18 @@ export default async function OccasionLanding({ params }: PageProps<"/hampers/[m
   if (!page) notFound();
 
   const parcels = (await getProducts()).filter((p) => p.section === "parcel" && p.in_stock);
+  const days = page.date ? daysUntil(page.date) : null;
+  if (page.key === "natal") {
+    return (
+      <>
+        <NatalLanding page={page} natal={parcels.filter(isNatalParcel)} parcels={parcels} days={days} />
+        <FaqJsonLd tips={page.tips} />
+      </>
+    );
+  }
   const tagged = parcels.filter((p) => p.occasions.includes(page.key));
   // Until parcels are tagged in Healthila OS, show the whole parcel range.
   const products = tagged.length ? tagged : parcels;
-  const days = page.date ? daysUntil(page.date) : null;
 
   return (
     <>
@@ -98,14 +108,20 @@ export default async function OccasionLanding({ params }: PageProps<"/hampers/[m
         <OtherOccasions current={page.key} />
       </div>
 
-      <JsonLd
-        data={{
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: page.tips.map((t) => ({ "@type": "Question", name: t.q, acceptedAnswer: { "@type": "Answer", text: t.a } })),
-        }}
-      />
+      <FaqJsonLd tips={page.tips} />
     </>
+  );
+}
+
+function FaqJsonLd({ tips }: { tips: { q: string; a: string }[] }) {
+  return (
+    <JsonLd
+      data={{
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: tips.map((t) => ({ "@type": "Question", name: t.q, acceptedAnswer: { "@type": "Answer", text: t.a } })),
+      }}
+    />
   );
 }
 
