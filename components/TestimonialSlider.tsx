@@ -21,6 +21,10 @@ const toneCls = {
   leaf: { card: "bg-[#e6f9ee]", quote: "text-leaf-500/30", name: "text-leaf-700" },
 };
 
+const gutter = (el: HTMLElement) => parseFloat(getComputedStyle(el).paddingLeft) || 0;
+/** One page = the track without its edge-bleed padding. */
+const pageWidth = (el: HTMLElement) => Math.max(1, el.clientWidth - 2 * gutter(el));
+
 /** Swipeable testimonial carousel: 1 card on phones, 2 on tablet, 3 on desktop. Auto-advances. */
 export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem[]; /** On a coloured section: white dots. */ onDark?: boolean }) {
   // The page is cached, so shuffle in the browser: a new order on every refresh.
@@ -40,7 +44,12 @@ export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem
     if (!el) return;
     // Measure after layout settles; observe the cards too, since their width
     // (not the track's) changes at breakpoints.
-    const read = () => setPages(Math.max(1, Math.round(el.scrollWidth / Math.max(1, el.clientWidth))));
+    const read = () => {
+      // The track bleeds to the screen edges; its side padding lines the first
+      // card up with the page, so snap to that and page by the inner width.
+      el.style.scrollPaddingInline = getComputedStyle(el).paddingLeft;
+      setPages(Math.max(1, Math.round((el.scrollWidth - 2 * gutter(el)) / pageWidth(el))));
+    };
     const measure = () => {
       read();
       requestAnimationFrame(read);
@@ -67,12 +76,12 @@ export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem
   function go(p: number) {
     const el = track.current;
     if (!el) return;
-    el.scrollTo({ left: p * el.clientWidth, behavior: "smooth" });
+    el.scrollTo({ left: p * pageWidth(el), behavior: "smooth" });
   }
 
   function onScroll() {
     const el = track.current;
-    if (el) setPage(Math.round(el.scrollLeft / el.clientWidth));
+    if (el) setPage(Math.round(el.scrollLeft / pageWidth(el)));
   }
 
   return (
@@ -85,7 +94,7 @@ export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem
       <div
         ref={track}
         onScroll={onScroll}
-        className="-mx-2 flex snap-x snap-mandatory overflow-x-auto pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mx-[calc(50%-50vw)] flex snap-x snap-mandatory overflow-x-auto px-[calc(50vw-50%-0.5rem)] pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((t) => {
           const c = toneCls[t.tone];

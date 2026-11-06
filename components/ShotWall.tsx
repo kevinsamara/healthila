@@ -99,7 +99,7 @@ export function ShotWall({ shots }: { shots: TestimonialShot[] }) {
         onMouseLeave={() => (paused.current = false)}
         onTouchStart={() => (paused.current = true)}
         onTouchEnd={() => setTimeout(() => (paused.current = false), 2500)}
-        className="-mx-4 flex gap-4 overflow-x-auto px-4 py-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+        className="mx-[calc(50%-50vw)] flex gap-4 overflow-x-auto px-[calc(50vw-50%)] py-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {Array.from({ length: reps }, () => list).flat().map((s, k) => {
           const i = k % list.length;
