@@ -6,6 +6,7 @@ import type { Product } from "@/lib/catalog";
 import { addItem } from "@/lib/cart";
 import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
+import { fruitPortions } from "@/lib/confirm-only";
 import { Check, MessageCircle } from "lucide-react";
 
 /** Card-level add button: one tap for single-option products, otherwise opens the product page. */
@@ -41,10 +42,10 @@ export function QuickAdd({ product }: { product: Product }) {
     );
   }
 
-  if (!single) {
+  if (!single || fruitPortions(product.id)) {
     return (
       <Link href={`/produk/${product.slug}`} className={`${base} bg-leaf-700 text-white hover:bg-leaf-900`}>
-        Pilih varian
+        {single ? "Pilih ukuran" : "Pilih varian"}
       </Link>
     );
   }

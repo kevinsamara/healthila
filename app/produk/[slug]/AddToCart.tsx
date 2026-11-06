@@ -9,10 +9,17 @@ import { qtyLabel, rupiah } from "@/lib/format";
 import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
 import { selectVariant, useSelectedVariant } from "@/lib/variant-store";
+import { fruitPortions, kgLabel, type FruitPortion } from "@/lib/confirm-only";
 
 type Option = { id: string | null; label: string; price: number | null; was: number | null; photo?: string | null; soldOut?: boolean };
 
 export function AddToCart({ product }: { product: Product }) {
+  const portions = fruitPortions(product.id);
+  if (portions) return <PortionAddToCart product={product} portions={portions} />;
+  return <PackAddToCart product={product} />;
+}
+
+function PackAddToCart({ product }: { product: Product }) {
   const options: Option[] = product.packagings.length
     ? product.packagings.map((k) => ({
         id: k.id,
@@ -222,6 +229,157 @@ export function AddToCart({ product }: { product: Product }) {
       )}
       {product.made_to_order && (
         <p className="mt-4 text-sm text-muted">Dibuat sesuai pesanan — mohon pesan minimal H-1.</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Semangka: bought per fruit ("1 buah utuh" / "½ buah"), priced on the average
+ * weight from lib/confirm-only; admin weighs and confirms the final total.
+ */
+function PortionAddToCart({ product, portions }: { product: Product; portions: FruitPortion[] }) {
+  const perKg = product.promo_price ?? product.price;
+  const wasKg = product.promo_price != null ? product.price : null;
+  // Stock is tracked in kg; turn it into whole portions.
+  const maxOf = (p: FruitPortion) => (product.stock_qty == null ? null : Math.floor(product.stock_qty / p.kg + 1e-9));
+  const [pick, setPick] = useState<FruitPortion["key"]>(() => (portions.find((p) => maxOf(p) !== 0) ?? portions[0]).key);
+  const [qty, setQty] = useState(1);
+  const [added, setAdded] = useState(false);
+  const [note, setNote] = useState("");
+  const portion = portions.find((p) => p.key === pick) ?? portions[0];
+  const maxQty = maxOf(portion);
+  const amount = maxQty != null && qty > maxQty ? Math.max(1, maxQty) : qty;
+  const price = perKg != null ? Math.round(perKg * portion.kg) : null;
+  const soldOut = maxQty === 0;
+
+  function add() {
+    if (price == null || soldOut) return;
+    addItem(
+      {
+        productId: product.id,
+        packagingId: null,
+        slug: product.slug,
+        name: product.name,
+        variant: null,
+        unitLabel: portion.unit,
+        price,
+        photo: product.photo_url,
+        basePerUnit: portion.kg,
+        baseUnit: "kg",
+        note: note.trim() || null,
+        maxQty,
+      },
+      amount,
+    );
+    setAdded(true);
+  }
+
+  return (
+    <div className="mt-6">
+      <p className="mt-1 text-4xl font-extrabold text-leaf-700">
+        {price != null ? rupiah(price) : "Harga by request"}
+        {price != null && <span className="text-base font-medium text-muted"> / {portion.label}</span>}
+      </p>
+      {perKg != null && (
+        <p className="mt-1 text-sm text-muted">
+          {rupiah(perKg)}/kg{wasKg != null && <span className="ml-1 line-through">{rupiah(wasKg)}</span>} · perkiraan {kgLabel(portion.kg)}, total
+          final sesuai timbangan
+        </p>
+      )}
+
+      <fieldset className="mt-5">
+        <legend className="text-sm font-semibold text-ink">Pilih ukuran</legend>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {portions.map((p) => {
+            const out = maxOf(p) === 0;
+            return (
+              <button
+                key={p.key}
+                type="button"
+                disabled={out}
+                onClick={() => {
+                  setPick(p.key);
+                  setAdded(false);
+                }}
+                className={`rounded-xl px-4 py-2 text-left text-sm font-semibold ring-1 ${
+                  out
+                    ? "cursor-not-allowed bg-black/5 text-muted ring-black/5"
+                    : p.key === pick
+                      ? "bg-leaf-700 text-white ring-leaf-700"
+                      : "bg-white text-ink ring-leaf-200 hover:ring-leaf-500"
+                }`}
+              >
+                {p.label}
+                <span className="ml-2 font-normal opacity-80">{out ? "Habis" : kgLabel(p.kg)}</span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      {!product.in_stock || soldOut ? (
+        <div className="mt-6 rounded-2xl bg-white p-4 ring-1 ring-leaf-200">
+          <p className="font-bold text-ink">Stok sedang habis</p>
+          <a
+            href={waLink(`Halo Healthila, apakah ${product.name} sudah tersedia lagi?`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex h-12 items-center rounded-full bg-leaf-700 px-6 font-bold text-white hover:bg-leaf-900"
+          >
+            Tanya ketersediaan via WhatsApp
+          </a>
+        </div>
+      ) : (
+        price != null && (
+          <div className="mt-6 space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-ink">Jumlah</p>
+              <div className="mt-2 flex items-center gap-4">
+                <div className="flex h-12 items-center rounded-full bg-white ring-1 ring-leaf-200">
+                  <button type="button" aria-label="Kurangi" onClick={() => setQty((q) => Math.max(1, q - 1))} className="h-12 w-12 text-xl text-leaf-700">
+                    −
+                  </button>
+                  <span className="min-w-24 text-center font-semibold">{qtyLabel(amount, portion.unit)}</span>
+                  <button
+                    type="button"
+                    aria-label="Tambah"
+                    onClick={() => setQty((q) => (maxQty != null ? Math.min(maxQty, q + 1) : q + 1))}
+                    disabled={maxQty != null && amount >= maxQty}
+                    className="h-12 w-12 text-xl text-leaf-700 disabled:cursor-not-allowed disabled:text-leaf-200"
+                  >
+                    +
+                  </button>
+                </div>
+                <p className="text-sm text-muted">
+                  Perkiraan <span className="font-bold text-ink">{rupiah(price * amount)}</span>
+                </p>
+              </div>
+            </div>
+            <label className="block text-sm font-semibold text-ink">
+              Catatan untuk pesanan <span className="font-normal text-muted">(opsional)</span>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value.slice(0, 200))}
+                rows={2}
+                placeholder="Contoh: pilih yang matang, mohon dipotong."
+                className="mt-2 w-full rounded-2xl border border-leaf-200 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-leaf-700"
+              />
+            </label>
+            <button type="button" onClick={add} className="h-13 w-full rounded-full bg-leaf-700 px-6 text-base font-bold text-white hover:bg-leaf-900">
+              Tambah ke Keranjang
+            </button>
+          </div>
+        )
+      )}
+
+      {added && (
+        <p className="mt-4 rounded-xl bg-leaf-50 px-4 py-3 text-sm text-leaf-900" role="status">
+          Ditambahkan ke keranjang.{" "}
+          <Link href="/keranjang" className="font-bold underline">
+            Lihat keranjang
+          </Link>
+        </p>
       )}
     </div>
   );
