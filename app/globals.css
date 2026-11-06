@@ -149,3 +149,32 @@ body {
     animation: none;
   }
 }
+
+/* Cara Order illustrations (components/HowToOrder.tsx) */
+@keyframes howto-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes howto-pop {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: .85; }
+}
+@keyframes howto-speed {
+  0%, 100% { transform: translateX(0); opacity: .9; }
+  50% { transform: translateX(-6px); opacity: .4; }
+}
+@keyframes howto-road {
+  to { stroke-dashoffset: 44; }
+}
+@keyframes howto-pin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.howto-bob { animation: howto-bob 0.9s ease-in-out infinite; }
+.howto-pop { transform-box: fill-box; transform-origin: center; animation: howto-pop 2.4s ease-in-out infinite; }
+.howto-speed { animation: howto-speed 0.6s ease-in-out infinite; }
+.howto-road { animation: howto-road 0.8s linear infinite; }
+.howto-pin { animation: howto-pin 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .howto-bob, .howto-pop, .howto-speed, .howto-road, .howto-pin { animation: none; }
+}

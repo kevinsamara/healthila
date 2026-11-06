@@ -63,34 +63,6 @@ export function WhyHealthila() {
   );
 }
 
-const steps = [
-  { title: "Pilih Produk", text: "Pilih buah, jus, atau parcel favoritmu dari katalog." },
-  { title: "Isi Data", text: "Masukkan nomor WhatsApp, nama, dan alamat pengiriman." },
-  { title: "Produk Dikirim", text: "Admin konfirmasi via WhatsApp, pesanan diproses & dikirim." },
-];
-
-export function HowToOrder() {
-  return (
-    <section className="mx-auto max-w-6xl px-4 py-20">
-      <SectionTitle title="Cara Order" />
-      <ol className="mt-14 grid gap-10 md:grid-cols-3">
-        {steps.map((s, i) => (
-          <li key={s.title} className="relative text-center">
-            {i < steps.length - 1 && (
-              <span className="absolute top-8 left-[calc(50%+3rem)] hidden w-[calc(100%-6rem)] border-t-2 border-dashed border-leaf-200 md:block" />
-            )}
-            <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-leaf-700 font-display text-3xl font-bold text-white">
-              {i + 1}
-            </span>
-            <h3 className="mt-5 font-display text-3xl font-bold text-ink">{s.title}</h3>
-            <p className="mx-auto mt-2 max-w-xs text-muted">{s.text}</p>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
 // Opaque cool/neutral pastels so the cards stand out on the #f37900 section.
 const toneCls = {
   coral: { card: "bg-[#fff8ef]", quote: "text-plum-500/20", name: "text-plum-700" },
