@@ -52,6 +52,15 @@ export function QuickAdd({ product }: { product: Product }) {
     );
   }
 
+  // Parcels: the contents are chosen on the product page (pilih sendiri / dipilihkan).
+  if (product.section === "parcel") {
+    return (
+      <Link href={`/produk/${product.slug}`} className={`${base} bg-leaf-700 text-white hover:bg-leaf-900`}>
+        Pesan parcel
+      </Link>
+    );
+  }
+
   if (!single || fruitPortions(product.id)) {
     return (
       <Link href={`/produk/${product.slug}`} className={`${base} bg-leaf-700 text-white hover:bg-leaf-900`}>

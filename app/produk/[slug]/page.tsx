@@ -50,6 +50,14 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
   const product = await getProductBySlug((await params).slug);
   if (!product) notFound();
 
+  // Parcels: fresh fruit ready today, for "pilih buah sendiri" when adding to cart.
+  const fruits =
+    product.section === "parcel"
+      ? (await getProducts())
+          .filter((p) => p.section === "buah" && p.in_stock)
+          .map((p) => ({ id: p.id, name: p.name, group: p.product_group ?? p.category }))
+      : undefined;
+
   // Same fruit first, then the rest of the section; available items only.
   const related = (await getProducts())
     .filter((p) => p.id !== product.id && p.section === product.section && p.in_stock)
@@ -100,7 +108,7 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
             </Link>
             <h1 className="mt-3 text-4xl leading-tight font-extrabold text-ink sm:text-5xl">{product.name}</h1>
 
-            <AddToCart product={product} />
+            <AddToCart product={product} fruits={fruits} />
             {isConfirmOnly(product.category) && (
               <p className="mt-4 flex gap-2 rounded-xl bg-sun-300/25 px-3 py-2.5 text-sm text-ink ring-1 ring-sun-400/50">
                 <Scale className="mt-0.5 h-4 w-4 shrink-0 text-leaf-700" />

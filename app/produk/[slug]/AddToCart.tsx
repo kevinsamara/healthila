@@ -12,6 +12,7 @@ import { selectVariant, useSelectedVariant } from "@/lib/variant-store";
 import { fruitPortions, kgLabel, type FruitPortion } from "@/lib/confirm-only";
 import { isNatalCategory } from "@/lib/natal";
 import { MessageCircle } from "lucide-react";
+import { ParcelFillDialog, type ReadyFruit } from "./ParcelFill";
 
 type Option = { id: string | null; label: string; price: number | null; was: number | null; photo?: string | null; soldOut?: boolean };
 
@@ -20,13 +21,14 @@ const BASE_PACKAGE = "Paket harga mulai";
 /** "Harga mulai" of a Parcel Natal with no fixed price: buyable as the base package (crm 0150). */
 const startPrice = (p: Product) => (isNatalCategory(p.category) && p.packagings.length === 0 ? p.from_price : null);
 
-export function AddToCart({ product }: { product: Product }) {
+export function AddToCart({ product, fruits }: { product: Product; /** Parcels: ready fruit to pick the contents from. */ fruits?: ReadyFruit[] }) {
   const portions = fruitPortions(product.id);
   if (portions) return <PortionAddToCart product={product} portions={portions} />;
-  return <PackAddToCart product={product} />;
+  return <PackAddToCart product={product} fruits={fruits} />;
 }
 
-function PackAddToCart({ product }: { product: Product }) {
+function PackAddToCart({ product, fruits }: { product: Product; fruits?: ReadyFruit[] }) {
+  const [filling, setFilling] = useState(false);
   const options: Option[] = product.packagings.length
     ? product.packagings.map((k) => ({
         id: k.id,
@@ -61,7 +63,7 @@ function PackAddToCart({ product }: { product: Product }) {
   // Clamp qty state kalau user pilih varian dengan stok lebih kecil.
   const effectiveQty = maxQty != null && qty > maxQty ? Math.max(1, maxQty) : qty;
 
-  function add() {
+  function add(fill?: string) {
     if (opt.price == null) return;
     if (maxQty != null && maxQty <= 0) return;
     addItem(
@@ -76,11 +78,12 @@ function PackAddToCart({ product }: { product: Product }) {
         photo: product.photo_url,
         basePerUnit: product.base_per_unit,
         baseUnit: product.base_unit,
-        note: note.trim() || null,
+        note: [fill, note.trim()].filter(Boolean).join(" · ") || null,
         maxQty,
       },
       effectiveQty,
     );
+    setFilling(false);
     setAdded(true);
   }
 
@@ -224,11 +227,12 @@ function PackAddToCart({ product }: { product: Product }) {
           </label>
           <button
             type="button"
-            onClick={add}
+            onClick={() => (fruits ? setFilling(true) : add())}
             className="h-13 w-full rounded-full bg-leaf-700 px-6 text-base font-bold text-white hover:bg-leaf-900"
           >
             Tambah ke Keranjang
           </button>
+          {filling && fruits && <ParcelFillDialog fruits={fruits} onClose={() => setFilling(false)} onConfirm={add} />}
           {isNatalCategory(product.category) && (
             // Natal parcels: checkout directly, or talk it through first.
             <a
