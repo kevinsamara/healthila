@@ -14,7 +14,7 @@ const GOLD = "#f3c969";
 const PERKS = [
   { icon: Gift, title: "Kartu ucapan Natal gratis", text: "Tulis ucapan Kakak, kami cetak & selipkan." },
   { icon: Sparkles, title: "Pita merah atau hijau", text: "Sentuhan Natal di setiap rangkaian." },
-  { icon: Truck, title: "Free delivery selama masa Natal", text: "Untuk kirim 24–25 Desember, pesan minimal H-3." },
+  { icon: Truck, title: "Free delivery selama masa Natal", text: "S.d. Rp10.000 se-Kota Malang, kirim 20 Nov – 25 Des." },
   { icon: MapPin, title: "Antar se-Malang", text: "Bisa custom isi & budget." },
 ];
 

@@ -9,7 +9,8 @@ import { qtyLabel, rupiah } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { jakartaNow, sameDayCutoff, slotOpen, slotTime, type DeliverySlot } from "@/lib/delivery";
 import { FREE_SHIPPING, waLink } from "@/lib/site";
-import { checkVoucher, confirmOnlyNames, getCheckoutProfile, placeOrder } from "./actions";
+import { checkVoucher, confirmOnlyNames, getCheckoutProfile, hasNatalParcel, placeOrder } from "./actions";
+import { NATAL_FREE_DELIVERY, natalShippingDiscount } from "@/lib/natal";
 import { type OngkirState, useOngkir } from "./useOngkir";
 import { AlarmClock, Cake, Ticket, Truck } from "lucide-react";
 
@@ -42,10 +43,12 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
   const appliedVoucher = voucher && voucher.subtotal === total ? voucher : null;
   // Semangka/melon in the cart: weight per fruit varies, admin confirms first.
   const [confirmOnly, setConfirmOnly] = useState<string[]>([]);
+  const [natal, setNatal] = useState(false);
   const productIds = items.filter((i) => !i.bundleId).map((i) => i.productId).sort().join(",");
   useEffect(() => {
     let live = true;
     void confirmOnlyNames(productIds ? productIds.split(",") : []).then((n) => live && setConfirmOnly(n)).catch(() => {});
+    void hasNatalParcel(productIds ? productIds.split(",") : []).then((n) => live && setNatal(n)).catch(() => {});
     return () => {
       live = false;
     };
@@ -295,7 +298,12 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
               <span className="font-semibold">−{rupiah(appliedVoucher.discount)}</span>
             </div>
           )}
-          <OngkirLines ongkir={ongkir} subtotal={total - (appliedVoucher?.discount ?? 0)} freeLeft={profile?.freeShippingLeft} />
+          <OngkirLines
+            ongkir={ongkir}
+            subtotal={total - (appliedVoucher?.discount ?? 0)}
+            freeLeft={profile?.freeShippingLeft}
+            natalDiscount={natal ? natalShippingDiscount(form.date || tomorrow(), ongkir.loading ? null : ongkir.fee) : 0}
+          />
         </div>
         <VoucherField
           subtotal={total}
@@ -336,7 +344,7 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
         ) : (
           <p className="mt-1 text-xs text-muted">Ongkir final & pembayaran dikonfirmasi admin via WhatsApp.</p>
         )}
-        <FreeShippingNote left={profile?.freeShippingLeft} />
+        {natal ? <NatalDeliveryNote /> : <FreeShippingNote left={profile?.freeShippingLeft} />}
         <TotebagHint subtotal={total} />
 
         {error && (
@@ -415,7 +423,18 @@ function VoucherField({
 }
 
 
-function OngkirLines({ ongkir, subtotal, freeLeft }: { ongkir: OngkirState; subtotal: number; freeLeft: number | null | undefined }) {
+function OngkirLines({
+  ongkir,
+  subtotal,
+  freeLeft,
+  natalDiscount = 0,
+}: {
+  ongkir: OngkirState;
+  subtotal: number;
+  freeLeft: number | null | undefined;
+  /** Free delivery Natal; same 10rb cap as FREEONGKIR, never both. */
+  natalDiscount?: number;
+}) {
   if (ongkir.loading)
     return (
       <div className="flex justify-between text-muted">
@@ -431,7 +450,8 @@ function OngkirLines({ ongkir, subtotal, freeLeft }: { ongkir: OngkirState; subt
       </div>
     );
   // Known FREEONGKIR eligibility only for signed-in buyers.
-  const discount = freeLeft && freeLeft > 0 ? Math.min(ongkir.fee, FREE_SHIPPING.max) : 0;
+  const freeOngkir = freeLeft && freeLeft > 0 ? Math.min(ongkir.fee, FREE_SHIPPING.max) : 0;
+  const discount = Math.max(freeOngkir, natalDiscount);
   return (
     <>
       <div className="flex justify-between">
@@ -440,7 +460,7 @@ function OngkirLines({ ongkir, subtotal, freeLeft }: { ongkir: OngkirState; subt
       </div>
       {discount > 0 && (
         <div className="flex justify-between text-leaf-700">
-          <span>FREEONGKIR</span>
+          <span>{natalDiscount >= freeOngkir ? "Free delivery Natal" : "FREEONGKIR"}</span>
           <span className="font-semibold">−{rupiah(discount)}</span>
         </div>
       )}
@@ -449,6 +469,17 @@ function OngkirLines({ ongkir, subtotal, freeLeft }: { ongkir: OngkirState; subt
         <span className="text-xl font-extrabold text-leaf-900">{rupiah(subtotal + ongkir.fee - discount)}</span>
       </div>
     </>
+  );
+}
+
+/** Free delivery Natal hint, shown instead of FREEONGKIR when the cart has a Natal parcel. */
+function NatalDeliveryNote() {
+  const d = NATAL_FREE_DELIVERY;
+  return (
+    <p className="mt-3 rounded-xl bg-[#e9f6ef] px-3 py-2 text-xs font-medium text-[#0a3b2c]">
+      <Truck className="mr-1 inline h-4 w-4 align-[-3px]" />
+      <b>FREE DELIVERY NATAL s.d. {rupiah(d.max)}</b> untuk parcel Natal yang dikirim 20 November – 25 Desember ke alamat di Kota Malang.
+    </p>
   );
 }
 
@@ -554,6 +585,13 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 function today() {
   return jakartaNow().date;
+}
+
+/** Default delivery date when none is picked (the order goes out tomorrow). */
+function tomorrow() {
+  const d = new Date(`${today()}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
 }
 
 /** Courier run choice; runs already closed for the chosen day are disabled. */

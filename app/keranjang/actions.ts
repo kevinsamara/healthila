@@ -8,6 +8,7 @@ import { fetchOngkir, type OngkirEstimate } from "@/lib/ongkir";
 import { rupiah } from "@/lib/format";
 import { getProducts } from "@/lib/catalog";
 import { isConfirmOnly } from "@/lib/confirm-only";
+import { isNatalCategory } from "@/lib/natal";
 import { getAccount, sessionToken } from "@/lib/session";
 import { webRpc, WebRpcError, webSecret } from "@/lib/web-rpc";
 
@@ -157,4 +158,10 @@ export async function confirmOnlyNames(productIds: string[]): Promise<string[]> 
   const ids = new Set(productIds);
   if (ids.size === 0) return [];
   return (await getProducts()).filter((p) => ids.has(p.id) && isConfirmOnly(p.category)).map((p) => p.name);
+}
+
+/** Whether the cart has a "Parcel Natal" product (free delivery Natal, crm 0149). */
+export async function hasNatalParcel(productIds: string[]): Promise<boolean> {
+  const ids = new Set(productIds);
+  return ids.size > 0 && (await getProducts()).some((p) => ids.has(p.id) && isNatalCategory(p.category));
 }
