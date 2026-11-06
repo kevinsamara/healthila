@@ -12,7 +12,7 @@ import { ShoppingBasket } from "lucide-react";
 import { NatalLanding } from "@/components/natal/NatalLanding";
 import { isNatalParcel } from "@/lib/natal";
 
-export const revalidate = 3600;
+export const revalidate = 300; // same as the catalog cache, so CRM edits show within ~5 min
 export const dynamicParams = false;
 
 export function generateStaticParams() {
