@@ -6,6 +6,8 @@ import { z } from "zod";
 import { notifyNewWebOrder, type PlacedOrder } from "@/lib/notify";
 import { fetchOngkir, type OngkirEstimate } from "@/lib/ongkir";
 import { rupiah } from "@/lib/format";
+import { getProducts } from "@/lib/catalog";
+import { isConfirmOnly } from "@/lib/confirm-only";
 import { getAccount, sessionToken } from "@/lib/session";
 import { webRpc, WebRpcError, webSecret } from "@/lib/web-rpc";
 
@@ -69,6 +71,8 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
   const ongkir = await fetchOngkir(input.address);
   const ongkirLine = ongkir.state === "calculated" ? `🚚 Estimasi ongkir web: ${rupiah(ongkir.fee)}${ongkir.label ? ` (${ongkir.label})` : ""}` : null;
   const notes = [ongkirLine, input.notes].filter(Boolean).join("\n").slice(0, 500) || null;
+  if (input.payment === "qris" && (await confirmOnlyNames(input.lines.map((l) => l.productId))).length > 0)
+    return { ok: false, error: "Semangka & melon perlu dikonfirmasi admin dulu (berat per buah). Pilih “Konfirmasi via WhatsApp”." };
   if (input.payment === "qris" && ongkir.state !== "calculated")
     return { ok: false, error: "Ongkir untuk alamat ini belum bisa dihitung otomatis. Pilih “Konfirmasi via WhatsApp”." };
 
@@ -146,4 +150,11 @@ export async function getCheckoutProfile() {
     name: account.name,
     addresses: account.addresses.map((a) => ({ id: a.id, recipient: a.recipient, address: a.address })),
   };
+}
+
+/** Names of cart products that must be confirmed by admin first (no QRIS): semangka, melon. */
+export async function confirmOnlyNames(productIds: string[]): Promise<string[]> {
+  const ids = new Set(productIds);
+  if (ids.size === 0) return [];
+  return (await getProducts()).filter((p) => ids.has(p.id) && isConfirmOnly(p.category)).map((p) => p.name);
 }

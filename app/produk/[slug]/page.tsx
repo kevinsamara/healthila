@@ -9,7 +9,8 @@ import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { getProductBySlug, getProducts, type Product } from "@/lib/catalog";
 import { sectionLabel, waLink } from "@/lib/site";
 import { AddToCart } from "./AddToCart";
-import { Gift, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
+import { CONFIRM_ONLY_NOTE, isConfirmOnly } from "@/lib/confirm-only";
+import { Gift, Scale, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
 import { DynIcon } from "@/lib/icons";
 
 export const revalidate = 300;
@@ -100,6 +101,12 @@ export default async function ProductPage({ params }: PageProps<"/produk/[slug]"
             <h1 className="mt-3 text-4xl leading-tight font-extrabold text-ink sm:text-5xl">{product.name}</h1>
 
             <AddToCart product={product} />
+            {isConfirmOnly(product.category) && (
+              <p className="mt-4 flex gap-2 rounded-xl bg-sun-300/25 px-3 py-2.5 text-sm text-ink ring-1 ring-sun-400/50">
+                <Scale className="mt-0.5 h-4 w-4 shrink-0 text-leaf-700" />
+                {CONFIRM_ONLY_NOTE}
+              </p>
+            )}
 
             <ul className="mt-8 grid gap-3 sm:grid-cols-3">
               {([

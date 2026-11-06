@@ -9,7 +9,7 @@ import { qtyLabel, rupiah } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
 import { jakartaNow, sameDayCutoff, slotOpen, slotTime, type DeliverySlot } from "@/lib/delivery";
 import { FREE_SHIPPING, waLink } from "@/lib/site";
-import { checkVoucher, getCheckoutProfile, placeOrder } from "./actions";
+import { checkVoucher, confirmOnlyNames, getCheckoutProfile, placeOrder } from "./actions";
 import { type OngkirState, useOngkir } from "./useOngkir";
 import { AlarmClock, Cake, Ticket, Truck } from "lucide-react";
 
@@ -40,8 +40,18 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
   const [voucher, setVoucher] = useState<{ code: string; discount: number; subtotal: number } | null>(null);
   // A voucher priced on another cart total is re-checked by the server anyway; drop it here.
   const appliedVoucher = voucher && voucher.subtotal === total ? voucher : null;
+  // Semangka/melon in the cart: weight per fruit varies, admin confirms first.
+  const [confirmOnly, setConfirmOnly] = useState<string[]>([]);
+  const productIds = items.filter((i) => !i.bundleId).map((i) => i.productId).sort().join(",");
+  useEffect(() => {
+    let live = true;
+    void confirmOnlyNames(productIds ? productIds.split(",") : []).then((n) => live && setConfirmOnly(n)).catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, [productIds]);
   // QRIS needs a known ongkir; otherwise admin confirms the total on WhatsApp.
-  const payQris = payChoice === "qris" && ongkir.fee != null && !ongkir.loading;
+  const payQris = payChoice === "qris" && confirmOnly.length === 0 && ongkir.fee != null && !ongkir.loading;
 
   // Returning buyers: prefill name, phone and address saved on this device.
   useEffect(() => {
@@ -292,7 +302,15 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
           applied={appliedVoucher}
           onApply={(v) => setVoucher(v ? { ...v, subtotal: total } : null)}
         />
-        {ongkir.fee != null && !ongkir.loading ? (
+        {confirmOnly.length > 0 ? (
+          <div className="mt-4 rounded-xl bg-sun-300/25 px-3 py-2.5 text-sm text-ink ring-1 ring-sun-400/50">
+            <p className="font-semibold">Pembayaran setelah konfirmasi admin</p>
+            <p className="mt-0.5 text-xs text-muted">
+              {confirmOnly.join(", ")} dijual per buah utuh atau potong, jadi berat & total final dikonfirmasi admin dulu via WhatsApp. Setelah itu
+              baru pembayaran — tidak bisa QRIS langsung.
+            </p>
+          </div>
+        ) : ongkir.fee != null && !ongkir.loading ? (
           <div className="mt-4 space-y-2">
             <p className="text-sm font-medium text-ink">Pembayaran</p>
             {(
