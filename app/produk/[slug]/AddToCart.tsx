@@ -10,6 +10,8 @@ import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
 import { selectVariant, useSelectedVariant } from "@/lib/variant-store";
 import { fruitPortions, kgLabel, type FruitPortion } from "@/lib/confirm-only";
+import { isNatalCategory } from "@/lib/natal";
+import { MessageCircle } from "lucide-react";
 
 type Option = { id: string | null; label: string; price: number | null; was: number | null; photo?: string | null; soldOut?: boolean };
 
@@ -215,6 +217,17 @@ function PackAddToCart({ product }: { product: Product }) {
           >
             Tambah ke Keranjang
           </button>
+          {isNatalCategory(product.category) && (
+            // Natal parcels: checkout directly, or talk it through first.
+            <a
+              href={waLink(`Halo Healthila, saya mau konsultasi ${product.name}${opt.id ? ` (${opt.label})` : ""} untuk Natal`)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-white text-base font-bold text-[#128c4a] ring-1 ring-[#25D366] hover:bg-[#25D366]/10"
+            >
+              <MessageCircle className="h-5 w-5" /> Konsultasi via WhatsApp
+            </a>
+          )}
           <p className="text-center text-xs text-muted">Produk dapat ditinjau dan diubah kembali di halaman Keranjang.</p>
         </div>
       )}
