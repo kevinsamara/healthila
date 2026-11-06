@@ -15,6 +15,11 @@ import { MessageCircle } from "lucide-react";
 
 type Option = { id: string | null; label: string; price: number | null; was: number | null; photo?: string | null; soldOut?: boolean };
 
+const BASE_PACKAGE = "Paket harga mulai";
+
+/** "Harga mulai" of a Parcel Natal with no fixed price: buyable as the base package (crm 0150). */
+const startPrice = (p: Product) => (isNatalCategory(p.category) && p.packagings.length === 0 ? p.from_price : null);
+
 export function AddToCart({ product }: { product: Product }) {
   const portions = fruitPortions(product.id);
   if (portions) return <PortionAddToCart product={product} portions={portions} />;
@@ -35,10 +40,12 @@ function PackAddToCart({ product }: { product: Product }) {
         {
           id: null,
           label: product.unit ? `per ${product.unit}` : "",
-          price: product.promo_price ?? product.price,
+          price: product.promo_price ?? product.price ?? startPrice(product),
           was: product.promo_price != null ? product.price : null,
         },
       ];
+  // Parcel Natal without a fixed price: the "harga mulai" base package (crm 0150).
+  const basePackage = product.price == null && product.promo_price == null && startPrice(product) != null;
 
   // Shared with ProductGallery: picking a variant slides the gallery to its photo.
   const variantId = useSelectedVariant(product.id, (options.find((o) => !o.soldOut) ?? options[0]).id);
@@ -63,7 +70,7 @@ function PackAddToCart({ product }: { product: Product }) {
         packagingId: opt.id,
         slug: product.slug,
         name: product.name,
-        variant: product.packagings.length ? opt.label : null,
+        variant: product.packagings.length ? opt.label : basePackage ? BASE_PACKAGE : null,
         unitLabel: unitWord,
         price: opt.price,
         photo: product.photo_url,
@@ -94,7 +101,12 @@ function PackAddToCart({ product }: { product: Product }) {
         {unitWord && opt.price != null && <span className="text-base font-medium text-muted"> / {unitWord}</span>}
         {opt.was != null && <span className="ml-3 text-lg font-medium text-muted line-through">{rupiah(opt.was)}</span>}
       </p>
-      {product.base_per_unit && (
+      {basePackage && (
+        <p className="mt-1 text-sm text-muted">
+          Harga paket dasar. Mau isi, ukuran, atau budget lain? Konsultasikan dulu via WhatsApp.
+        </p>
+      )}
+            {product.base_per_unit && (
         <p className="mt-1 text-sm text-muted">Berat per pack ± {Math.round(product.base_per_unit * 1000)} gr</p>
       )}
 

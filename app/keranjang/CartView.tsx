@@ -119,7 +119,8 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
           // Web-only packs are stored in the CRM's base unit (kg).
           quantity: i.basePerUnit ? Math.round(i.qty * i.basePerUnit * 1000) / 1000 : i.qty,
           bundleId: i.bundleId ?? null,
-          label: i.basePerUnit ? qtyLabel(i.qty, i.unitLabel) : null,
+          // Per-fruit packs say how much; a Natal base package says so in the order.
+          label: i.basePerUnit ? qtyLabel(i.qty, i.unitLabel) : !i.packagingId && i.variant ? i.variant : null,
         })),
       });
       if (!res.ok && res.fallback) {

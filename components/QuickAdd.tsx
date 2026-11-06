@@ -7,6 +7,7 @@ import { addItem } from "@/lib/cart";
 import { sellUnit } from "@/lib/price";
 import { waLink } from "@/lib/site";
 import { fruitPortions } from "@/lib/confirm-only";
+import { isNatalCategory } from "@/lib/natal";
 import { Check, MessageCircle } from "lucide-react";
 
 /** Card-level add button: one tap for single-option products, otherwise opens the product page. */
@@ -22,6 +23,15 @@ export function QuickAdd({ product }: { product: Product }) {
   const single = product.packagings.length <= 1;
   const pkg = product.packagings[0] ?? null;
   const price = pkg ? (pkg.promo_price ?? pkg.price) : (product.promo_price ?? product.price);
+
+  if (price == null && isNatalCategory(product.category) && product.from_price != null) {
+    // Parcel Natal at its "harga mulai": pick on the product page (checkout or WhatsApp consult).
+    return (
+      <Link href={`/produk/${product.slug}`} className={`${base} bg-leaf-700 text-white hover:bg-leaf-900`}>
+        Beli / konsultasi
+      </Link>
+    );
+  }
 
   if (price == null) {
     // No price in the CRM yet (e.g. parcels quoted per request): ask on WhatsApp.
