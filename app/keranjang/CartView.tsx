@@ -171,7 +171,7 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
-    <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
+    <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
       <ul className="h-fit divide-y divide-leaf-100 rounded-3xl bg-white ring-1 ring-leaf-100">
         {items.map((i) => {
           // Server-side rules override stale localStorage snapshot (admin bisa
@@ -188,7 +188,7 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
             ? effMinQty - companionQty : 0;
           return (
           <li key={i.key} className="flex flex-col gap-2 p-4">
-          <div className="flex gap-4">
+          <div className="flex gap-3 sm:gap-4">
             <Link href={i.bundleId ? `/bundling/${i.slug}` : `/produk/${i.slug}`} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-leaf-50">
               {i.photo && <Image src={i.photo} alt={i.name} fill sizes="80px" className="object-cover" />}
             </Link>
@@ -197,12 +197,13 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
                 {i.name}
               </Link>
               {i.variant && <p className="text-sm text-muted">{i.variant}</p>}
-              {i.note && <p className="mt-0.5 text-xs text-plum-700 italic">Catatan: {i.note}</p>}
+              {i.note && <p className="mt-0.5 text-xs break-words text-plum-700 italic">Catatan: {i.note}</p>}
               <p className="mt-1 text-sm text-muted">
                 {rupiah(i.price)}
                 {i.unitLabel ? ` / ${i.unitLabel}` : ""}
+                <span className="font-bold text-ink sm:hidden"> · {rupiah(i.price * i.qty)}</span>
               </p>
-              <div className="mt-2 flex items-center gap-3">
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
                 <div className="flex h-9 items-center rounded-full ring-1 ring-leaf-200">
                   <button aria-label="Kurangi" onClick={() => setQty(i.key, i.qty - 1)} className="h-9 w-9 text-leaf-700">
                     −
@@ -227,7 +228,7 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
                 )}
               </div>
             </div>
-            <p className="shrink-0 font-bold text-ink">{rupiah(i.price * i.qty)}</p>
+            <p className="hidden shrink-0 font-bold text-ink sm:block">{rupiah(i.price * i.qty)}</p>
           </div>
           {(needSub > 0 || needQty > 0) && (
             <div className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-900 ring-1 ring-amber-200">
@@ -244,7 +245,7 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
         })}
       </ul>
 
-      <form onSubmit={checkout} className="h-fit rounded-3xl bg-white p-6 ring-1 ring-leaf-100">
+      <form onSubmit={checkout} className="h-fit min-w-0 rounded-3xl bg-white p-5 ring-1 ring-leaf-100 sm:p-6">
         <h2 className="text-lg font-bold text-ink">Detail pesanan</h2>
         {profile ? (
           <Field label="No. WhatsApp pemesan" hint="Terverifikasi — pesanan tersimpan di akun Anda.">
