@@ -43,8 +43,13 @@ export const metadata: Metadata = {
   ],
   // "./" resolves to each page's own path, so every page is its own canonical.
   alternates: { canonical: "./" },
-  // Google Search Console ownership (HTML-tag method), set on Vercel.
-  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
+  // Google Search Console + Facebook Business domain verification (HTML-tag). Set on Vercel.
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    other: process.env.FACEBOOK_DOMAIN_VERIFICATION
+      ? { "facebook-domain-verification": process.env.FACEBOOK_DOMAIN_VERIFICATION }
+      : undefined,
+  },
   openGraph: {
     type: "website",
     locale: "id_ID",
