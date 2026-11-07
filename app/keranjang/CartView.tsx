@@ -100,8 +100,16 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
       return;
     }
     setError(null);
+    const firstAttempt = orderKey.current == null;
     orderKey.current ??= crypto.randomUUID();
     const snapshot = items;
+    if (firstAttempt) {
+      trackEvent("begin_checkout", {
+        currency: "IDR",
+        value: Math.round(cartTotal(snapshot)),
+        items: snapshot.map((i) => ({ item_id: i.productId, item_name: i.name, price: i.price, quantity: i.qty })),
+      });
+    }
     startTransition(async () => {
       const res = await placeOrder({
         name: form.name,
