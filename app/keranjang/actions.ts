@@ -9,6 +9,7 @@ import { rupiah } from "@/lib/format";
 import { getProducts } from "@/lib/catalog";
 import { isConfirmOnly } from "@/lib/confirm-only";
 import { isNatalCategory } from "@/lib/natal";
+import { INSTANT_APPS, isSunday, nextDeliveryDate } from "@/lib/delivery";
 import { getAccount, sessionToken } from "@/lib/session";
 import { webRpc, WebRpcError, webSecret } from "@/lib/web-rpc";
 
@@ -32,7 +33,13 @@ const Input = z.object({
   name: z.string().trim().min(1, "Nama wajib diisi").max(120),
   phone: z.string().trim().min(1, "Nomor WhatsApp wajib diisi"),
   address: z.string().trim().min(5, "Alamat wajib diisi").max(500),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .refine((d) => !isSunday(d), "Hari Minggu libur, tidak ada pengiriman. Pilih Senin–Sabtu.")
+    .nullable(),
+  /** Instant delivery via an ojol app (admin books it); WhatsApp confirmation only. */
+  instant: z.enum(INSTANT_APPS).nullable().optional(),
   notes: z.string().max(500).nullable(),
   slot: z.number().int().min(1).max(3).nullable(),
   payment: z.enum(["qris"]).nullable(),
@@ -71,7 +78,12 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
   // Re-estimated here (never trusted from the browser) and recorded for admin.
   const ongkir = await fetchOngkir(input.address);
   const ongkirLine = ongkir.state === "calculated" ? `🚚 Estimasi ongkir web: ${rupiah(ongkir.fee)}${ongkir.label ? ` (${ongkir.label})` : ""}` : null;
-  const notes = [ongkirLine, input.notes].filter(Boolean).join("\n").slice(0, 500) || null;
+  const instantLine = input.instant
+    ? `🛵 PENGIRIMAN INSTAN via ${input.instant} — ongkir sesuai tarif aplikasi, ditanggung pembeli; konfirmasi total via WhatsApp`
+    : null;
+  const notes = [instantLine ?? ongkirLine, input.notes].filter(Boolean).join("\n").slice(0, 500) || null;
+  if (input.payment === "qris" && input.instant)
+    return { ok: false, error: "Pengiriman instan via ojol dikonfirmasi admin dulu. Pilih “Konfirmasi via WhatsApp”." };
   if (input.payment === "qris" && (await confirmOnlyNames(input.lines.map((l) => l.productId))).length > 0)
     return { ok: false, error: "Semangka & melon perlu dikonfirmasi admin dulu (berat per buah). Pilih “Konfirmasi via WhatsApp”." };
   if (input.payment === "qris" && ongkir.state !== "calculated")
@@ -82,7 +94,8 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       p_phone_e164: phone.number,
       p_name: input.name,
       p_address: input.address,
-      p_delivery_date: input.date,
+      // No Sunday deliveries: an empty date means the next delivery day.
+      p_delivery_date: input.date ?? nextDeliveryDate(),
       p_notes: notes,
       p_lines: input.lines.map((l) =>
         l.bundleId
@@ -91,7 +104,7 @@ export async function placeOrder(raw: PlaceOrderInput): Promise<PlaceOrderResult
       ),
       p_key: input.key,
       p_session_token: await sessionToken(),
-      p_slot: input.slot,
+      p_slot: input.instant ? null : input.slot,
       p_payment: input.payment,
       p_shipping_cost: input.payment === "qris" && ongkir.state === "calculated" ? ongkir.fee : null,
       p_voucher: input.voucher || null,

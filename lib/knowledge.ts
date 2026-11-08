@@ -26,7 +26,7 @@ export async function healthilaSummary() {
 - Google Maps: ${site.googleMaps}${place?.rating ? `\n- Rating Google: ${place.rating.toFixed(1)} dari ${place.count} ulasan` : ""}
 - WhatsApp pemesanan: ${site.whatsappDisplay} (https://wa.me/${site.whatsapp})
 - Instagram: ${site.instagram}
-- Area antar: Kota Malang, Kota Batu, Kabupaten Malang; slot antar pagi, siang, sore; bisa same-day selama slot tersedia
+- Area antar: Kota Malang, Kota Batu, Kabupaten Malang; slot antar pagi, siang, sore; bisa same-day selama slot tersedia; pengiriman Senin–Sabtu, hari Minggu libur (tidak ada pengiriman); mau lebih cepat bisa kirim instan via Gojek, Grab, Shopee, atau Maxim — ongkir sesuai tarif aplikasi, dikonfirmasi admin via WhatsApp, tidak bisa QRIS
 - Pembayaran: QRIS (dicek admin) atau konfirmasi via WhatsApp
 - Promo pengguna baru: gratis ongkir s.d. Rp${FREE_SHIPPING.max.toLocaleString("id-ID")} untuk ${FREE_SHIPPING.orders} pesanan pertama via website
 - Kualitas: buah dikurasi — sampel dicicipi, tingkat manis dicek dengan brix meter, disortir agar tidak memar/busuk

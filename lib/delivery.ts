@@ -44,3 +44,29 @@ export function sameDayCutoff(slots: DeliverySlot[], now = jakartaNow()) {
   const m = Math.max(...open);
   return `${String(Math.floor(m / 60)).padStart(2, "0")}.${String(m % 60).padStart(2, "0")}`;
 }
+
+/** Healthila is closed on Sunday: no deliveries (owner, Nov 2026). */
+export const isSunday = (date: string) => new Date(`${date}T00:00:00Z`).getUTCDay() === 0;
+
+export function addDays(date: string, n: number) {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Default delivery day when none is picked: tomorrow, or Monday when tomorrow is Sunday. */
+export function nextDeliveryDate(today = jakartaNow().date) {
+  const d = addDays(today, 1);
+  return isSunday(d) ? addDays(d, 1) : d;
+}
+
+/** "Senin, 9 November" */
+export const dayLabel = (date: string) =>
+  new Date(`${date}T00:00:00Z`).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+
+/**
+ * Faster delivery with an ojol app, booked by admin. Ongkir is the app's tariff
+ * and the order is confirmed on WhatsApp first — never QRIS.
+ */
+export const INSTANT_APPS = ["Gojek", "Grab", "Shopee", "Maxim"] as const;
+export type InstantApp = (typeof INSTANT_APPS)[number];

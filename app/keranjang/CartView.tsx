@@ -7,14 +7,35 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { cartTotal, clearCart, setQty, useCart, type CartItem } from "@/lib/cart";
 import { qtyLabel, rupiah } from "@/lib/format";
 import { trackEvent } from "@/lib/analytics";
-import { jakartaNow, sameDayCutoff, slotOpen, slotTime, type DeliverySlot } from "@/lib/delivery";
+import {
+  dayLabel,
+  INSTANT_APPS,
+  isSunday,
+  jakartaNow,
+  nextDeliveryDate,
+  sameDayCutoff,
+  slotOpen,
+  slotTime,
+  type DeliverySlot,
+  type InstantApp,
+} from "@/lib/delivery";
 import { FREE_SHIPPING, waLink } from "@/lib/site";
 import { checkVoucher, confirmOnlyNames, getCheckoutProfile, hasNatalParcel, placeOrder } from "./actions";
 import { NATAL_FREE_DELIVERY, natalShippingDiscount } from "@/lib/natal";
 import { type OngkirState, useOngkir } from "./useOngkir";
-import { AlarmClock, Cake, Ticket, Truck } from "lucide-react";
+import { AlarmClock, Bike, Cake, CalendarX, Ticket, Truck } from "lucide-react";
 
-type Form = { name: string; phone: string; address: string; date: string; notes: string; slot: number | null };
+type Form = {
+  name: string;
+  phone: string;
+  address: string;
+  date: string;
+  notes: string;
+  slot: number | null;
+  /** Healthila courier runs, or instant via an ojol app (admin books it, WhatsApp confirmation). */
+  ship: "kurir" | "instan";
+  app: InstantApp | null;
+};
 type Done = { code: string; customerStatus: "new" | "existing" | null; wa: string; freeShippingMax: number | null };
 type Profile = NonNullable<Awaited<ReturnType<typeof getCheckoutProfile>>>;
 export type BundleRule = {
@@ -27,7 +48,8 @@ const BUYER_KEY = "healthila_buyer";
 
 export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; bundleRules?: Record<string, BundleRule> }) {
   const items = useCart();
-  const [form, setForm] = useState<Form>({ name: "", phone: "", address: "", date: "", notes: "", slot: null });
+  const [form, setForm] = useState<Form>({ name: "", phone: "", address: "", date: "", notes: "", slot: null, ship: "kurir", app: null });
+  const [dateError, setDateError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<Done | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -54,7 +76,8 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
     };
   }, [productIds]);
   // QRIS needs a known ongkir; otherwise admin confirms the total on WhatsApp.
-  const payQris = payChoice === "qris" && confirmOnly.length === 0 && ongkir.fee != null && !ongkir.loading;
+  const instant = form.ship === "instan";
+  const payQris = payChoice === "qris" && !instant && confirmOnly.length === 0 && ongkir.fee != null && !ongkir.loading;
 
   // Returning buyers: prefill name, phone and address saved on this device.
   useEffect(() => {
@@ -99,6 +122,10 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
       setError("Mohon isi nama, nomor WhatsApp, dan alamat pengiriman.");
       return;
     }
+    if (instant && !form.app) {
+      setError("Pilih aplikasi untuk pengiriman instan (Gojek, Grab, Shopee, atau Maxim).");
+      return;
+    }
     setError(null);
     const firstAttempt = orderKey.current == null;
     orderKey.current ??= crypto.randomUUID();
@@ -115,8 +142,10 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
         name: form.name,
         phone: form.phone,
         address: form.address,
-        date: form.date || null,
-        slot: form.slot,
+        // Instant goes out as soon as possible (Monday when today is Sunday).
+        date: form.date || (instant ? instantDate() : null),
+        slot: instant ? null : form.slot,
+        instant: instant ? form.app : null,
         payment: payQris ? "qris" : null,
         voucher: appliedVoucher?.code ?? null,
         notes: orderNotes(snapshot, form.notes),
@@ -169,6 +198,17 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
 
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
+  // Healthila is closed on Sunday: a Sunday date is refused.
+  const setDate = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value;
+    if (v && isSunday(v)) {
+      setDateError("Hari Minggu libur, tidak ada pengiriman. Pilih Senin–Sabtu.");
+      setForm((f) => ({ ...f, date: "" }));
+      return;
+    }
+    setDateError(null);
+    setForm((f) => ({ ...f, date: v }));
+  };
 
   return (
     <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -289,10 +329,28 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
         <Field label="Alamat pengiriman *">
           <textarea value={form.address} onChange={set("address")} rows={3} autoComplete="street-address" className={input} />
         </Field>
-        <Field label="Tanggal kirim" hint={form.date ? undefined : "Kosong = dikirim besok"}>
-          <input type="date" value={form.date} onChange={set("date")} min={today()} className={input} />
+        <ShipPicker form={form} onChange={(patch) => setForm((f) => ({ ...f, ...patch }))} />
+        <Field
+          label="Tanggal kirim"
+          hint={
+            form.date
+              ? "Minggu libur, tidak ada pengiriman."
+              : instant
+                ? "Kosong = secepatnya; waktu kirim dikonfirmasi admin. Minggu libur."
+                : `Kosong = dikirim ${dayLabel(nextDeliveryDate())}. Minggu libur, tidak ada pengiriman.`
+          }
+        >
+          <input type="date" value={form.date} onChange={setDate} min={today()} className={input} />
+          {dateError && (
+            <span role="alert" className="mt-1 flex items-center gap-1 text-xs font-semibold text-plum-700">
+              <CalendarX className="h-3.5 w-3.5" />
+              {dateError}
+            </span>
+          )}
         </Field>
-        <SlotPicker slots={slots} date={form.date} value={form.slot} onChange={(slot) => setForm((f) => ({ ...f, slot }))} />
+        {!instant && (
+          <SlotPicker slots={slots} date={form.date} value={form.slot} onChange={(slot) => setForm((f) => ({ ...f, slot }))} />
+        )}
         <Field label="Catatan">
           <textarea value={form.notes} onChange={set("notes")} rows={2} placeholder="Mis. pilih yang matang, kartu ucapan…" className={input} />
         </Field>
@@ -309,10 +367,11 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
             </div>
           )}
           <OngkirLines
+            instantApp={instant ? form.app ?? "ojol" : null}
             ongkir={ongkir}
             subtotal={total - (appliedVoucher?.discount ?? 0)}
             freeLeft={profile?.freeShippingLeft}
-            natalDiscount={natal ? natalShippingDiscount(form.date || tomorrow(), ongkir.loading ? null : ongkir.fee) : 0}
+            natalDiscount={natal && !instant ? natalShippingDiscount(form.date || nextDeliveryDate(), ongkir.loading ? null : ongkir.fee) : 0}
           />
         </div>
         <VoucherField
@@ -326,6 +385,14 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
             <p className="mt-0.5 text-xs text-muted">
               {confirmOnly.join(", ")} dijual per buah utuh atau potong, jadi berat & total final dikonfirmasi admin dulu via WhatsApp. Setelah itu
               baru pembayaran — tidak bisa QRIS langsung.
+            </p>
+          </div>
+        ) : instant ? (
+          <div className="mt-4 rounded-xl bg-sun-300/25 px-3 py-2.5 text-sm text-ink ring-1 ring-sun-400/50">
+            <p className="font-semibold">Pembayaran setelah konfirmasi admin</p>
+            <p className="mt-0.5 text-xs text-muted">
+              Pengiriman instan dipesankan admin lewat aplikasi {form.app ?? "pilihan Kakak"}. Ongkir mengikuti tarif aplikasi saat itu, jadi total
+              dikonfirmasi dulu via WhatsApp — tidak bisa QRIS langsung.
             </p>
           </div>
         ) : ongkir.fee != null && !ongkir.loading ? (
@@ -354,7 +421,7 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
         ) : (
           <p className="mt-1 text-xs text-muted">Ongkir final & pembayaran dikonfirmasi admin via WhatsApp.</p>
         )}
-        {natal ? <NatalDeliveryNote /> : <FreeShippingNote left={profile?.freeShippingLeft} />}
+        {instant ? null : natal ? <NatalDeliveryNote /> : <FreeShippingNote left={profile?.freeShippingLeft} />}
         <TotebagHint subtotal={total} />
 
         {error && (
@@ -434,17 +501,33 @@ function VoucherField({
 
 
 function OngkirLines({
+  instantApp,
   ongkir,
   subtotal,
   freeLeft,
   natalDiscount = 0,
 }: {
+  /** Instant via an ojol app: ongkir is the app's tariff, confirmed by admin. */
+  instantApp?: string | null;
   ongkir: OngkirState;
   subtotal: number;
   freeLeft: number | null | undefined;
   /** Free delivery Natal; same 10rb cap as FREEONGKIR, never both. */
   natalDiscount?: number;
 }) {
+  if (instantApp)
+    return (
+      <>
+        <div className="flex justify-between text-muted">
+          <span>Ongkir instan · {instantApp}</span>
+          <span>sesuai tarif aplikasi</span>
+        </div>
+        <div className="flex justify-between border-t border-dashed border-leaf-100 pt-1.5">
+          <span className="font-semibold text-ink">Total belanja</span>
+          <span className="text-xl font-extrabold text-leaf-900">{rupiah(subtotal)}</span>
+        </div>
+      </>
+    );
   if (ongkir.loading)
     return (
       <div className="flex justify-between text-muted">
@@ -597,11 +680,53 @@ function today() {
   return jakartaNow().date;
 }
 
-/** Default delivery date when none is picked (the order goes out tomorrow). */
-function tomorrow() {
-  const d = new Date(`${today()}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
+/** Instant delivery with no date picked: today, or Monday when today is Sunday. */
+function instantDate() {
+  return isSunday(today()) ? nextDeliveryDate() : today();
+}
+
+/** Healthila courier (scheduled runs) or instant via an ojol app. */
+function ShipPicker({ form, onChange }: { form: Form; onChange: (patch: Partial<Form>) => void }) {
+  const opt = (on: boolean) =>
+    `flex w-full items-start gap-2.5 rounded-xl px-3 py-2.5 text-left ring-1 ${on ? "bg-leaf-50 ring-leaf-500" : "ring-leaf-100 hover:ring-leaf-200"}`;
+  return (
+    <div className="mt-4">
+      <p className="text-sm font-medium text-ink">Pengiriman</p>
+      <div className="mt-1.5 grid gap-2">
+        <button type="button" onClick={() => onChange({ ship: "kurir" })} className={opt(form.ship === "kurir")}>
+          <Truck className="mt-0.5 h-4 w-4 shrink-0 text-leaf-700" />
+          <span>
+            <span className="block text-sm font-semibold text-ink">Kurir Healthila</span>
+            <span className="block text-xs text-muted">Jadwal pagi / siang / sore. Ongkir sesuai zona, bisa bayar QRIS.</span>
+          </span>
+        </button>
+        <button type="button" onClick={() => onChange({ ship: "instan" })} className={opt(form.ship === "instan")}>
+          <Bike className="mt-0.5 h-4 w-4 shrink-0 text-leaf-700" />
+          <span>
+            <span className="block text-sm font-semibold text-ink">Instan via ojol — lebih cepat</span>
+            <span className="block text-xs text-muted">Gojek, Grab, Shopee, atau Maxim. Ongkir sesuai tarif aplikasi, konfirmasi via WhatsApp (tidak bisa QRIS).</span>
+          </span>
+        </button>
+      </div>
+      {form.ship === "instan" && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {INSTANT_APPS.map((a) => (
+            <button
+              key={a}
+              type="button"
+              aria-pressed={form.app === a}
+              onClick={() => onChange({ app: a })}
+              className={`rounded-full px-3.5 py-1.5 text-sm ring-1 ${
+                form.app === a ? "bg-leaf-700 font-semibold text-white ring-leaf-700" : "bg-white text-ink ring-leaf-200 hover:ring-leaf-500"
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** Courier run choice; runs already closed for the chosen day are disabled. */
@@ -631,7 +756,8 @@ function SlotPicker({
 
   const enabled = slots.filter((s) => s.enabled);
   if (!enabled.length) return null;
-  const cutoff = now ? sameDayCutoff(enabled, now) : null;
+  // Sunday: closed, nothing goes out today.
+  const cutoff = now && !isSunday(now.date) ? sameDayCutoff(enabled, now) : null;
   return (
     <div className="mt-4">
       <p className="text-sm font-medium text-ink">Jam antar</p>
@@ -661,9 +787,11 @@ function SlotPicker({
             <AlarmClock className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
             Pesan sebelum <b className="text-ink">{cutoff}</b> WIB bisa diantar hari ini.
           </>
-        ) : (
-          "Pengantaran hari ini sudah tutup — pesanan dikirim besok atau di tanggal pilihan Kakak."
-        )}{" "}
+        ) : now && isSunday(now.date) ? (
+          `Hari Minggu libur, tidak ada pengiriman — pesanan dikirim ${dayLabel(nextDeliveryDate(now.date))} atau di tanggal pilihan Kakak.`
+        ) : now ? (
+          `Pengantaran hari ini sudah tutup — pesanan dikirim ${dayLabel(nextDeliveryDate(now.date))} atau di tanggal pilihan Kakak.`
+        ) : null}{" "}
         Jam antar dikonfirmasi admin.
       </p>
     </div>
@@ -688,10 +816,11 @@ function buildMessage(items: CartItem[], total: number, f: Form, code: string | 
     `Nama: ${f.name.trim()}`,
     code ? null : `No. WhatsApp: ${f.phone.trim()}`,
     `Alamat: ${f.address.trim()}`,
+    f.ship === "instan" ? `Pengiriman: INSTAN via ${f.app ?? "ojol"} (ongkir sesuai tarif aplikasi)` : null,
     f.date
       ? `Tanggal kirim: ${new Date(f.date + "T00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`
       : null,
-    f.slot ? `Jam antar: ${f.slot === 1 ? "Pagi" : f.slot === 2 ? "Siang" : "Sore"}` : null,
+    f.ship === "kurir" && f.slot ? `Jam antar: ${f.slot === 1 ? "Pagi" : f.slot === 2 ? "Siang" : "Sore"}` : null,
     f.notes.trim() ? `Catatan: ${f.notes.trim()}` : null,
     "",
     "Mohon info ongkir & cara pembayarannya. Terima kasih!",

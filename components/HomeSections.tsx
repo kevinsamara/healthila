@@ -40,7 +40,7 @@ const features = [
   { icon: Medal, title: "Quality Above All", text: "Setiap buah melewati quality check ketat sebelum sampai ke tangan Kakak.", bg: "bg-[#fff4cc]", chip: "bg-[#ffd23f]" },
   { icon: Gift, title: "Premium Packaging", text: "Dikemas rapi dan elegan, siap jadi hadiah istimewa.", bg: "bg-[#ffe6d5]", chip: "bg-[#ff9a52]" },
   { icon: Smartphone, title: "Effortless Order", text: "Pesan lewat website, konfirmasi cepat via WhatsApp. Simpel dan anti ribet.", bg: "bg-[#ddf8e6]", chip: "bg-[#5fd38d]" },
-  { icon: Truck, title: "Same-Day Delivery", text: "Dikirim fresh setiap hari untuk Kota Malang & sekitarnya.", bg: "bg-[#fde4ef]", chip: "bg-[#f47fb1]" },
+  { icon: Truck, title: "Same-Day Delivery", text: "Dikirim fresh Senin–Sabtu untuk Kota Malang & sekitarnya.", bg: "bg-[#fde4ef]", chip: "bg-[#f47fb1]" },
 ];
 
 export function WhyHealthila() {
