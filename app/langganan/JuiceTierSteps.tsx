@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { CircleAlert, CupSoda, Leaf, Minus, Plus, Shuffle, Truck } from "lucide-react";
@@ -396,8 +397,7 @@ export function JuiceTierSteps({
                 <li key={f.id} className={`flex items-center gap-3 p-3 ${!f.available ? "opacity-60" : ""}`}>
                   <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-leaf-50">
                     {item?.photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- catalog photo (Supabase storage)
-                      <img src={item.photo} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <Image src={item.photo} alt="" fill sizes="56px" className="object-cover" />
                     ) : (
                       <CupSoda className="m-auto mt-3.5 h-7 w-7 text-leaf-700" />
                     )}

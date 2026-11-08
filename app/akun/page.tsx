@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAccount, type AccountOrder } from "@/lib/session";
@@ -440,8 +441,8 @@ function RekomendasiPanel({ products }: { products: Product[] }) {
             <Link href={`/produk/${p.slug}`} className="group block overflow-hidden rounded-2xl bg-leaf-50/60 ring-1 ring-leaf-100 hover:ring-leaf-300">
               {p.photo_url && (
                 <div className="relative aspect-square w-full overflow-hidden bg-leaf-50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+                  <Image src={p.photo_url} alt={p.name} fill sizes="(min-width:1024px) 280px, (min-width:640px) 45vw, 90vw"
+                    className="object-cover transition group-hover:scale-105" />
                 </div>
               )}
               <div className="p-3">

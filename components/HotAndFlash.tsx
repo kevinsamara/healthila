@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -261,8 +262,8 @@ function HotCard({ p }: { p: Product }) {
     >
       <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-leaf-50">
         {p.photo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+          <Image src={p.photo_url} alt={p.name} fill sizes="(min-width:1024px) 220px, (min-width:640px) 30vw, 45vw"
+            className="object-cover transition group-hover:scale-105" />
         ) : (
           <div className="flex h-full items-center justify-center text-leaf-200">—</div>
         )}

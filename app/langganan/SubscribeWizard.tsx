@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -301,8 +302,7 @@ export function SubscribeWizard({
                 <li key={i.id} className="flex items-center gap-3 p-3">
                   <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-leaf-50">
                     {i.photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element -- catalog photo (Supabase storage)
-                      <img src={i.photo} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      <Image src={i.photo} alt="" fill sizes="56px" className="object-cover" />
                     ) : (
                       <CupSoda className="m-auto mt-3.5 h-7 w-7 text-leaf-700" />
                     )}

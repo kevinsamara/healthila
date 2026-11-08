@@ -128,8 +128,8 @@ export function ShotWall({ shots }: { shots: TestimonialShot[] }) {
       {current && (
         <div role="dialog" aria-modal="true" aria-label="Screenshot testimoni" className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4" onClick={() => setOpen(null)}>
           <div className="relative flex max-h-full w-full max-w-md flex-col items-center" onClick={(e) => e.stopPropagation()}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- full-size view of a public storage image */}
-            <img src={current.image_url} alt={current.caption ?? "Testimoni pelanggan"} className="max-h-[80vh] w-auto rounded-xl object-contain" />
+            <Image src={current.image_url} alt={current.caption ?? "Testimoni pelanggan"} width={800} height={1200}
+              sizes="(min-width:640px) 448px, 90vw" className="max-h-[80vh] w-auto rounded-xl object-contain" unoptimized={false} />
             <p className="mt-3 text-center text-sm text-white">
               {current.caption ?? LABEL[current.source]} · {open! + 1}/{list.length}
             </p>
