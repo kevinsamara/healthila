@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Clock, Flame, Package, Zap } from "lucide-react";
+import { Clock, Flame, Lock, Package, Zap } from "lucide-react";
 import type { Bundle } from "@/lib/bundles";
 import type { Product } from "@/lib/catalog";
 import { BundleVisual } from "./BundleVisual";
@@ -168,15 +168,19 @@ function FlashColumn({ products, startsAt = null }: { products: Product[]; start
 
 function FlashCard({ p, startsAt }: { p: Product; startsAt: string | null }) {
   const discountPct = p.price && p.promo_price ? Math.round((1 - p.promo_price / p.price) * 100) : 0;
-  return (
-    <Link
-      href={`/produk/${p.slug}`}
-      className="group flex h-full flex-col overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-coral-500"
-    >
+  // Not started yet: the card is dark and locked (no link) until the sale opens.
+  const locked = !!startsAt;
+  const body = (
+    <>
       <div className="relative aspect-square w-full shrink-0 overflow-hidden bg-leaf-50">
         {p.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={p.photo_url} alt={p.name} className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+          <img
+            src={p.photo_url}
+            alt={p.name}
+            className={`h-full w-full object-cover transition ${locked ? "brightness-50 grayscale" : "group-hover:scale-105"}`}
+            loading="lazy"
+          />
         ) : (
           <div className="flex h-full items-center justify-center text-leaf-200">—</div>
         )}
@@ -194,14 +198,28 @@ function FlashCard({ p, startsAt }: { p: Product; startsAt: string | null }) {
           berisiko wrap, jadi: name block fix 32px, price row fix 32px, dua
           baris strikethrough disembunyikan via overflow-hidden. */}
       <div className="flex flex-col gap-1 overflow-hidden p-2">
-        <p className="line-clamp-2 h-8 overflow-hidden text-[12px] leading-tight text-ink">{p.name}</p>
+        <p className={`line-clamp-2 h-8 overflow-hidden text-[12px] leading-tight ${locked ? "text-white/80" : "text-ink"}`}>{p.name}</p>
         <div className="flex h-8 items-center justify-between gap-1 overflow-hidden">
-          <PriceButton>{rupiah(p.promo_price ?? p.price ?? 0)}</PriceButton>
+          <PriceButton muted={locked}>{rupiah(p.promo_price ?? p.price ?? 0)}</PriceButton>
           {p.price != null && p.promo_price != null && p.promo_price < p.price && (
-            <span className="shrink-0 whitespace-nowrap text-[10px] text-muted line-through">{rupiah(p.price)}</span>
+            <span className={`shrink-0 whitespace-nowrap text-[10px] line-through ${locked ? "text-white/50" : "text-muted"}`}>{rupiah(p.price)}</span>
           )}
         </div>
       </div>
+    </>
+  );
+  if (locked)
+    return (
+      <div aria-disabled="true" title="Flash sale belum dimulai" className="flex h-full cursor-not-allowed flex-col overflow-hidden rounded-xl bg-ink ring-1 ring-black/20 select-none">
+        {body}
+      </div>
+    );
+  return (
+    <Link
+      href={`/produk/${p.slug}`}
+      className="group flex h-full flex-col overflow-hidden rounded-xl ring-1 ring-black/5 transition hover:ring-coral-500"
+    >
+      {body}
     </Link>
   );
 }
@@ -272,15 +290,19 @@ function HotCard({ p }: { p: Product }) {
  *  whitespace-nowrap + shrink-0: pil tidak boleh wrap atau menyusut sehingga
  *  text "Rp250.000" tetap satu baris di dalam pill. Mencegah card ikut
  *  tinggi karena isi pil wrap. */
-function PriceButton({ children }: { children: React.ReactNode }) {
+function PriceButton({ children, muted = false }: { children: React.ReactNode; muted?: boolean }) {
   return (
-    <span className="inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-sun-400 px-2.5 py-1 text-[12px] font-extrabold tabular-nums text-leaf-900 shadow-sm">
+    <span
+      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-extrabold tabular-nums shadow-sm ${
+        muted ? "bg-white/15 text-white" : "bg-sun-400 text-leaf-900"
+      }`}
+    >
       {children}
     </span>
   );
 }
 
-/** "Mulai 08.00" (or "Besok 08.00" / "Sen 08.00") on an upcoming flash card. */
+/** Lock overlay on a not-yet-started flash card: "Mulai 08.00" / "Besok 08.00" / "Sen 08.00". */
 function StartsBadge({ at }: { at: string }) {
   // Jakarta time on server and client alike; only a render across midnight can differ.
   const opts = { timeZone: "Asia/Jakarta" } as const;
@@ -295,11 +317,13 @@ function StartsBadge({ at }: { at: string }) {
         ? "Besok"
         : start.toLocaleDateString("id-ID", { ...opts, weekday: "short" });
   return (
-    <span
-      suppressHydrationWarning
-      className="absolute top-1 right-1 flex items-center gap-0.5 rounded-full bg-leaf-900/85 px-1.5 py-0.5 text-[10px] font-bold text-white"
-    >
-      <Clock className="h-2.5 w-2.5" /> {when} {time}
+    <span className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/35">
+      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-ink shadow">
+        <Lock className="h-4 w-4" strokeWidth={2.5} />
+      </span>
+      <span suppressHydrationWarning className="flex items-center gap-0.5 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white">
+        <Clock className="h-2.5 w-2.5" /> {when} {time}
+      </span>
     </span>
   );
 }
