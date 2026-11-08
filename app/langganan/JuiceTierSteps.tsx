@@ -284,7 +284,12 @@ export function JuiceTierSteps({
               value={startDate}
               min={minStart}
               max={addDays(today, 60)}
-              onChange={(e) => e.target.value && setT({ start: e.target.value, custom: t.freq === "custom" ? [] : t.custom })}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (!v) return;
+                // Sunday is closed: start on the Monday after.
+                setT({ start: isoWeekday(v) === 7 ? addDays(v, 1) : v, custom: t.freq === "custom" ? [] : t.custom });
+              }}
               className={input}
             />
           </label>
@@ -292,7 +297,7 @@ export function JuiceTierSteps({
             <>
               <p className="mt-3 text-sm font-medium text-ink">Hari kirim (pilih {perWeek})</p>
               <div className="mt-1.5 flex flex-wrap gap-2">
-                {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+                {[1, 2, 3, 4, 5, 6].map((n) => {
                   const on = weekdays.includes(n);
                   return (
                     <button
@@ -317,13 +322,13 @@ export function JuiceTierSteps({
             days={t.days!}
             selected={dates}
             onToggle={(d) => {
-              if (d === firstDate) return;
+              if (d === firstDate || isoWeekday(d) === 7) return;
               const next = dates.includes(d) ? dates.filter((x) => x !== d) : [...dates, d];
               setT({ freq: "custom", custom: next, start: firstDate });
             }}
           />
           <p className="mt-1 text-xs text-muted">
-            Ketuk tanggal untuk menambah atau menghapus kiriman. Setiap kiriman berisi {t.people} orang × {t.perDay ?? "…"} botol.
+            Ketuk tanggal untuk menambah atau menghapus kiriman. Minggu libur, tidak ada pengiriman. Setiap kiriman berisi {t.people} orang × {t.perDay ?? "…"} botol.
           </p>
             </>
           )}
@@ -674,14 +679,17 @@ function Calendar({ from, days, selected, onToggle }: { from: string; days: numb
         ))}
         {cells.map((d, i) => {
           const on = selected.includes(d);
+          const sunday = isoWeekday(d) === 7;
           return (
             <button
               key={d}
               type="button"
+              disabled={sunday}
+              title={sunday ? "Minggu libur" : undefined}
               onClick={() => onToggle(d)}
               aria-pressed={on}
               className={`flex h-10 flex-col items-center justify-center rounded-lg text-xs ${
-                on ? "bg-leaf-700 font-bold text-white" : "bg-leaf-50/60 text-ink hover:bg-leaf-100"
+                on ? "bg-leaf-700 font-bold text-white" : sunday ? "cursor-not-allowed text-muted/50 line-through" : "bg-leaf-50/60 text-ink hover:bg-leaf-100"
               } ${i === 0 ? "cursor-default" : ""}`}
             >
               <span>{Number(d.slice(8))}</span>

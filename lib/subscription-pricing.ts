@@ -48,7 +48,7 @@ export type QuoteInput = {
 export type Frequency = "daily" | "4x_week" | "3x_week" | "2x_week" | "weekly" | "biweekly" | "custom";
 
 export const FREQUENCIES: { key: Frequency; label: string; perWeek?: number; minDays: number }[] = [
-  { key: "daily", label: "Tiap hari", minDays: 1 },
+  { key: "daily", label: "Tiap hari (Sen–Sab)", minDays: 1 },
   { key: "4x_week", label: "4× seminggu", perWeek: 4, minDays: 7 },
   { key: "3x_week", label: "3× seminggu", perWeek: 3, minDays: 7 },
   { key: "2x_week", label: "2× seminggu", perWeek: 2, minDays: 7 },
@@ -76,21 +76,25 @@ export const isoWeekday = (date: string) => ((new Date(date + "T00:00:00Z").getU
  * keeps the buyer's dates (the start date is always included).
  */
 export function deliveryDatesFor(freq: Frequency, from: string, days: number, opts: { weekdays?: number[]; custom?: string[] } = {}): string[] {
+  // Healthila is closed on Sunday (healthila-crm 0151): never a delivery date.
+  const noSunday = (dates: string[]) => dates.filter((d) => isoWeekday(d) !== 7);
+  if (isoWeekday(from) === 7) from = addDays(from, 1);
   const n = Math.max(1, Math.floor(days));
   const step = (k: number) => Array.from({ length: Math.ceil(n / k) }, (_, i) => addDays(from, i * k));
   switch (freq) {
     case "daily":
-      return step(1);
+      return noSunday(step(1));
     case "weekly":
       return step(7);
     case "biweekly":
       return step(14);
     case "custom": {
       const end = addDays(from, n);
-      return [...new Set([from, ...(opts.custom ?? [])])].filter((d) => d >= from && d < end).sort();
+      return noSunday([...new Set([from, ...(opts.custom ?? [])])].filter((d) => d >= from && d < end).sort());
     }
     default: {
-      const wd = opts.weekdays?.length ? opts.weekdays : DEFAULT_WEEKDAYS[FREQUENCIES.find((f) => f.key === freq)?.perWeek ?? 2];
+      const picked = opts.weekdays?.filter((w) => w !== 7);
+      const wd = picked?.length ? picked : DEFAULT_WEEKDAYS[FREQUENCIES.find((f) => f.key === freq)?.perWeek ?? 2];
       let start = from;
       for (let i = 0; i < 7 && !wd.includes(isoWeekday(start)); i++) start = addDays(start, 1);
       return Array.from({ length: n }, (_, i) => addDays(start, i)).filter((d) => wd.includes(isoWeekday(d)));

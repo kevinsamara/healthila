@@ -402,7 +402,8 @@ export function SubscribeWizard({
             Hari kirim{plan.multi_day && d.interval === "1" ? " (boleh pilih beberapa)" : ""}
           </p>
           <div className="mt-1.5 flex flex-wrap gap-2">
-            {DAYS.slice(1).map((day, i) => {
+            {/* Sunday is closed: Senin–Sabtu only (healthila-crm 0151). */}
+            {DAYS.slice(1, 7).map((day, i) => {
               const n = i + 1;
               const on = d.weekdays.includes(n);
               return (
@@ -417,6 +418,7 @@ export function SubscribeWizard({
               );
             })}
           </div>
+          <p className="mt-1 text-xs text-muted">Minggu libur, tidak ada pengiriman.</p>
           {slots.length > 0 && (
             <label className="mt-3 block text-sm font-medium text-ink">
               Jam antar
