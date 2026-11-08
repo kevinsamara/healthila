@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Flame, Package, Zap } from "lucide-react";
+import { Clock, Flame, Package, Zap } from "lucide-react";
 import type { Bundle } from "@/lib/bundles";
 import type { Product } from "@/lib/catalog";
 import { BundleVisual } from "./BundleVisual";
@@ -15,10 +16,25 @@ import { rupiah } from "@/lib/format";
  * Harga ditampilkan sebagai "pil" oranye biar menonjol.
  * Section auto-hide kalau dua-duanya kosong; satu kosong → kolomnya hilang,
  * yang satunya tetap full-width.
+ * Tanpa flash sale aktif, kolom Flash Sale menampilkan flash sale berikutnya
+ * (`upcoming`) dengan hitung mundur "Mulai dalam".
  */
-export function HotAndFlash({ hot, flash, bundles = [] }: { hot: Product[]; flash: Product[]; bundles?: Bundle[] }) {
+export function HotAndFlash({
+  hot,
+  flash,
+  upcoming = [],
+  upcomingStart = null,
+  bundles = [],
+}: {
+  hot: Product[];
+  flash: Product[];
+  upcoming?: Product[];
+  upcomingStart?: string | null;
+  bundles?: Bundle[];
+}) {
   const hasHot = hot.length > 0;
-  const hasFlash = flash.length > 0;
+  const soon = !flash.length && upcoming.length > 0 && !!upcomingStart;
+  const hasFlash = flash.length > 0 || soon;
   const hasBundles = bundles.length > 0;
   const cols = Number(hasHot) + Number(hasFlash) + Number(hasBundles);
   if (!cols) return null;
@@ -42,7 +58,7 @@ export function HotAndFlash({ hot, flash, bundles = [] }: { hot: Product[]; flas
       >
         {hasFlash && (
           <div className={`min-w-0 ${cols === 3 ? "md:col-span-2 lg:col-span-1" : ""}`}>
-            <FlashColumn products={flash} />
+            {soon ? <FlashColumn products={upcoming} startsAt={upcomingStart} /> : <FlashColumn products={flash} />}
           </div>
         )}
         {hasHot && <HotColumn products={hot} />}
@@ -101,7 +117,7 @@ function BundleCard({ b }: { b: Bundle }) {
 
 /* ──────────────────────────────── FLASH SALE ─────────────────────────────── */
 
-function FlashColumn({ products }: { products: Product[] }) {
+function FlashColumn({ products, startsAt = null }: { products: Product[]; startsAt?: string | null }) {
   const earliest = products.reduce<string | null>((min, p) => {
     if (!p.promo_ends_at) return min;
     if (!min) return p.promo_ends_at;
@@ -113,12 +129,22 @@ function FlashColumn({ products }: { products: Product[] }) {
       <div className="flex min-h-[52px] flex-wrap items-center gap-2.5 px-4 py-2">
         <Zap className="h-5 w-5 fill-sun-400 text-sun-400" strokeWidth={2.4} />
         <span className="text-base font-extrabold tracking-tight text-white">Flash Sale</span>
-        {earliest && (
-          // "Berakhir dalam" with the timer underneath: narrower than one long row.
-          <span className="ml-auto flex flex-col items-end gap-0.5">
-            <span className="text-[10px] leading-none text-white/80">Berakhir dalam</span>
-            <Countdown target={earliest} />
-          </span>
+        {startsAt ? (
+          <>
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-bold text-white">Segera</span>
+            <span className="ml-auto flex flex-col items-end gap-0.5">
+              <span className="text-[10px] leading-none text-white/80">Mulai dalam</span>
+              <Countdown target={startsAt} />
+            </span>
+          </>
+        ) : (
+          earliest && (
+            // "Berakhir dalam" with the timer underneath: narrower than one long row.
+            <span className="ml-auto flex flex-col items-end gap-0.5">
+              <span className="text-[10px] leading-none text-white/80">Berakhir dalam</span>
+              <Countdown target={earliest} />
+            </span>
+          )
         )}
       </div>
       {/* Horizontal strip — kartu berbaris memanjang ke samping, bukan 2 row.
@@ -131,7 +157,7 @@ function FlashColumn({ products }: { products: Product[] }) {
         >
           {products.slice(0, 8).map((p) => (
             <li key={p.id} className="shrink-0 basis-[46%] sm:basis-[150px]" style={{ scrollSnapAlign: "start" }}>
-              <FlashCard p={p} />
+              <FlashCard p={p} startsAt={startsAt} />
             </li>
           ))}
         </ul>
@@ -140,7 +166,7 @@ function FlashColumn({ products }: { products: Product[] }) {
   );
 }
 
-function FlashCard({ p }: { p: Product }) {
+function FlashCard({ p, startsAt }: { p: Product; startsAt: string | null }) {
   const discountPct = p.price && p.promo_price ? Math.round((1 - p.promo_price / p.price) * 100) : 0;
   return (
     <Link
@@ -162,6 +188,7 @@ function FlashCard({ p }: { p: Product }) {
         <span className="absolute bottom-1 left-1">
           <SalesBadge badge={p.sales_badge} size="xs" />
         </span>
+        {startsAt && <StartsBadge at={startsAt} />}
       </div>
       {/* Fixed-height body — HARUS sama persis di Flash & HOT. Mobile text
           berisiko wrap, jadi: name block fix 32px, price row fix 32px, dua
@@ -253,16 +280,50 @@ function PriceButton({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Countdown Shopee-style boxed digits (HH : MM : SS). Hides when expired. */
+/** "Mulai 08.00" (or "Besok 08.00" / "Sen 08.00") on an upcoming flash card. */
+function StartsBadge({ at }: { at: string }) {
+  // Jakarta time on server and client alike; only a render across midnight can differ.
+  const opts = { timeZone: "Asia/Jakarta" } as const;
+  const day = (d: Date) => d.toLocaleDateString("en-CA", opts);
+  const start = new Date(at);
+  const now = new Date();
+  const time = start.toLocaleTimeString("id-ID", { ...opts, hour: "2-digit", minute: "2-digit" });
+  const when =
+    day(start) === day(now)
+      ? "Mulai"
+      : day(start) === day(new Date(now.getTime() + 86_400_000))
+        ? "Besok"
+        : start.toLocaleDateString("id-ID", { ...opts, weekday: "short" });
+  return (
+    <span
+      suppressHydrationWarning
+      className="absolute top-1 right-1 flex items-center gap-0.5 rounded-full bg-leaf-900/85 px-1.5 py-0.5 text-[10px] font-bold text-white"
+    >
+      <Clock className="h-2.5 w-2.5" /> {when} {time}
+    </span>
+  );
+}
+
+/** Countdown Shopee-style boxed digits (HH : MM : SS). At zero it refreshes the
+ *  page once, so a starting / ending flash sale swaps in; hides when expired. */
 function Countdown({ target }: { target: string }) {
+  const router = useRouter();
   // Starts empty and ticks on the client only: the server's clock would not match (hydration error).
   const [left, setLeft] = useState<number | null>(null);
   useEffect(() => {
-    const tick = () => setLeft(Math.max(0, new Date(target).getTime() - Date.now()));
+    let done = false;
+    const tick = () => {
+      const ms = Math.max(0, new Date(target).getTime() - Date.now());
+      setLeft(ms);
+      if (ms === 0 && !done) {
+        done = true;
+        router.refresh();
+      }
+    };
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [target]);
+  }, [target, router]);
   if (left == null || left <= 0) return null;
   const sec = Math.floor(left / 1000);
   const d = Math.floor(sec / 86400);

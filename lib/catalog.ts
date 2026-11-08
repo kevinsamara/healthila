@@ -213,3 +213,53 @@ async function loadProducts(): Promise<Product[]> {
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   return (await getProducts()).find((p) => p.slug === slug) ?? null;
 }
+
+/** A promo that is not running now but starts later (web_flash_upcoming). */
+type UpcomingRow = { product_id: string; packaging_id: string | null; price: number; promo_price: number; starts_at: string; ends_at: string | null };
+
+const loadUpcomingRows = unstable_cache(
+  async (): Promise<UpcomingRow[]> => {
+    const { data, error } = await db().from("web_flash_upcoming").select("product_id, packaging_id, price, promo_price, starts_at, ends_at");
+    if (error) {
+      console.error("[catalog] web_flash_upcoming", error.message);
+      return [];
+    }
+    return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+      product_id: r.product_id as string,
+      packaging_id: (r.packaging_id as string | null) ?? null,
+      price: Number(r.price),
+      promo_price: Number(r.promo_price),
+      starts_at: r.starts_at as string,
+      ends_at: (r.ends_at as string | null) ?? null,
+    }));
+  },
+  ["web-flash-upcoming"],
+  { revalidate: 300, tags: ["catalog"] },
+);
+
+/**
+ * The next flash sale when none is running: the products whose promo starts
+ * soonest (same start time), priced as shown on the site (pack sizes scale by
+ * the promo's ratio to the CRM price). promo_ends_at = end of that window.
+ */
+export async function getUpcomingFlash(products: Product[]): Promise<{ startsAt: string | null; products: Product[] }> {
+  const rows = (await loadUpcomingRows()).filter((r) => r.price > 0 && r.promo_price < r.price && Date.parse(r.starts_at) > Date.now());
+  const byId = new Map(products.map((p) => [p.id, p]));
+  const startsAt = rows.reduce<string | null>((min, r) => (byId.has(r.product_id) && (!min || r.starts_at < min) ? r.starts_at : min), null);
+  if (!startsAt) return { startsAt: null, products: [] };
+  const out = new Map<string, Product>();
+  for (const r of rows) {
+    const p = byId.get(r.product_id);
+    if (!p || r.starts_at !== startsAt) continue;
+    const base = r.packaging_id ? p.packagings.find((k) => k.id === r.packaging_id)?.price : p.price;
+    if (base == null) continue;
+    const promo = Math.round((base * r.promo_price) / r.price);
+    const prev = out.get(p.id);
+    if (prev && prev.price! - prev.promo_price! >= base - promo) continue;
+    out.set(p.id, { ...p, price: base, promo_price: promo, promo_ends_at: r.ends_at });
+  }
+  return { startsAt, products: [...out.values()] };
+}
+
+/** A promo's end time is still ahead (the cached catalog can outlive a window by up to 5 min). */
+export const promoRunning = (endsAt: string | null): endsAt is string => !!endsAt && Date.parse(endsAt) > Date.now();

@@ -8,15 +8,32 @@ import { ChevronRight, Zap } from "lucide-react";
  * stays visible while scrolling). Tapping it scrolls to the Flash Sale / HOT /
  * Bundling section; without a flash sale it names what is there instead.
  */
-export function FlashStrip({ count, maxPct, endsAt, fallback }: { count: number; maxPct: number; endsAt: string | null; fallback: string }) {
+export function FlashStrip({
+  count,
+  upcomingCount = 0,
+  startsAt = null,
+  maxPct,
+  endsAt,
+  fallback,
+}: {
+  count: number;
+  /** No flash sale running: products in the next one, starting at `startsAt`. */
+  upcomingCount?: number;
+  startsAt?: string | null;
+  maxPct: number;
+  endsAt: string | null;
+  fallback: string;
+}) {
+  const soon = count === 0 && upcomingCount > 0 && !!startsAt;
+  const target = soon ? startsAt : endsAt;
   const [left, setLeft] = useState<number | null>(null);
   useEffect(() => {
-    if (!endsAt) return;
-    const tick = () => setLeft(Math.max(0, new Date(endsAt).getTime() - Date.now()));
+    if (!target) return;
+    const tick = () => setLeft(Math.max(0, new Date(target).getTime() - Date.now()));
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [endsAt]);
+  }, [target]);
 
   const pad = (n: number) => String(n).padStart(2, "0");
   const time =
@@ -35,7 +52,7 @@ export function FlashStrip({ count, maxPct, endsAt, fallback }: { count: number;
       className="sticky top-16 z-30 flex w-full items-center justify-center gap-2 bg-gradient-to-r from-coral-500 via-[#ff3e4c] to-plum-700 px-4 py-2 text-white shadow-md md:top-[72px]"
     >
       <Zap className="h-4 w-4 shrink-0 fill-sun-400 text-sun-400" />
-      <span className="text-sm font-extrabold">{count > 0 ? "Flash Sale" : fallback}</span>
+      <span className="text-sm font-extrabold">{count > 0 ? "Flash Sale" : soon ? "Flash Sale mulai dalam" : fallback}</span>
       {count > 0 && (
         <span className="hidden text-sm text-white/90 sm:inline">
           · {count} produk diskon{maxPct > 0 ? ` s.d. ${maxPct}%` : ""}

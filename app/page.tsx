@@ -12,7 +12,7 @@ import { HotAndFlash } from "@/components/HotAndFlash";
 import { ProductCard } from "@/components/ProductCard";
 import { getArticles } from "@/lib/articles";
 import { getBundles } from "@/lib/bundles";
-import { getProducts, type Product } from "@/lib/catalog";
+import { getProducts, getUpcomingFlash, promoRunning, type Product } from "@/lib/catalog";
 import { getHeroSlideKeys } from "@/lib/hero-slides";
 import { waLink, type SectionKey } from "@/lib/site";
 import { Citrus, CupSoda, ShoppingBasket } from "lucide-react";
@@ -39,9 +39,15 @@ export default async function Home() {
   // Flash sale: promo publik aktif dengan harga diskon riil + punya waktu
   // tutup (expires_at ATAU daily_end_time). Max 4, sort by soonest ending.
   const flashProducts = available
-    .filter((p) => p.photo_url && p.promo_price != null && p.price != null && p.promo_price < p.price && p.promo_ends_at)
+    .filter((p) => p.photo_url && p.promo_price != null && p.price != null && p.promo_price < p.price && promoRunning(p.promo_ends_at))
     .sort((a, b) => (a.promo_ends_at ?? "").localeCompare(b.promo_ends_at ?? ""))
     .slice(0, 8);
+  // No flash sale running (e.g. the evening for daily 08:00–15:30 promos):
+  // show the next one with "mulai dalam …".
+  const upcoming = flashProducts.length
+    ? { startsAt: null, products: [] as Product[] }
+    : await getUpcomingFlash(available.filter((p) => p.photo_url));
+  const upcomingProducts = upcoming.products.slice(0, 8);
   const photoOf = (keys: SectionKey[]) => all.find((p) => keys.includes(p.section) && p.photo_url)?.photo_url ?? null;
 
   const categories = [
@@ -76,9 +82,11 @@ export default async function Home() {
 
   return (
     <>
-      {flashProducts.length + hotProducts.length + bundles.length > 0 && (
+      {flashProducts.length + upcomingProducts.length + hotProducts.length + bundles.length > 0 && (
         <FlashStrip
           count={flashProducts.length}
+          upcomingCount={upcomingProducts.length}
+          startsAt={upcomingProducts.length ? upcoming.startsAt : null}
           maxPct={Math.max(0, ...flashProducts.map((p) => (p.price && p.promo_price ? Math.round((1 - p.promo_price / p.price) * 100) : 0)))}
           endsAt={flashProducts[0]?.promo_ends_at ?? null}
           fallback={[hotProducts.length && "Produk HOT", bundles.length && "Bundling hemat"].filter(Boolean).join(" & ")}
@@ -116,7 +124,7 @@ export default async function Home() {
 
       <BulkSection />
 
-      <HotAndFlash hot={hotProducts} flash={flashProducts} bundles={bundles} />
+      <HotAndFlash hot={hotProducts} flash={flashProducts} upcoming={upcomingProducts} upcomingStart={upcoming.startsAt} bundles={bundles} />
 
       {/* Featured */}
       {featured.length > 0 && (
