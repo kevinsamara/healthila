@@ -45,10 +45,18 @@ export async function POST(req: Request) {
     messages[messages.length - 1]!.content!.length <= MAX_CHARS;
   if (!valid) return text("Pertanyaannya belum bisa dibaca, Kak. Coba tulis ulang ya.", 422);
 
+  // Forward visitor IP ke webapp supaya rate limit per-IP di sana (0164:
+  // cs_chat_rate_limits) beneran per-visitor, bukan satu bucket "unknown".
+  // Storefront sudah punya in-memory limit sendiri; ini jadi defense berikutnya.
+  const visitorIp = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   try {
     const res = await fetch(`${CRM_URL}/api/public/cs-chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${webSecret() ?? ""}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${webSecret() ?? ""}`,
+        "X-Visitor-IP": visitorIp,
+      },
       body: JSON.stringify({ system: await csSystemPrompt(), messages }),
       signal: AbortSignal.timeout(55_000),
     });
