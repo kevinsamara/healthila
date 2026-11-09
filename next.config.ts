@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     loaderFile: "./lib/image-loader.ts",
     remotePatterns: [
       { protocol: "https", hostname: supabaseHost, pathname: "/storage/v1/object/public/**" },
+      { protocol: "https", hostname: "cdn.healthila.id", pathname: "/**" },
     ],
   },
   turbopack: {
