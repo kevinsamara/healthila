@@ -8,7 +8,7 @@ import { BundleVisual, bundleSummary } from "@/components/BundleVisual";
 import { bundleSaving, getBundle, getBundles } from "@/lib/bundles";
 import { qtyLabel, rupiah } from "@/lib/format";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 export const dynamicParams = true;
 
 export async function generateStaticParams() {

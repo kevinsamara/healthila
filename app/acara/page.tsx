@@ -6,7 +6,7 @@ import { getProducts } from "@/lib/catalog";
 import { EVENT_NEEDS, productsForNeeds, type EventNeedKey } from "@/lib/event-needs";
 import { EventPicker } from "./EventPicker";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Buah untuk Acara & Kantor Malang — Fruit Platter, Fruit Tower, Parcel, Jus",

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArticleCard, ArticleCover } from "@/components/ArticleCard";
 import { categoryTone, getArticle, getArticles } from "@/lib/articles";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export async function generateStaticParams() {
   return (await getArticles()).map((a) => ({ slug: a.slug }));

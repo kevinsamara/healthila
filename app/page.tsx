@@ -19,7 +19,7 @@ import { Citrus, CupSoda, ShoppingBasket } from "lucide-react";
 import { DynIcon } from "@/lib/icons";
 import { isNatalParcel } from "@/lib/natal";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 // Root needs an explicit canonical: the layout's "./" resolves to "/index" here.
 export const metadata: Metadata = { alternates: { canonical: "/" } };

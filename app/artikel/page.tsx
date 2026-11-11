@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ArticleCard } from "@/components/ArticleCard";
 import { getArticles } from "@/lib/articles";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export const metadata: Metadata = {
   title: "Artikel Edukasi",

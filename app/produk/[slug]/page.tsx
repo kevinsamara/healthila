@@ -13,7 +13,7 @@ import { CONFIRM_ONLY_NOTE, isConfirmOnly } from "@/lib/confirm-only";
 import { Gift, Scale, ShieldCheck, Truck, type LucideIcon } from "lucide-react";
 import { DynIcon } from "@/lib/icons";
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 // Pre-render every product (ISR) instead of rendering on each visit.
 export async function generateStaticParams() {

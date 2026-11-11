@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Konsultasi parcel buah online: pilih bentuk, acara, budget, buah favorit, dan kartu ucapan — tim Healthila rangkaikan untuk Kakak.",
 };
 
-export const revalidate = 300;
+export const revalidate = 3600;
 
 export default async function ParcelCustomPage() {
   const [products, art] = await Promise.all([getProducts(), getFruitArt()]);
