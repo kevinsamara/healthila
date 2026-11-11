@@ -178,3 +178,52 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .howto-bob, .howto-pop, .howto-speed, .howto-road, .howto-pin { animation: none; }
 }
+
+/* Jus & Dessert hero illustration (components/JuiceHero.tsx) */
+@keyframes jus-float {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-8px) rotate(6deg); }
+}
+@keyframes jus-wobble {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+@keyframes jus-sip {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes jus-bubble {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: .8; }
+  100% { transform: translateY(-120px); opacity: 0; }
+}
+@keyframes jus-drop {
+  0% { transform: translate(0, 0) scale(.3); opacity: 0; }
+  25% { opacity: 1; transform: translate(calc(var(--dx) * .4), calc(var(--dy) * .4)) scale(1); }
+  100% { transform: translate(var(--dx), calc(var(--dy) * -.2)) scale(.6); opacity: 0; }
+}
+@keyframes jus-crown {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.12); }
+}
+@keyframes jus-twinkle {
+  0%, 100% { transform: scale(.6) rotate(0); opacity: .5; }
+  50% { transform: scale(1.15) rotate(20deg); opacity: 1; }
+}
+@keyframes jus-heart {
+  0% { transform: translateY(0) scale(.6); opacity: 0; }
+  30% { opacity: 1; transform: translateY(-6px) scale(1); }
+  100% { transform: translateY(-30px) scale(.9); opacity: 0; }
+}
+.jus-float, .jus-drop, .jus-crown, .jus-twinkle path, .jus-twinkle, .jus-heart, .jus-bubble { transform-box: fill-box; transform-origin: center; }
+.jus-float { animation: jus-float 3.2s ease-in-out infinite; }
+.jus-wobble { transform-box: fill-box; transform-origin: 50% 100%; animation: jus-wobble 2.6s ease-in-out infinite; }
+.jus-sip { animation: jus-sip 1.8s ease-in-out infinite; }
+.jus-bubble { animation: jus-bubble 2.8s ease-in infinite; }
+.jus-drop { animation: jus-drop 1.8s ease-out infinite; }
+.jus-crown { transform-origin: 50% 100%; animation: jus-crown 1.8s ease-in-out infinite; }
+.jus-twinkle path { animation: jus-twinkle 1.8s ease-in-out infinite; }
+.jus-heart { animation: jus-heart 2.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .jus-float, .jus-wobble, .jus-sip, .jus-bubble, .jus-drop, .jus-crown, .jus-twinkle path, .jus-heart { animation: none; }
+}
