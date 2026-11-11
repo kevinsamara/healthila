@@ -24,7 +24,7 @@ export type SectionKey = "buah" | "jus" | "dessert" | "parcel" | "lainnya";
 
 export const sections: { key: SectionKey; label: string; blurb: string }[] = [
   { key: "buah", label: "Buah Segar", blurb: "Lokal & impor, dipilih tiap pagi" },
-  { key: "jus", label: "Jus", blurb: "Cold-pressed tanpa gula tambahan" },
+  { key: "jus", label: "Jus", blurb: "Cold-pressed tanpa gula & air tambahan" },
   { key: "dessert", label: "Dessert", blurb: "Manis yang tetap sehat" },
   { key: "parcel", label: "Parcel", blurb: "Hampers buah untuk setiap momen" },
   { key: "lainnya", label: "Lainnya", blurb: "Camilan sehat pendamping" },

@@ -63,7 +63,7 @@ export default async function Home() {
     {
       href: "/jus-dessert",
       title: "Jus & Dessert",
-      text: "Cold-pressed tanpa gula tambahan, dibuat fresh setiap hari.",
+      text: "Cold-pressed tanpa gula & air tambahan, dibuat fresh setiap hari.",
       gradient: "from-leaf-900 via-leaf-700 to-[#5fcf8f]",
       photo: photoOf(["jus", "dessert"]),
       icon: CupSoda,
@@ -233,7 +233,7 @@ function heroSlides(available: Product[], keys: string[]): HeroSlide[] {
       bg: "bg-gradient-to-br from-sun-400 via-[#ff8a3d] to-coral-500",
       badge: "Dibuat fresh setiap hari",
       badgeClass: "bg-white text-coral-500",
-      heading: "Jus cold-pressed & dessert buah, tanpa gula tambahan.",
+      heading: "Jus cold-pressed tanpa gula & air tambahan, plus dessert buah.",
       text: "Diperas dari buah segar pilihan, plus dessert buah yang ringan untuk teman santai. Siap diantar se-Malang.",
       textClass: "text-white/90",
       cta: { href: "/jus-dessert", label: "Lihat Jus & Dessert", className: "bg-leaf-900 text-white hover:bg-leaf-700" },

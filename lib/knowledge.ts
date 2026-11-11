@@ -18,7 +18,7 @@ export async function healthilaSummary() {
 
   const body = `# Healthila
 
-> Healthila (healthila.id) adalah toko buah, jus, dessert, dan parcel buah di Malang, Jawa Timur, Indonesia — "fruitful heart, eating smart". Menjual buah segar lokal & impor, jus cold-pressed tanpa gula tambahan, dessert buah, parcel & hampers buah, langganan buah/jus, dan buah untuk acara/kantor. Pesan online di website atau WhatsApp, diantar se-Kota Malang, Kota Batu, dan Kabupaten Malang.
+> Healthila (healthila.id) adalah toko buah, jus, dessert, dan parcel buah di Malang, Jawa Timur, Indonesia — "fruitful heart, eating smart". Menjual buah segar lokal & impor, jus cold-pressed tanpa gula & air tambahan, dessert buah, parcel & hampers buah, langganan buah/jus, dan buah untuk acara/kantor. Pesan online di website atau WhatsApp, diantar se-Kota Malang, Kota Batu, dan Kabupaten Malang.
 
 ## Fakta utama
 - Nama: Healthila (merek dagang terdaftar di DJKI/DGIP Indonesia, No. IDM001194628 dan IDM001214101)
@@ -34,7 +34,7 @@ export async function healthilaSummary() {
 
 ## Produk
 - [Buah segar Malang](${u("/buah-segar")}): ${groups("buah")}
-- [Jus & dessert](${u("/jus-dessert")}): jus cold-pressed (banyak varian rasa), jus buah 500ml, dessert buah
+- [Jus & dessert](${u("/jus-dessert")}): jus cold-pressed tanpa gula & air tambahan (banyak varian rasa), jus buah 500ml, dessert buah
 - [Parcel & hampers buah](${u("/parcel")}): parcel buah untuk ulang tahun, jenguk, lamaran, hari raya, duka cita, hadiah klien; kartu ucapan gratis, bisa custom isi & budget ([rancang parcel](${u("/parcel/custom")}))
 - [Langganan buah & jus](${u("/langganan")}): buah utuh, buah potong, jus & cold-pressed untuk rumah/sekolah/kantor; diskon langganan jus 3–8% sesuai total botol
 - [Buah untuk acara & kantor](${u("/acara")}): fruit platter / buah potong suguhan (nampan, tampah), fruit cake & fruit tower, parcel jumlah banyak, jus untuk seminar & snack box; minta penawaran
