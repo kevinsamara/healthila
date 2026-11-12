@@ -18,10 +18,30 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/bundling/[slug]">): Promise<Metadata> {
   const b = await getBundle((await params).slug);
   if (!b) return { title: "Bundling tidak ditemukan", robots: { index: false } };
+  const title = `${/^bundling/i.test(b.name) ? "" : "Bundling "}${b.name} — ${rupiah(b.bundle_price)}`;
+  const description = (b.description || `Paket ${bundleSummary(b)} dalam satu bundling hemat dari Healthila Malang.`).slice(0, 160);
+  const ogImage = b.photo_url ?? b.items.find((i) => i.photo)?.photo ?? null;
+  const absoluteOg = ogImage
+    ? (ogImage.startsWith("http") ? ogImage : `https://healthila.id${ogImage}`)
+    : null;
   return {
-    title: `${/^bundling/i.test(b.name) ? "" : "Bundling "}${b.name} — ${rupiah(b.bundle_price)}`,
-    description: (b.description || `Paket ${bundleSummary(b)} dalam satu bundling hemat dari Healthila Malang.`).slice(0, 160),
+    title,
+    description,
     alternates: { canonical: `/bundling/${b.slug}` },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `https://healthila.id/bundling/${b.slug}`,
+      siteName: "Healthila",
+      images: absoluteOg ? [{ url: absoluteOg, width: 1200, height: 1200, alt: b.name }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: absoluteOg ? [absoluteOg] : undefined,
+    },
   };
 }
 

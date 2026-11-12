@@ -39,10 +39,28 @@ function productDescription(name: string, desc: string | null) {
 export async function generateMetadata({ params }: PageProps<"/produk/[slug]">): Promise<Metadata> {
   const product = await getProductBySlug((await params).slug);
   if (!product) return { title: "Produk tidak ditemukan", alternates: { canonical: null } };
+  const title = `Jual ${product.name} di Malang`;
+  const description = productDescription(product.name, product.description);
+  const abs = product.photo_url
+    ? (product.photo_url.startsWith("http") ? product.photo_url : `https://healthila.id${product.photo_url}`)
+    : null;
   return {
-    title: `Jual ${product.name} di Malang`,
-    description: productDescription(product.name, product.description),
-    openGraph: product.photo_url ? { images: [product.photo_url] } : undefined,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      url: `https://healthila.id/produk/${product.slug}`,
+      siteName: "Healthila",
+      images: abs ? [{ url: abs, width: 1200, height: 1200, alt: product.name }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: abs ? [abs] : undefined,
+    },
   };
 }
 
