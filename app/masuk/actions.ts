@@ -2,7 +2,6 @@
 
 import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { redirect } from "next/navigation";
-import { sendWhatsApp } from "@/lib/fonnte";
 import { clearSession, sessionToken, startSession } from "@/lib/session";
 import { webRpc, WebRpcError } from "@/lib/web-rpc";
 
@@ -18,12 +17,27 @@ export async function requestOtp(rawPhone: string): Promise<Result> {
   if (!phone) return { ok: false, error: "Nomor WhatsApp tidak valid. Contoh: 0812 3456 7890" };
   try {
     const { code } = await webRpc<{ code: string }>("web_otp_request", { p_phone_e164: phone });
-    const sent = await sendWhatsApp(
-      phone.replace(/^\+/, ""),
-      `Kode masuk Healthila: *${code}*\n\nBerlaku 5 menit. Jangan bagikan kode ini kepada siapa pun, termasuk yang mengaku dari Healthila.`,
-    );
-    if (!sent.ok) {
-      console.error("[otp] send failed", sent.detail);
+
+    // Kirim OTP via CRM endpoint (Meta Cloud API template `otp_login`).
+    // Ganti Fonnte sebelumnya — Fonnte rawan banned + rate-limited untuk OTP.
+    const crmUrl = (process.env.CRM_URL || "https://crm.healthila.id").replace(/\/$/, "");
+    const secret = process.env.WA_OTP_SHARED_SECRET;
+    if (!secret) {
+      console.error("[otp] WA_OTP_SHARED_SECRET not set");
+      return { ok: false, error: "Kode gagal dikirim: konfigurasi server. Hubungi admin." };
+    }
+    const r = await fetch(`${crmUrl}/api/wa/send-otp`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-OTP-Secret": secret,
+      },
+      body: JSON.stringify({ phone, code }),
+      cache: "no-store",
+    });
+    const d = await r.json().catch(() => ({ ok: false, error: "parse error" }));
+    if (!d.ok) {
+      console.error("[otp] send failed", d.detail ?? d.error);
       return { ok: false, error: "Kode gagal dikirim ke WhatsApp. Pastikan nomor aktif di WhatsApp, lalu coba lagi." };
     }
     return { ok: true, phone };
