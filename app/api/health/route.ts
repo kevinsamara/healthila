@@ -13,6 +13,8 @@ export async function GET() {
       orders: has("WEB_ORDER_SECRET"),
       whatsappOtp: has("FONNTE_TOKEN"),
       newOrderNotification: has("FONNTE_TOKEN") && has("SORTIR_GROUP_ID"),
+      // Staff-group messages use the ops number when set (lib/fonnte.ts).
+      opsNumber: has("FONNTE_TOKEN_OPS"),
       googleReviews: has("GOOGLE_PLACES_API_KEY") || has("GOOGLE_MAPS_API_KEY"),
     },
     { headers: { "Cache-Control": "no-store" } },
