@@ -54,14 +54,15 @@ ${noImportTag()}`,
   );
 }
 
-export async function notifyNewWebOrder(o: PlacedOrder) {
+export async function notifyNewWebOrder(o: PlacedOrder, prefix = "") {
   const target = process.env.SORTIR_GROUP_ID;
   if (!target) {
     console.warn("[notify] SORTIR_GROUP_ID not set — skipping new-order notification");
-    return;
+    return { ok: false as const, detail: "SORTIR_GROUP_ID not set" };
   }
-  const res = await sendToStaffGroup(formatMessage(o));
+  const res = await sendToStaffGroup(prefix + formatMessage(o));
   if (!res.ok) console.error("[notify] new order", o.code, res.detail);
+  return res;
 }
 
 function formatMessage(o: PlacedOrder) {
