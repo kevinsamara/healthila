@@ -45,9 +45,13 @@ export function noImportTag(date = new Date()) {
 export async function sendToStaffGroup(message: string) {
   const target = process.env.SORTIR_GROUP_ID;
   if (!target) return { ok: false as const, detail: "SORTIR_GROUP_ID not set" };
-  return sendWhatsApp(target, `${message}
+  return sendWhatsApp(
+    target,
+    `${message}
 
-${noImportTag()}`);
+${noImportTag()}`,
+    { ops: true },
+  );
 }
 
 export async function notifyNewWebOrder(o: PlacedOrder) {

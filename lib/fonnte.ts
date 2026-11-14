@@ -1,11 +1,14 @@
 import "server-only";
 
 /**
- * WhatsApp send via Fonnte (same device as the CRM). Server-only: the token
- * comes from FONNTE_TOKEN and never reaches the browser. Never throws.
+ * WhatsApp send via Fonnte (same devices as the CRM). Server-only: tokens
+ * never reach the browser. Never throws.
+ *   ops: true → FONNTE_TOKEN_OPS, the internal number for staff groups (falls
+ *   back to FONNTE_TOKEN), like the CRM — so staff notifications keep working
+ *   when the main broadcast number is restricted by WhatsApp.
  */
-export async function sendWhatsApp(targetDigits: string, message: string): Promise<{ ok: boolean; detail?: string }> {
-  const token = process.env.FONNTE_TOKEN;
+export async function sendWhatsApp(targetDigits: string, message: string, opts?: { ops?: boolean }): Promise<{ ok: boolean; detail?: string }> {
+  const token = (opts?.ops && process.env.FONNTE_TOKEN_OPS) || process.env.FONNTE_TOKEN;
   if (!token) return { ok: false, detail: "FONNTE_TOKEN not set" };
   try {
     const res = await fetch("https://api.fonnte.com/send", {
