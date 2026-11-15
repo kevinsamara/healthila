@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { Bot, Send, ShoppingBag } from "lucide-react";
+import { Send, ShoppingBag } from "lucide-react";
 import { cartCount, useCart } from "@/lib/cart";
 import { site, waLink } from "@/lib/site";
 import { CsCards, type CsRef } from "./CsCards";
+import { Hila, HilaAvatar } from "./Hila";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -105,11 +106,12 @@ export function CsChat({ embedded = false }: { embedded?: boolean }) {
   return (
     <div className={embedded ? "flex min-h-0 flex-1 flex-col" : "mt-6 flex h-[65vh] min-h-[420px] flex-col overflow-hidden rounded-3xl bg-white ring-1 ring-leaf-100"}>
       <div ref={list} aria-live="polite" className="flex-1 space-y-3 overflow-y-auto p-4 sm:p-5">
+        {messages.length === 0 && <Hila pose="halo" className="mx-auto w-36 sm:w-40" />}
         <div className="flex gap-2">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-leaf-700 text-white">
-            <Bot className="h-4 w-4" />
-          </span>
-          <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-leaf-50 px-4 py-2.5 text-ink">Halo Kak, ada yang bisa dibantu soal Healthila?</p>
+          <HilaAvatar />
+          <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-leaf-50 px-4 py-2.5 text-ink">
+            Halo Kak, aku <b>Hila</b>, CS 24 jam Healthila. Ada yang bisa Hila bantu?
+          </p>
         </div>
         {messages.length === 0 && (
           <div className="flex flex-wrap gap-2 pl-10">
@@ -130,11 +132,9 @@ export function CsChat({ embedded = false }: { embedded?: boolean }) {
           ) : (
             <div key={i}>
               <div className="flex gap-2">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-leaf-700 text-white">
-                  <Bot className="h-4 w-4" />
-                </span>
+                <HilaAvatar />
                 <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-leaf-50 px-4 py-2.5 whitespace-pre-wrap text-ink">
-                  {answer?.text ? <Linked text={answer.text} /> : <span className="text-muted">Sedang mengetik…</span>}
+                  {answer?.text ? <Linked text={answer.text} /> : <span className="text-muted">Hila lagi cek dulu ya…</span>}
                 </p>
               </div>
               {!streaming && answer && answer.refs.length > 0 && <CsCards refs={answer.refs} />}

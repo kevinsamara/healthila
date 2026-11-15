@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getAccount } from "@/lib/session";
+import { Hila } from "@/components/Hila";
 import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = { title: "Masuk", robots: { index: false } };
@@ -13,6 +14,7 @@ export default async function MasukPage({ searchParams }: PageProps<"/masuk">) {
 
   return (
     <div className="mx-auto max-w-md px-4 py-14">
+      <Hila pose="selamat-datang" priority className="mx-auto mb-4 w-48" />
       <h1 className="text-3xl font-extrabold tracking-tight text-leaf-900">Masuk</h1>
       <p className="mt-2 text-muted">
         Cukup pakai nomor WhatsApp. Kami kirim kode 6 digit — tanpa password.

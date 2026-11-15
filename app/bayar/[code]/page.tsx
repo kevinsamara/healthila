@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import Link from "next/link";
+import { Hila } from "@/components/Hila";
 import { WhatsAppIcon } from "@/components/WhatsAppFab";
 import { rupiah } from "@/lib/format";
 import { getBayarDetail, getQrisPayment, isSubscriptionCode } from "@/lib/payment";
@@ -8,7 +9,7 @@ import { qrisWithAmount, qrSvg } from "@/lib/qris";
 import { waLink } from "@/lib/site";
 import { Countdown, CopyAmount, ProofUpload } from "./PaymentClient";
 import { VoucherForm } from "./VoucherForm";
-import { CircleCheck, Gift, LogIn, ReceiptText } from "lucide-react";
+import { Gift, LogIn, ReceiptText } from "lucide-react";
 
 export const metadata: Metadata = { title: "Pembayaran QRIS", robots: { index: false } };
 export const dynamic = "force-dynamic";
@@ -42,7 +43,7 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
   if (pay.status === "verified") {
     return (
       <Shell>
-        <CircleCheck className="mx-auto h-14 w-14 text-leaf-700" strokeWidth={1.6} />
+        <Hila pose="terima-kasih" priority className="mx-auto w-48" />
         <h1 className="mt-3 text-center text-2xl font-extrabold text-leaf-900">Pembayaran diterima</h1>
         <p className="mt-2 text-center text-muted">
           {pay.code} sudah lunas.{sub ? " Langganan aktif — jadwal kirim & status tiap pengiriman ada di Akun." : " Pantau status pengiriman di Akun."}
@@ -62,7 +63,8 @@ export default async function BayarPage({ params, searchParams }: PageProps<"/ba
   if (pay.status !== "awaiting" && pay.status !== "submitted") {
     return (
       <Shell>
-        <h1 className="text-center text-2xl font-extrabold text-ink">
+        <Hila pose="maaf" className="mx-auto w-44" />
+        <h1 className="mt-3 text-center text-2xl font-extrabold text-ink">
           {pay.status === "expired" ? "Batas waktu pembayaran lewat" : pay.status === "cancelled" ? (sub ? "Langganan dibatalkan" : "Pesanan dibatalkan") : "Pembayaran belum terverifikasi"}
         </h1>
         <p className="mt-2 text-center text-muted">

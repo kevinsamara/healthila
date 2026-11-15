@@ -1,3 +1,4 @@
+import { Hila } from "./Hila";
 import Link from "next/link";
 import { getGoogleReviews } from "@/lib/google-reviews";
 import { site } from "@/lib/site";
@@ -110,6 +111,7 @@ export async function Testimonials() {
       <BgCircles />
       <CloudPattern />
       <div className="relative mx-auto max-w-7xl px-4 py-20">
+        <Hila pose="terima-kasih-review" className="mx-auto -mb-2 w-40 sm:w-44" />
         <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" light />
         {google && (
           <a

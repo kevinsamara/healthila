@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { X, Percent, Zap, Truck, Crown, Gift } from "lucide-react";
+import { Hila } from "./Hila";
+import { X, Percent, Zap, Truck, Crown } from "lucide-react";
 
 /**
  * Modal "Ayo Login!" — tampil ke pengunjung yang belum login untuk mendorong
@@ -69,14 +70,8 @@ export function LoginPrompt() {
         <div className="relative overflow-hidden bg-gradient-to-br from-sun-100 via-leaf-50 to-white px-6 pt-8 pb-6 text-center">
           <div className="pointer-events-none absolute -left-6 -top-4 h-24 w-24 rounded-full bg-coral-500/15 blur-xl" />
           <div className="pointer-events-none absolute -right-8 bottom-0 h-24 w-24 rounded-full bg-leaf-700/10 blur-xl" />
-          {/* 5 badge icon floating */}
-          <div className="relative mb-4 flex items-center justify-center gap-2">
-            <Badge color="bg-coral-500 text-white"><Percent className="h-5 w-5" strokeWidth={2.6} /></Badge>
-            <Badge color="bg-leaf-700 text-white"><Truck className="h-5 w-5" strokeWidth={2.4} /></Badge>
-            <Badge color="bg-sun-400 text-leaf-900"><Zap className="h-6 w-6 fill-leaf-900" strokeWidth={2.2} /></Badge>
-            <Badge color="bg-leaf-700 text-white"><Gift className="h-5 w-5" strokeWidth={2.4} /></Badge>
-            <Badge color="bg-sun-400 text-leaf-900"><Crown className="h-5 w-5" strokeWidth={2.4} /></Badge>
-          </div>
+          {/* Hila menyapa — manfaatnya sudah ada di daftar di bawah */}
+          <Hila pose="halo" className="relative mx-auto -mt-3 mb-1 w-32" />
           <h2 id="login-prompt-title" className="text-3xl font-extrabold leading-tight text-leaf-900">
             Ayo Login!
           </h2>
@@ -119,14 +114,6 @@ export function LoginPrompt() {
         </div>
       </div>
     </div>
-  );
-}
-
-function Badge({ color, children }: { color: string; children: React.ReactNode }) {
-  return (
-    <span className={`flex h-11 w-11 items-center justify-center rounded-2xl shadow-md ring-2 ring-white ${color}`}>
-      {children}
-    </span>
   );
 }
 

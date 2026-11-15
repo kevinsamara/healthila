@@ -1,5 +1,6 @@
 "use client";
 
+import { Hila } from "@/components/Hila";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -107,6 +108,7 @@ export function CartView({ slots, bundleRules = {} }: { slots: DeliverySlot[]; b
   if (items.length === 0) {
     return (
       <div className="mt-12 rounded-3xl bg-white p-10 text-center ring-1 ring-leaf-100">
+        <Hila pose="siap-membantu" className="mx-auto mb-3 w-40" />
         <p className="text-lg font-semibold text-ink">Keranjang masih kosong</p>
         <p className="mt-1 text-muted">Yuk pilih buah segar favorit Anda.</p>
         <Link href="/katalog" className="mt-6 inline-block rounded-full bg-leaf-700 px-6 py-3 font-bold text-white hover:bg-leaf-900">
@@ -618,6 +620,7 @@ function TotebagHint({ subtotal }: { subtotal: number }) {
 function OrderPlaced({ done }: { done: Done }) {
   return (
     <div className="mx-auto mt-10 max-w-lg rounded-3xl bg-white p-8 text-center ring-1 ring-leaf-100">
+      <Hila pose="berhasil" priority className="mx-auto -mt-2 mb-2 w-44" />
       <p className="text-sm font-semibold tracking-wide text-leaf-500 uppercase">Pesanan tersimpan</p>
       <p className="mt-2 text-3xl font-extrabold text-leaf-900">{done.code}</p>
       <p className="mt-3 text-muted">
