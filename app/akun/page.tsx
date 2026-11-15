@@ -26,7 +26,7 @@ export default async function AkunPage() {
 
   const firstName = account.name ? account.name.split(" ")[0] : null;
   const overviewSafe: AccountOverview = overview ?? { loyalty_points: 0, loyalty_history: [], vouchers: [], redeemable_vouchers: [], favorites: [] };
-  const activeOrders = account.orders.filter((o) => o.status !== "cancelled" && o.status !== "completed").length;
+  const activeOrders = account.orders.filter(isActiveOrder).length;
   const vouchersCount = overviewSafe.vouchers.length;
 
   const tabs: TabDef[] = [
@@ -116,7 +116,7 @@ function Ringkasan({ account, profile, overview }: {
   const birthLabel = profile?.birth_date
     ? new Date(profile.birth_date + "T00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long" })
     : null;
-  const activeOrder = account.orders.find((o) => o.status !== "cancelled" && o.status !== "completed");
+  const activeOrder = account.orders.find(isActiveOrder);
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {/* Loyalty mini */}
@@ -171,7 +171,7 @@ function Ringkasan({ account, profile, overview }: {
         {activeOrder ? (
           <>
             <p className="mt-2 font-bold text-ink">{activeOrder.code}</p>
-            <p className="text-xs text-muted">Status: {activeOrder.status}</p>
+            <p className="text-xs text-muted">Status: {!activeOrder.confirmed ? "Menunggu konfirmasi" : STATUS[activeOrder.status]?.[0] ?? activeOrder.status}</p>
           </>
         ) : (
           <>
@@ -270,9 +270,10 @@ function LoyaltyPanel({ overview }: { overview: AccountOverview }) {
         </div>
         <p className="mt-2 text-5xl font-extrabold tabular-nums">{overview.loyalty_points}</p>
         <p className="mt-3 text-sm text-white/80">
-          Setiap <b className="text-white">Rp100.000</b> belanja = <b className="text-white">1 poin</b>. Poin bisa ditukar jadi voucher — buka halaman Voucher untuk cek yang tersedia.
+          Setiap <b className="text-white">Rp100.000</b> belanja = <b className="text-white">1 poin</b>. Poin bisa ditukar jadi voucher di bawah ini.
         </p>
       </div>
+      <RedeemCard overview={overview} />
       <Card title="Riwayat poin terakhir">
         {overview.loyalty_history.length === 0 ? (
           <p className="text-sm text-muted">Belum ada aktivitas. Mulai belanja untuk kumpul poin pertama Kakak!</p>
@@ -303,10 +304,10 @@ function LoyaltyPanel({ overview }: { overview: AccountOverview }) {
 
 function VoucherPanel({ overview }: { overview: AccountOverview }) {
   const hasActive = overview.vouchers.length > 0;
-  const hasRedeemable = overview.redeemable_vouchers.length > 0;
 
-  if (!hasActive && !hasRedeemable) {
+  if (!hasActive) {
     return (
+      <div className="space-y-4">
       <Card title="Voucher Kakak">
         <div className="py-8 text-center">
           <Ticket className="mx-auto h-12 w-12 text-leaf-200" strokeWidth={1.4} />
@@ -317,13 +318,14 @@ function VoucherPanel({ overview }: { overview: AccountOverview }) {
           </p>
         </div>
       </Card>
+      <RedeemCard overview={overview} />
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {hasActive && (
-        <Card title="Voucher Kakak" hint={`${overview.vouchers.length} voucher siap dipakai`}>
+      <Card title="Voucher Kakak" hint={`${overview.vouchers.length} voucher siap dipakai`}>
           <ul className="space-y-3">
             {overview.vouchers.map((v) => (
               <li key={v.code} className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-sun-100 to-coral-100 p-4 ring-1 ring-sun-300">
@@ -349,47 +351,58 @@ function VoucherPanel({ overview }: { overview: AccountOverview }) {
             ))}
           </ul>
         </Card>
-      )}
 
-      {hasRedeemable && (
-        <Card title="Tukar Poin Kakak" hint={`Saldo poin: ${overview.loyalty_points}`}>
+      <RedeemCard overview={overview} />
+    </div>
+  );
+}
+
+/** Vouchers that can be bought with loyalty points — always listed; the button only works with enough points. */
+function RedeemCard({ overview }: { overview: AccountOverview }) {
+  const list = overview.redeemable_vouchers;
+  return (
+    <Card title="Tukar Poin Kakak" hint={`Saldo poin: ${overview.loyalty_points}`}>
+      {list.length === 0 ? (
+        <p className="py-4 text-center text-sm text-muted">Belum ada voucher yang bisa ditukar poin saat ini. Terus kumpulkan poin ya, Kak!</p>
+      ) : (
+        <>
           <ul className="space-y-3">
-            {overview.redeemable_vouchers.map((v) => (
-              <li key={v.id} className={`relative overflow-hidden rounded-2xl p-4 ring-1 ${
-                v.affordable ? "bg-leaf-50 ring-leaf-200" : "bg-slate-50 ring-slate-200 opacity-80"
-              }`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold text-ink">{v.name}</p>
-                    <p className="mt-0.5 text-xs text-muted">
-                      Diskon{" "}
-                      <b className="text-leaf-700">
-                        {v.kind === "percent" ? `${v.amount}%` : v.kind === "free_shipping" ? "Ongkir" : rupiah(v.amount)}
-                      </b>
-                      {v.min_subtotal != null && v.min_subtotal > 0 && <> · Min. belanja {rupiah(v.min_subtotal)}</>}
-                      {v.expires_at && <> · s/d {v.expires_at}</>}
-                    </p>
-                    {v.notes && <p className="mt-1 text-xs text-muted italic">{v.notes}</p>}
-                    <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-plum-100 px-2 py-0.5 text-[11px] font-bold text-plum-700">
-                      ⭐ {v.points_cost} poin
-                    </p>
+            {list.map((v) => {
+              const short = Math.max(0, v.points_cost - overview.loyalty_points);
+              return (
+                <li key={v.id} className={`relative overflow-hidden rounded-2xl p-4 ring-1 ${v.affordable ? "bg-leaf-50 ring-leaf-200" : "bg-slate-50 ring-slate-200"}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-ink">{v.name}</p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        Diskon{" "}
+                        <b className="text-leaf-700">
+                          {v.kind === "percent" ? `${v.amount}%` : v.kind === "free_shipping" ? "Ongkir" : rupiah(v.amount)}
+                        </b>
+                        {v.kind === "percent" && v.max_discount != null && v.max_discount > 0 && <> · Maks. {rupiah(v.max_discount)}</>}
+                        {v.min_subtotal != null && v.min_subtotal > 0 && <> · Min. belanja {rupiah(v.min_subtotal)}</>}
+                        {v.expires_at && <> · s/d {v.expires_at}</>}
+                      </p>
+                      {v.notes && <p className="mt-1 text-xs text-muted italic">{v.notes}</p>}
+                      <p className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-plum-100 px-2 py-0.5 text-[11px] font-bold text-plum-700">
+                          <Sparkles className="h-3 w-3" /> {v.points_cost} poin
+                        </span>
+                        {!v.affordable && <span className="text-[11px] text-muted">Kurang {short} poin lagi</span>}
+                      </p>
+                    </div>
+                    <RedeemButton voucherId={v.id} pointsCost={v.points_cost} affordable={v.affordable} label={v.name} />
                   </div>
-                  <RedeemButton
-                    voucherId={v.id}
-                    pointsCost={v.points_cost}
-                    affordable={v.affordable}
-                    label={v.name}
-                  />
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
           <p className="mt-3 text-[11px] text-muted">
-            Poin terpotong saat tombol &ldquo;Tukar&rdquo; ditekan. Voucher langsung muncul di daftar atas dan bisa dipakai saat checkout.
+            Poin terpotong saat tombol &ldquo;Tukar&rdquo; ditekan. Voucher langsung muncul di Voucher Kakak dan bisa dipakai saat checkout.
           </p>
-        </Card>
+        </>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -483,6 +496,9 @@ function AlamatPanel({ addresses }: { addresses: Awaited<ReturnType<typeof getAc
 }
 
 /* ─────────────────────────── SHARED HELPERS ─────────────────────────── */
+
+/** Still on its way to the buyer: once shipped (or completed/cancelled) it is history, not active. */
+const isActiveOrder = (o: AccountOrder) => !["shipped", "completed", "delivered", "cancelled"].includes(o.status);
 
 const STATUS: Record<string, [string, string]> = {
   scheduled: ["Dijadwalkan", "bg-leaf-100 text-leaf-900"],
