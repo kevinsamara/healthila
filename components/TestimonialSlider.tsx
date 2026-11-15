@@ -25,7 +25,7 @@ const gutter = (el: HTMLElement) => parseFloat(getComputedStyle(el).paddingLeft)
 /** One page = the track without its edge-bleed padding. */
 const pageWidth = (el: HTMLElement) => Math.max(1, el.clientWidth - 2 * gutter(el));
 
-/** Swipeable testimonial carousel: 1 card on phones, 2 on tablet, 3 on desktop. Auto-advances. */
+/** Swipeable testimonial carousel, one card per slide inside its column. Auto-advances. */
 export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem[]; /** On a coloured section: white dots. */ onDark?: boolean }) {
   // The page is cached, so shuffle in the browser: a new order on every refresh.
   const [items, setItems] = useState(initial);
@@ -94,13 +94,13 @@ export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem
       <div
         ref={track}
         onScroll={onScroll}
-        className="mx-[calc(50%-50vw)] flex snap-x snap-mandatory overflow-x-auto px-[calc(50vw-50%-0.5rem)] pb-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x snap-mandatory overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((t) => {
           const c = toneCls[t.tone];
           return (
-            <div key={t.key} className="w-full shrink-0 snap-start px-2 md:w-1/2 lg:w-1/3">
-              <figure className={`relative flex h-full flex-col overflow-hidden rounded-3xl p-7 shadow-xl shadow-black/10 ${c.card}`}>
+            <div key={t.key} className="w-full shrink-0 snap-start px-1">
+              <figure className={`relative flex h-full min-h-72 flex-col overflow-hidden rounded-3xl p-7 shadow-xl shadow-black/10 sm:p-9 ${c.card}`}>
                 <span className={`absolute top-1 right-5 font-display text-[8rem] leading-none font-extrabold ${c.quote}`} aria-hidden>
                   “
                 </span>
@@ -109,7 +109,7 @@ export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem
                     <Star key={n} className={`h-5 w-5 ${n <= t.rating ? "fill-sun-400 text-sun-400" : "fill-black/10 text-black/10"}`} />
                   ))}
                 </p>
-                <blockquote className="relative mt-4 line-clamp-6 leading-relaxed text-ink/85 italic">“{t.quote}”</blockquote>
+                <blockquote className="relative mt-4 line-clamp-6 text-lg leading-relaxed text-ink/85 italic sm:text-xl">“{t.quote}”</blockquote>
                 <figcaption className="mt-auto flex items-end justify-between gap-3 pt-6">
                   <span className="min-w-0">
                     {t.href ? (
@@ -130,7 +130,7 @@ export function TestimonialSlider({ items: initial, onDark }: { items: SlideItem
       </div>
 
       {pages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-4">
+        <div className="mt-4 flex items-center justify-center gap-4">
           <NavButton label="Sebelumnya" onClick={() => go(page - 1 < 0 ? pages - 1 : page - 1)}>
             ‹
           </NavButton>

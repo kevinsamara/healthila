@@ -111,29 +111,34 @@ export async function Testimonials() {
       <BgCircles />
       <CloudPattern />
       <div className="relative mx-auto max-w-7xl px-4 py-20">
-        <Hila pose="terima-kasih-review" className="mx-auto -mb-2 w-40 sm:w-44" />
-        <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" light />
-        {google && (
-          <a
-            href={mapsHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mx-auto mt-6 flex w-fit items-center gap-3 rounded-full bg-white px-5 py-2.5 shadow-sm ring-1 ring-black/5 hover:ring-leaf-500"
-          >
-            <GoogleG />
-            <span className="font-display text-2xl font-bold text-ink">{google.rating.toFixed(1)}</span>
-            <span className="flex text-sun-400">{[0, 1, 2, 3, 4].map((i) => <Star key={i} className="h-4 w-4 fill-current" />)}</span>
-            <span className="text-sm text-muted">{google.count} ulasan Google</span>
-          </a>
-        )}
+        {/* Row 1: Hila + title + Google badge | review carousel. Row 2: WhatsApp screenshots, full width. */}
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          <div className="flex flex-col items-center">
+            <Hila pose="terima-kasih-review" className="-mb-2 w-44 sm:w-52" />
+            <SectionTitle title="Kata Mereka" subtitle="Kirim sehat, bukan sekadar hadiah" light />
+            {google && (
+              <a
+                href={mapsHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 flex w-fit items-center gap-3 rounded-full bg-white px-5 py-2.5 shadow-sm ring-1 ring-black/5 hover:ring-leaf-500"
+              >
+                <GoogleG />
+                <span className="font-display text-2xl font-bold text-ink">{google.rating.toFixed(1)}</span>
+                <span className="flex text-sun-400">{[0, 1, 2, 3, 4].map((i) => <Star key={i} className="h-4 w-4 fill-current" />)}</span>
+                <span className="text-sm text-muted">{google.count} ulasan Google</span>
+              </a>
+            )}
+          </div>
+          <div className="min-w-0">
+            <TestimonialSlider items={items} onDark />
+          </div>
+        </div>
         {shots.length > 0 && (
-          <div className="mt-10">
+          <div className="mt-14">
             <ShotWall shots={shots} />
           </div>
         )}
-        <div className="mt-10">
-          <TestimonialSlider items={items} onDark />
-        </div>
         <p className="mt-8 text-center">
           <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:underline">
             Lihat semua ulasan di Google Maps →
