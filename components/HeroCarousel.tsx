@@ -203,6 +203,12 @@ function ModelScene({ model, photos, priority }: { model: NonNullable<HeroSlide[
         <br />
         ucapan Natal
       </p>
+      <p className="absolute right-0 bottom-28 z-20 rotate-6 rounded-2xl bg-[#e23a4f] px-3 py-2 text-center text-xs leading-tight font-extrabold text-white shadow-lg ring-4 ring-white sm:text-sm md:bottom-28">
+        Free delivery
+        <br />
+        Kota Malang
+        <span className="mt-0.5 block text-[10px] font-semibold text-white/85">s.d. Rp10.000</span>
+      </p>
       <Image
         src={model.src}
         alt={model.alt}
