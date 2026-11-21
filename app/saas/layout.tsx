@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { hasAccess } from "./_gate/actions";
+import { SaasGate } from "./_gate/SaasGate";
 
 export const metadata: Metadata = {
   title: {
@@ -66,11 +68,12 @@ function SaasFooter() {
   );
 }
 
-export default function SaasLayout({ children }: { children: React.ReactNode }) {
+export default async function SaasLayout({ children }: { children: React.ReactNode }) {
+  const allowed = await hasAccess();
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <SaasHeader />
-      {children}
+      {allowed ? children : <SaasGate />}
       <SaasFooter />
     </div>
   );
