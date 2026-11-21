@@ -88,6 +88,7 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
             >
               <div className="pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-white/5" />
               {s.snow && <Snow />}
+              {s.model && <Ornaments />}
               <div
                 className={`relative mx-auto grid w-full max-w-7xl flex-1 items-center gap-10 px-4 pt-16 md:grid-cols-2 md:pt-24 ${
                   s.model ? "pb-0 md:gap-6" : "pb-20 md:pb-28"
@@ -187,7 +188,7 @@ function ModelScene({ model, photos, priority }: { model: NonNullable<HeroSlide[
     "right-0 top-0 w-24 rotate-6 sm:w-28 md:w-32",
   ];
   return (
-    <div className="relative mx-auto h-[440px] w-full max-w-lg self-end sm:h-[480px] md:mt-0 md:h-[600px]">
+    <div className="relative mx-auto h-[440px] w-full max-w-lg self-end sm:h-[480px] md:mt-0 md:h-[600px] lg:h-[640px]">
       {photos.map((p, i) => (
         <Link
           key={p.id}
@@ -197,6 +198,11 @@ function ModelScene({ model, photos, priority }: { model: NonNullable<HeroSlide[
           <Image src={p.photo} alt={p.name} fill sizes="160px" className="object-cover transition duration-500 group-hover:scale-105" />
         </Link>
       ))}
+      <p className="absolute bottom-16 left-0 z-20 -rotate-6 rounded-2xl bg-[#f3c969] px-3 py-2 text-center text-xs leading-tight font-extrabold text-[#0a3b2c] shadow-lg ring-4 ring-white sm:text-sm md:bottom-24">
+        Gratis kartu
+        <br />
+        ucapan Natal
+      </p>
       <Image
         src={model.src}
         alt={model.alt}
@@ -206,6 +212,44 @@ function ModelScene({ model, photos, priority }: { model: NonNullable<HeroSlide[
         sizes="(min-width: 768px) 460px, 320px"
         className="pointer-events-none absolute bottom-0 left-1/2 z-10 h-full w-auto max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_20px_30px_rgba(0,0,0,0.35)]"
       />
+    </div>
+  );
+}
+
+/** [left % of the right column, string length px, ball size px, colour, kind, swing delay s] */
+const BAUBLES: [number, number, number, string, "ball" | "star", number][] = [
+  [6, 70, 26, "#e23a4f", "ball", 0],
+  [16, 130, 34, "#f3c969", "ball", 0.6],
+  [27, 46, 20, "#ffffff", "ball", 1.1],
+  [72, 54, 22, "#f3c969", "star", 0.3],
+  [84, 120, 30, "#e23a4f", "ball", 0.9],
+  [95, 78, 24, "#ffffff", "ball", 1.4],
+];
+
+/** Christmas baubles hanging from the top edge over the right column (desktop). */
+function Ornaments() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 mx-auto hidden max-w-7xl grid-cols-2 px-4 md:grid">
+      <div />
+      <div className="relative">
+        {BAUBLES.map(([left, len, size, color, kind, delay]) => (
+          <span key={left} className="hero-swing absolute top-0 flex flex-col items-center" style={{ left: `${left}%`, animationDelay: `${delay}s` }}>
+            <span className="w-px bg-white/45" style={{ height: len }} />
+            {kind === "star" ? (
+              <svg viewBox="0 0 24 24" width={size} height={size} className="-mt-0.5 drop-shadow">
+                <path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17l-6.1 3.4 1.5-6.8L2.2 9l6.9-.7Z" fill={color} />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 32 36" width={size} height={size * 1.12} className="drop-shadow">
+                <rect x="12" y="0" width="8" height="5" rx="1.5" fill="#d4a83c" />
+                <circle cx="16" cy="20" r="15" fill={color} />
+                <path d="M3 18q13 6 26 0" stroke={color === "#ffffff" ? "#e23a4f" : "#ffffff"} strokeOpacity=".55" strokeWidth="2.2" fill="none" />
+                <ellipse cx="10.5" cy="13" rx="3.5" ry="5" fill="#fff" opacity=".35" />
+              </svg>
+            )}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

@@ -227,3 +227,13 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .jus-float, .jus-wobble, .jus-sip, .jus-bubble, .jus-drop, .jus-crown, .jus-twinkle path, .jus-heart { animation: none; }
 }
+
+/* Hanging Christmas baubles on the Natal hero (components/HeroCarousel.tsx) */
+@keyframes hero-swing {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(4deg); }
+}
+.hero-swing { transform-origin: 50% 0; animation: hero-swing 3.2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .hero-swing { animation: none; }
+}
