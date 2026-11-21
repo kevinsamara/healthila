@@ -9,6 +9,7 @@ import { LoginPrompt } from "@/components/LoginPrompt";
 import { BundlePopupLoader } from "@/components/BundlePopupLoader";
 import { StoreJsonLd } from "@/components/JsonLd";
 import { Analytics } from "@/components/Analytics";
+import { HideOnSaas } from "@/components/HideOnSaas";
 import { site } from "@/lib/site";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -62,14 +63,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="id" className={`${jakarta.variable} ${barlow.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
-        <Header />
+        <HideOnSaas><Header /></HideOnSaas>
         <main className="flex-1">{children}</main>
-        <Footer />
-        <WhatsAppFab />
-        <CsWidget />
-        <LoginPrompt />
-        <BundlePopupLoader />
-        <StoreJsonLd />
+        <HideOnSaas><Footer /></HideOnSaas>
+        <HideOnSaas><WhatsAppFab /></HideOnSaas>
+        <HideOnSaas><CsWidget /></HideOnSaas>
+        <HideOnSaas><LoginPrompt /></HideOnSaas>
+        <HideOnSaas><BundlePopupLoader /></HideOnSaas>
+        <HideOnSaas><StoreJsonLd /></HideOnSaas>
         <Analytics />
       </body>
     </html>
