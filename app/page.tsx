@@ -202,6 +202,7 @@ function heroSlides(available: Product[], keys: string[]): HeroSlide[] {
       whatsapp: waLink("Halo Healthila, saya mau pesan hampers Natal"),
       photos: natalPhotos,
       snow: true,
+      model: { src: "/hero/natal-model.webp", alt: "Model memegang dua parcel buah Natal Healthila", width: 825, height: 1100 },
     },
     {
       key: "parcel",

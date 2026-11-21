@@ -22,6 +22,8 @@ export type HeroSlide = {
   photos: HeroPhoto[];
   /** Falling-snow decoration (Natal). */
   snow?: boolean;
+  /** Cut-out person (transparent PNG/WebP) standing on the slide's bottom edge; photos become small floating cards. */
+  model?: { src: string; alt: string; width: number; height: number };
 };
 
 const PER_SLIDE = 4;
@@ -82,12 +84,16 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
               aria-roledescription="slide"
               aria-label={`${si + 1} dari ${count}`}
               inert={si !== index}
-              className={`relative w-full shrink-0 ${s.bg}`}
+              className={`relative flex w-full shrink-0 flex-col ${s.bg}`}
             >
               <div className="pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-white/5" />
               {s.snow && <Snow />}
-              <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pt-16 pb-20 md:grid-cols-2 md:pt-24 md:pb-28">
-                <div>
+              <div
+                className={`relative mx-auto grid w-full max-w-7xl flex-1 items-center gap-10 px-4 pt-16 md:grid-cols-2 md:pt-24 ${
+                  s.model ? "pb-0 md:gap-6" : "pb-20 md:pb-28"
+                }`}
+              >
+                <div className={s.model ? "md:pb-28" : undefined}>
                   <p className={`inline-block rounded-full px-3 py-1 text-xs font-bold tracking-wide uppercase ${s.badgeClass}`}>{s.badge}</p>
                   <h2 className="mt-5 text-5xl leading-[1.05] font-extrabold sm:text-7xl">{s.heading}</h2>
                   <p className={`mt-5 max-w-md text-lg ${s.textClass}`}>{s.text}</p>
@@ -115,7 +121,9 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
                   </div>
                 </div>
 
-                {photos.length > 0 && (
+                {s.model ? (
+                  <ModelScene model={s.model} photos={photos.slice(0, 2)} priority={si === 0} />
+                ) : photos.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 pb-8">
                     {photos.map((p, i) => (
                       <Link
@@ -165,6 +173,40 @@ export function HeroCarousel({ slides: initial }: { slides: HeroSlide[] }) {
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * Right side of a slide with a model: the cut-out stands on the slide's bottom
+ * edge (over the red circle), two product photos float beside as small cards.
+ */
+function ModelScene({ model, photos, priority }: { model: NonNullable<HeroSlide["model"]>; photos: HeroPhoto[]; priority: boolean }) {
+  const spots = [
+    // Clear spots around the cut-out: left of the head, above the raised hand.
+    "left-0 top-8 w-24 -rotate-6 sm:w-32 md:top-12 md:w-36",
+    "right-0 top-0 w-24 rotate-6 sm:w-28 md:w-32",
+  ];
+  return (
+    <div className="relative mx-auto h-[440px] w-full max-w-lg self-end sm:h-[480px] md:mt-0 md:h-[600px]">
+      {photos.map((p, i) => (
+        <Link
+          key={p.id}
+          href={`/produk/${p.slug}`}
+          className={`group absolute z-0 aspect-square overflow-hidden rounded-3xl bg-white/10 shadow-xl ring-4 shadow-black/25 ring-white/90 ${spots[i]}`}
+        >
+          <Image src={p.photo} alt={p.name} fill sizes="160px" className="object-cover transition duration-500 group-hover:scale-105" />
+        </Link>
+      ))}
+      <Image
+        src={model.src}
+        alt={model.alt}
+        width={model.width}
+        height={model.height}
+        priority={priority}
+        sizes="(min-width: 768px) 460px, 320px"
+        className="pointer-events-none absolute bottom-0 left-1/2 z-10 h-full w-auto max-w-none -translate-x-1/2 object-contain object-bottom drop-shadow-[0_20px_30px_rgba(0,0,0,0.35)]"
+      />
+    </div>
   );
 }
 
